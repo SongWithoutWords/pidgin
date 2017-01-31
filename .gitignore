@@ -19,6 +19,5 @@ cabal.sandbox.config
 cabal.project.local
 
 *.directory
+gen/*
 sample-out/*
-src/Lexer.hs
-src/Parser.hs
