@@ -38,10 +38,10 @@ data Token = TokenEol
            | TokenMinus
            | TokenDot
 
+           | TokenChrLit Char
            | TokenIntLit Int
            | TokenFltLit Float
            | TokenStrLit String
-           | TokenChrLit Char
 
            | TokenType String
            | TokenName String
