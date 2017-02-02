@@ -2,6 +2,14 @@ module Syntax where
 
 import Tokens
 
+
+data Delcaration
+  = Function Signature Body
+  | Class
+
+data Signature
+  = Signature {  }
+
 data ExprOrEol
   = Expr Expr
   | Eol

@@ -50,14 +50,22 @@ import ParseError
 
 %%
 
-lits : {- empty -} {[]}
-     | lits lit { $2 : $1 }
+file : exprs eol { $1 }
 
-expr :
+exprs
+  : {- empty -} { [] }
+  | exprs expr { $2 : $1 }
 
-lit : litChr {LitChr $1}
-    | litFlt {LitFlt $1}
-    | litInt {LitInt $1}
-    | litStr {LitStr $1}
+expr
+  : name { Variable $1 }
+  | name "(" exprs ")" { FuncInvoke $1 $3 } 
+  | expr "." name "(" exprs ")" { MethInvoke $1 $3 $5 }
+  | lit { Lit $1 }
+
+lit
+  : litChr {LitChr $1}
+  | litFlt {LitFlt $1}
+  | litInt {LitInt $1}
+  | litStr {LitStr $1}
 
 
