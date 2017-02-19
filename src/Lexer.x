@@ -1,11 +1,7 @@
 {
 {-# OPTIONS_GHC -w #-}
 
-module Lexer (
-Token(..),
-scanTokens
-) where
-
+module Lexer ({-Token(..),-} scanTokens) where
 import Tokens
 }
 
@@ -18,72 +14,74 @@ $alphaUpper   = [A-Z]
 
 $alpha        = [$alphaLower $alphaUpper]
 $alphaNumeral = [$alpha $digit]
-$eol          = [\n\;]
+-- $eol          = [\n\;]
 
 $whitespace   = [' ']
 
 tokens :-
 
-
 -- Comments
 "--".*                                    ;
 
 -- Syntax
-$eol                                      { \_ _ -> TokenEol }
+\n+                                       { \_ _ -> TokenEol }
 
 -- Should be able to limit to spaces and tabs!
 $white+                                   ;
 
-Bln                                       { \p _ -> TokenBln }
-Chr                                       { \p _ -> TokenChr }
-Flt                                       { \p _ -> TokenFlt }
-Int                                       { \p _ -> TokenInt }
-Nat                                       { \p _ -> TokenNat }
-Str                                       { \p _ -> TokenStr }
+Bln                                       { \p _ -> TokenTypeBln }
+Chr                                       { \p _ -> TokenTypeChr }
+Flt                                       { \p _ -> TokenTypeFlt }
+Int                                       { \p _ -> TokenTypeInt }
+Nat                                       { \p _ -> TokenTypeNat }
+Str                                       { \p _ -> TokenTypeStr }
 
-none                                      { \p _ -> TokenNone }
+if                                        { \p _ -> TokenIf }
+else                                      { \p _ -> TokenElse }
 true                                      { \p _ -> TokenTrue }
 false                                     { \p _ -> TokenFalse }
 and                                       { \p _ -> TokenAnd }
 or                                        { \p _ -> TokenOr }
 not                                       { \p _ -> TokenNot }
-
-"->"                                      { \p _ -> TokenThinArrow }
-"=>"                                      { \p _ -> TokenFatArrow }
+none                                      { \p _ -> TokenNone }
 
 -- Stand-in: Will improve lexer to use indentation
 "{"                                       { \p _ -> TokenIndent }
 "}"                                       { \p _ -> TokenDedent }
 
-"("                                       { \p _ -> TokenLParen }
-")"                                       { \p _ -> TokenRParen }
-"["                                       { \p _ -> TokenLBracket }
-"]"                                       { \p _ -> TokenRBracket }
-
+"~"                                       { \p _ -> TokenTilde }
 "@"                                       { \p _ -> TokenAt }
 "#"                                       { \p _ -> TokenHash }
+"$"                                       { \p _ -> TokenDollar }
 "^"                                       { \p _ -> TokenCaret }
 "&"                                       { \p _ -> TokenAmpersand }
-
-"~"                                       { \p _ -> TokenTilde }
-"?"                                       { \p _ -> TokenQMark }
 "*"                                       { \p _ -> TokenStar }
-"+"                                       { \p _ -> TokenPlus }
+"("                                       { \p _ -> TokenLParen }
+")"                                       { \p _ -> TokenRParen }
 "-"                                       { \p _ -> TokenMinus }
+"+"                                       { \p _ -> TokenPlus }
+"="                                       { \p _ -> TokenEqual }
+"["                                       { \p _ -> TokenLBracket }
+"]"                                       { \p _ -> TokenRBracket }
+";"                                       { \p _ -> TokenSemicolon }
+":"                                       { \p _ -> TokenColon }
+","                                       { \p _ -> TokenComma }
 "."                                       { \p _ -> TokenDot }
+"?"                                       { \p _ -> TokenQMark }
 
-[\-]? $digitNonZero $digit*               { \p s -> TokenIntLit (read s) }
-[\-]? $digitNonZero $digit* [\.] $digit+  { \p s -> TokenFltLit (read s) }
-[\"]([\\][\"]|[^\"])*[\"]                 { \p s -> TokenStrLit (init (tail s)) }
-[\'][\\]?[^\n\t][\']                      { \p s -> TokenChrLit (read s) }
+"->"                                      { \p _ -> TokenThinArrow }
+"=>"                                      { \p _ -> TokenFatArrow }
 
-$alphaUpper $alphaNumeral*                { \p s -> TokenType s }
+[\'][\\]?[^\n\t][\']                      { \p s -> TokenLitChr (read s) }
+[\-]? $digitNonZero $digit*               { \p s -> TokenLitInt (read s) }
+[\-]? $digitNonZero $digit* [\.] $digit+  { \p s -> TokenLitFlt (read s) }
+[\"]([\\][\"]|[^\"])*[\"]                 { \p s -> TokenLitStr (init (tail s)) }
+
 $alphaLower $alphaNumeral*                { \p s -> TokenName s }
--- $alphaLower*                { \p s -> TokenName s }
+$alphaUpper $alphaNumeral*                { \p s -> TokenTypeName s }
 
 {
 scanTokens :: String -> [Token]
 scanTokens = alexScanTokens
 }
-
 

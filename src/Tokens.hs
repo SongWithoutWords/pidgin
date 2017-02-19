@@ -1,51 +1,57 @@
 module Tokens where
 
-data Token = TokenEol
+data Token
+  = TokenEol
 
-           | TokenBln
-           | TokenChr
-           | TokenFlt
-           | TokenInt
-           | TokenNat
-           | TokenStr
+  | TokenTypeBln
+  | TokenTypeChr
+  | TokenTypeFlt
+  | TokenTypeInt
+  | TokenTypeNat
+  | TokenTypeStr
 
-           | TokenNone
-           | TokenTrue
-           | TokenFalse
-           | TokenAnd
-           | TokenOr
-           | TokenNot
+  | TokenIf
+  | TokenElse
+  | TokenTrue
+  | TokenFalse
+  | TokenAnd
+  | TokenOr
+  | TokenNot
+  | TokenNone
 
-           | TokenThinArrow
-           | TokenFatArrow
+  | TokenIndent
+  | TokenDedent
 
-           | TokenIndent
-           | TokenDedent
+  | TokenTilde
+  | TokenAt
+  | TokenHash
+  | TokenDollar
+  | TokenCaret
+  | TokenAmpersand
+  | TokenStar
+  | TokenLParen
+  | TokenRParen
+  | TokenMinus
+  | TokenPlus
+  | TokenEqual
+  | TokenLBracket
+  | TokenRBracket
+  | TokenSemicolon
+  | TokenColon
+  | TokenComma
+  | TokenDot
+  | TokenQMark
 
-           | TokenLParen
-           | TokenRParen
-           | TokenLBracket
-           | TokenRBracket
+  | TokenThinArrow
+  | TokenFatArrow
 
-           | TokenAt
-           | TokenHash
-           | TokenCaret
-           | TokenAmpersand
-           | TokenTilde
-           | TokenQMark
-           | TokenStar
-           | TokenPlus
-           | TokenMinus
-           | TokenDot
+  | TokenLitChr Char
+  | TokenLitInt Int
+  | TokenLitFlt Float
+  | TokenLitStr String
 
-           | TokenChrLit Char
-           | TokenIntLit Int
-           | TokenFltLit Float
-           | TokenStrLit String
+  | TokenName String
+  | TokenTypeName String
 
-           | TokenType String
-           | TokenName String
-
-           deriving (Eq, Show)
-
+  deriving (Eq, Show)
 
