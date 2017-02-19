@@ -70,7 +70,7 @@ data Stmt
   = StmtAssign Lexpr Expr
   | StmtVariable Variable
   | StmtFunction Function
-  | StmtIf IfStruct
+  | StmtIf IfChain
   | StmtApply Apply
   deriving(Eq, Show)
 
@@ -100,7 +100,7 @@ data Lexpr
   deriving(Eq, Show)
 
 data Expr
-  = ExprIf IfStruct
+  = ExprIf IfChain
   | ExprLambda Lambda
   | ExprApply Apply
   | ExprAccess Access
@@ -108,8 +108,14 @@ data Expr
   | ExprLit Lit
   deriving(Eq, Show)
 
-data IfStruct
-  = IfStruct CondBlock [CondBlock] (Maybe Block) -- if [else if] else?
+-- data IfStruct
+  -- = IfStruct CondBlock [CondBlock] (Maybe Block) -- if [else if] else?
+  -- deriving(Eq, Show)
+
+data IfChain
+  = IfChainIf CondBlock IfChain
+  | IfChainElse Block
+  | IfChainNone
   deriving(Eq, Show)
 
 data CondBlock

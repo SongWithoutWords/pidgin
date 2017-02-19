@@ -116,8 +116,8 @@ stmts
 stmt
   : lexpr "=" expr  { StmtAssign $1 $3 }
   | variable        { StmtVariable $1 }
-  | function        { StmtFunction $1 }
-  | ifStruct        { StmtIf $1 }
+  -- | function        { StmtFunction $1 } -- causing some conflicts 
+  | ifChain         { StmtIf $1 }
   | apply           { StmtApply $1 }
 
 lexpr
@@ -153,32 +153,20 @@ parameter
 exprsCS
   : {- none -}        { [] }
   | expr              { [$1]}
-  | expr "," exprsCS  { $1 : $3 }
+  -- | expr "," exprsCS  { $1 : $3 } -- also causing conficts. Hmm...
 
 expr
-  : ifStruct  { ExprIf $1 }
+  : ifChain   { ExprIf $1 }
   | lambda    { ExprLambda $1 }
   | apply     { ExprApply $1 }
   | access    { ExprAccess $1 }
   | name      { ExprName $1 }
   | lit       { ExprLit $1 }
 
-ifStruct
-   : ifClause elseIfs elseClause { IfStruct $1 $2 $3 }
-
-
-elseIfs
-  : {- none -}            { [] }
-  | elseIf condBlock elseIfs { $2 : $3 }
-
-elseClause
-  : {- none -}          { Nothing }
-  | else indentedBlock  { Just $2 }
-
-ifClause
-  : if condBlock  { $2 }
-
-elseIf : else if   { }
+ifChain
+  : if condBlock                    { IfChainIf $2 IfChainNone }
+  | if condBlock else ifChain       { IfChainIf $2 $4 }
+  | if condBlock else indentedBlock { IfChainIf $2 $ IfChainElse $4 }
 
 condBlock
   : expr indentedBlock  { CondBlock $1 $2 } -- Would be nice to have one-line ifs
