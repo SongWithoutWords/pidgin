@@ -14,7 +14,6 @@ $alphaUpper   = [A-Z]
 
 $alpha        = [$alphaLower $alphaUpper]
 $alphaNumeral = [$alpha $digit]
--- $eol          = [\n\;]
 
 $whitespace   = [' ']
 
@@ -27,7 +26,7 @@ tokens :-
 \n+                                       { \_ _ -> TokenEol }
 
 -- Should be able to limit to spaces and tabs!
-$white+                                   ;
+$white                                    ;
 
 Bln                                       { \p _ -> TokenTypeBln }
 Chr                                       { \p _ -> TokenTypeChr }
