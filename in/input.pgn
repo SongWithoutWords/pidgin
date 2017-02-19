@@ -1,0 +1,6 @@
+myFunction(^~Int a, ^~Haggfish b) -> None {
+  x()
+  if a {
+     y()
+  }
+}
