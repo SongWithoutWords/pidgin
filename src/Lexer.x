@@ -1,11 +1,11 @@
 {
 {-# OPTIONS_GHC -w #-}
 
-module Lexer ({-Token(..),-} scanTokens) where
+module Lexer (scanTokens) where
 import Tokens
 }
 
-%wrapper "posn"
+%wrapper "monadUserState"
 
 $digitNonZero = 1-9
 $digit        = 0-9
@@ -15,10 +15,12 @@ $alphaUpper   = A-Z
 $alpha        = [$alphaLower $alphaUpper]
 $alphaNumeral = [$alpha $digit]
 
+$quote        = \"
+
 @char         = \\? [^\n\t]
 @litChar      = \' @char \'
-@string       = (\\\"|[^\"\n])*
-@litString    = \" @string \"
+@string       = ( \\ $quote | [^ $quote \n]) *
+@litString    = $quote @string $quote
 
 @litInt       = (0 | \-?[1-9][0-9]*)
 @litFlt       = @litInt \. [0-9]+
@@ -32,64 +34,105 @@ tokens        :-
 "--".*        ;
 
 -- Syntax
-\n+           { \_ _ -> TokenEol }
+\n+           { yield TokenEol }
 
 -- Should be able to limit to spaces and tabs!
 $white        ;
 
-Bln           { \p _ -> TokenTypeBln }
-Chr           { \p _ -> TokenTypeChr }
-Flt           { \p _ -> TokenTypeFlt }
-Int           { \p _ -> TokenTypeInt }
-Nat           { \p _ -> TokenTypeNat }
-Str           { \p _ -> TokenTypeStr }
+Bln           { yield TokenTypeBln }
+Chr           { yield TokenTypeChr }
+Flt           { yield TokenTypeFlt }
+Int           { yield TokenTypeInt }
+Nat           { yield TokenTypeNat }
+Str           { yield TokenTypeStr }
 
-if            { \p _ -> TokenIf }
-else          { \p _ -> TokenElse }
-true          { \p _ -> TokenTrue }
-false         { \p _ -> TokenFalse }
-and           { \p _ -> TokenAnd }
-or            { \p _ -> TokenOr }
-not           { \p _ -> TokenNot }
-none          { \p _ -> TokenNone }
+if            { yield TokenIf } -- \p _ -> TokenIf }
+else          { yield TokenElse }
+true          { yield TokenTrue }
+false         { yield TokenFalse }
+and           { yield TokenAnd }
+or            { yield TokenOr }
+not           { yield TokenNot }
+none          { yield TokenNone }
 
 -- Stand-in: Will improve lexer to use indentation
-"{"           { \p _ -> TokenIndent }
-"}"           { \p _ -> TokenDedent }
+"{"           { yield TokenIndent }
+"}"           { yield TokenDedent }
 
-"~"           { \p _ -> TokenTilde }
-"@"           { \p _ -> TokenAt }
-"#"           { \p _ -> TokenHash }
-"$"           { \p _ -> TokenDollar }
-"^"           { \p _ -> TokenCaret }
-"&"           { \p _ -> TokenAmpersand }
-"*"           { \p _ -> TokenStar }
-"("           { \p _ -> TokenLParen }
-")"           { \p _ -> TokenRParen }
-"-"           { \p _ -> TokenMinus }
-"+"           { \p _ -> TokenPlus }
-"="           { \p _ -> TokenEqual }
-"["           { \p _ -> TokenLBracket }
-"]"           { \p _ -> TokenRBracket }
-";"           { \p _ -> TokenSemicolon }
-":"           { \p _ -> TokenColon }
-","           { \p _ -> TokenComma }
-"."           { \p _ -> TokenDot }
-"?"           { \p _ -> TokenQMark }
+"~"           { yield TokenTilde }
+"@"           { yield TokenAt }
+"#"           { yield TokenHash }
+"$"           { yield TokenDollar }
+"^"           { yield TokenCaret }
+"&"           { yield TokenAmpersand }
+"*"           { yield TokenStar }
+"("           { yield TokenLParen }
+")"           { yield TokenRParen }
+"-"           { yield TokenMinus }
+"+"           { yield TokenPlus }
+"="           { yield TokenEqual }
+"["           { yield TokenLBracket }
+"]"           { yield TokenRBracket }
+";"           { yield TokenSemicolon }
+":"           { yield TokenColon }
+","           { yield TokenComma }
+"."           { yield TokenDot }
+"?"           { yield TokenQMark }
 
-"->"          { \p _ -> TokenThinArrow }
-"=>"          { \p _ -> TokenFatArrow }
+"->"          { yield TokenThinArrow }
+"=>"          { yield TokenFatArrow }
 
-@litChar      { \p s -> TokenLitChr (read s) }
-@litInt       { \p s -> TokenLitInt (read s) }
-@litFlt       { \p s -> TokenLitFlt (read s) }
-@litString    { \p s -> TokenLitStr (init (tail s)) }
+@litChar      { yieldFromStr $ TokenLitChr . read }
+@litInt       { yieldFromStr $ TokenLitInt . read }
+@litFlt       { yieldFromStr $ TokenLitFlt . read }
+@litString    { yieldFromStr $ TokenLitStr . init . tail }
 
-@nameLower    { \p s -> TokenName s }
-@nameUpper    { \p s -> TokenTypeName s }
+@nameLower    { yieldFromStr $ TokenName }
+@nameUpper    { yieldFromStr $ TokenTypeName }
 
 {
-scanTokens :: String -> [Token]
-scanTokens = alexScanTokens
-}
+data AlexUserState = AlexUserState
+  { tokens :: [Token]
+  , indChar :: Char
+  , indMult :: Int
+  , indDepth :: Int }
 
+type ParseError = String
+
+alexInitUserState :: AlexUserState
+alexInitUserState = AlexUserState [] ' '0 0
+
+alexEOF :: Alex()
+alexEOF = return ()
+
+ignore input len = alexMonadScan
+
+modifyUserState :: (AlexUserState -> AlexUserState) -> Alex ()
+modifyUserState f = Alex $ \s -> let current = alex_ust s
+                                     new = f current
+                                 in
+                                     Right (s { alex_ust = new}, ())
+
+getUserState :: Alex AlexUserState
+getUserState = Alex $ \s -> Right (s, alex_ust s)
+
+yieldFromStr :: (String -> Token) -> AlexAction ()
+yieldFromStr lex =
+  \(posn, prevChar, pending, s) len -> modifyUserState (push $ take len s) >> alexMonadScan
+    where
+      push :: String -> AlexUserState -> AlexUserState
+      push str state = state { tokens = (tokens state) ++ [lex str] }
+
+yield :: Token -> AlexAction ()
+yield token = yieldFromStr (\_ -> token)
+
+
+runAlexScan :: String -> Either ParseError AlexUserState
+runAlexScan s = runAlex s $ alexMonadScan >> getUserState
+
+scanTokens :: String -> [Token]
+scanTokens s = case runAlexScan s of
+           (Right state) -> tokens state
+           (Left parseError) -> error $ parseError
+
+}
