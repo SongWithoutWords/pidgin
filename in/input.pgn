@@ -1,6 +1,13 @@
-myFunction(^~Int a, ^~Haggfish b) -> None {
+myFunction() -> None
+  
+  a()
+  b = c
+  if q
+     f()
+     g = h
   x()
-  if a {
-     y()
-  }
-}
+  y = z
+
+  
+ 
+
