@@ -11,7 +11,8 @@ main = do
   let tokens = scanTokens input
   let tokenFilePath = "out/tokens.txt"
   putStrLn $ "Writing tokens to " ++ tokenFilePath
-  writeFile tokenFilePath (show tokens)
+  writeFile tokenFilePath (formatTokens tokens)
+
   let rawAst = show $ parse tokens
   let prettyAst = formatAst rawAst
   let astFilePath = "out/ast.txt"
