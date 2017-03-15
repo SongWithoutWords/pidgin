@@ -22,7 +22,7 @@ formatTokens tokens = formatTokens' $ show tokens
   where
     formatTokens' :: String -> String
     formatTokens' [] = []
-    formatTokens' ('T':'o':'k':'e':'n':cs) = formatTokens' cs
+    formatTokens' ('T':'k':'n':cs) = formatTokens' cs
     formatTokens' (c:cs)
       | c == '[' || c == ']' || c == '\"' = formatTokens' cs
       | c == ',' = '\n' : formatTokens' cs
