@@ -54,12 +54,12 @@ data DataType
   | TypeInt
   | TypeNat
   | TypeStr
-  | TypeUser TypeName
+  | TypeUser Typename
   | TypeInferred
   deriving(Eq, Show)
 
-data TypeName
-  = TypeName String
+data Typename
+  = Typename String
   deriving(Eq, Show)
 
 data Block
@@ -150,4 +150,3 @@ data Lit
   | LitInt Int
   | LitStr String
   deriving(Eq, Show)
-

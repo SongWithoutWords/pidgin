@@ -10,57 +10,57 @@ import ParseError
 %error { parseError }
 
 %token
-  eol           { TokenEol }
+  eol           { TknEol }
 
-  Bln           { TokenTypeBln }
-  Chr           { TokenTypeChr }
-  Flt           { TokenTypeFlt }
-  Int           { TokenTypeInt }
-  Nat           { TokenTypeNat }
-  Str           { TokenTypeStr }
+  Bln           { TknTypeBln }
+  Chr           { TknTypeChr }
+  Flt           { TknTypeFlt }
+  Int           { TknTypeInt }
+  Nat           { TknTypeNat }
+  Str           { TknTypeStr }
 
-  if            { TokenIf }
-  else          { TokenElse }
-  true          { TokenTrue }
-  false         { TokenFalse }
-  and           { TokenAnd }
-  or            { TokenOr }
-  not           { TokenNot }
-  none          { TokenNone }
+  if            { TknIf }
+  else          { TknElse }
+  true          { TknTrue }
+  false         { TknFalse }
+  and           { TknAnd }
+  or            { TknOr }
+  not           { TknNot }
+  none          { TknNone }
 
-  ind           { TokenIndent }
-  ded           { TokenDedent }
+  ind           { TknIndent }
+  ded           { TknDedent }
 
-  "~"           { TokenTilde }
-  "@"           { TokenAt }
-  "#"           { TokenHash }
-  "$"           { TokenDollar }
-  "^"           { TokenCaret }
-  "&"           { TokenAmpersand }
-  "*"           { TokenStar }
-  "("           { TokenLParen }
-  ")"           { TokenRParen }
-  "-"           { TokenMinus }
-  "+"           { TokenPlus }
-  "="           { TokenEqual }
-  "["           { TokenLBracket }
-  "]"           { TokenRBracket }
-  ";"           { TokenSemicolon}
-  ":"           { TokenColon }
-  ","           { TokenComma }
-  "."           { TokenDot }
-  "?"           { TokenQMark }
+  "~"           { TknTilde }
+  "@"           { TknAt }
+  "#"           { TknHash }
+  "$"           { TknDollar }
+  "^"           { TknCaret }
+  "&"           { TknAmpersand }
+  "*"           { TknStar }
+  "("           { TknLParen }
+  ")"           { TknRParen }
+  "-"           { TknMinus }
+  "+"           { TknPlus }
+  "="           { TknEqual }
+  "["           { TknLBracket }
+  "]"           { TknRBracket }
+  ";"           { TknSemicolon}
+  ":"           { TknColon }
+  ","           { TknComma }
+  "."           { TknDot }
+  "?"           { TknQMark }
 
-  "->"          { TokenThinArrow }
-  "=>"          { TokenFatArrow }
+  "->"          { TknThinArrow }
+  "=>"          { TknFatArrow }
 
-  litChr        { TokenLitChr $$ }
-  litFlt        { TokenLitFlt $$ }
-  litInt        { TokenLitInt $$ }
-  litStr        { TokenLitStr $$ }
+  litChr        { TknLitChr $$ }
+  litFlt        { TknLitFlt $$ }
+  litInt        { TknLitInt $$ }
+  litStr        { TknLitStr $$ }
 
-  tokenName     { TokenName $$ }
-  tokenTypeName { TokenTypeName $$ }
+  tokenName     { TknName $$ }
+  tokenTypeName { TknTypename $$ }
 
 %%
 
@@ -100,7 +100,7 @@ dataType
   | typeName { TypeUser $1 }
 
 typeName
-  : tokenTypeName { TypeName $1 }
+  : tokenTypeName { Typename $1 }
 
 indentedBlock
   : ind block ded { $2 }

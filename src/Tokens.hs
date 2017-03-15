@@ -1,57 +1,57 @@
 module Tokens where
 
 data Token
-  = TokenEol
+  = TknEol
 
-  | TokenTypeBln
-  | TokenTypeChr
-  | TokenTypeFlt
-  | TokenTypeInt
-  | TokenTypeNat
-  | TokenTypeStr
+  | TknIndent
+  | TknDedent
 
-  | TokenIf
-  | TokenElse
-  | TokenTrue
-  | TokenFalse
-  | TokenAnd
-  | TokenOr
-  | TokenNot
-  | TokenNone
+  | TknTypeBln
+  | TknTypeChr
+  | TknTypeFlt
+  | TknTypeInt
+  | TknTypeNat
+  | TknTypeStr
 
-  | TokenIndent
-  | TokenDedent
+  | TknIf
+  | TknElse
+  | TknTrue
+  | TknFalse
+  | TknAnd
+  | TknOr
+  | TknNot
+  | TknNone
 
-  | TokenTilde
-  | TokenAt
-  | TokenHash
-  | TokenDollar
-  | TokenCaret
-  | TokenAmpersand
-  | TokenStar
-  | TokenLParen
-  | TokenRParen
-  | TokenMinus
-  | TokenPlus
-  | TokenEqual
-  | TokenLBracket
-  | TokenRBracket
-  | TokenSemicolon
-  | TokenColon
-  | TokenComma
-  | TokenDot
-  | TokenQMark
+  | TknTilde
+  | TknAt
+  | TknHash
+  | TknDollar
+  | TknCaret
+  | TknAmpersand
+  | TknStar
+  | TknLParen
+  | TknRParen
+  | TknMinus
+  | TknPlus
+  | TknEqual
+  | TknLBracket
+  | TknRBracket
+  | TknSemicolon
+  | TknColon
+  | TknComma
+  | TknDot
+  | TknQMark
 
-  | TokenThinArrow
-  | TokenFatArrow
+  | TknThinArrow
+  | TknFatArrow
 
-  | TokenLitChr Char
-  | TokenLitInt Int
-  | TokenLitFlt Float
-  | TokenLitStr String
+  | TknLitChr Char
+  | TknLitInt Int
+  | TknLitFlt Float
+  | TknLitStr String
 
-  | TokenName String
-  | TokenTypeName String
+  | TknName String
+  | TknTypename String
 
   deriving (Eq, Show)
 
