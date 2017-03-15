@@ -37,58 +37,56 @@ tokens                   :-
 
 "--".*                   ; -- Comments
 
--- \n+                      { doAppendToken TknEol }
-
-^ $spaceOrTab* /$display { doCheckIndent }
+^ $spaceOrTab* /$display { checkIndentAction }
 
 $white                   ;
 
-Bln                      { doAppendToken TknTypeBln }
-Chr                      { doAppendToken TknTypeChr }
-Flt                      { doAppendToken TknTypeFlt }
-Int                      { doAppendToken TknTypeInt }
-Nat                      { doAppendToken TknTypeNat }
-Str                      { doAppendToken TknTypeStr }
+Bln                      { appendTokenAction TknTypeBln }
+Chr                      { appendTokenAction TknTypeChr }
+Flt                      { appendTokenAction TknTypeFlt }
+Int                      { appendTokenAction TknTypeInt }
+Nat                      { appendTokenAction TknTypeNat }
+Str                      { appendTokenAction TknTypeStr }
 
-if                       { doAppendToken TknIf }
-else                     { doAppendToken TknElse }
-true                     { doAppendToken TknTrue }
-false                    { doAppendToken TknFalse }
-and                      { doAppendToken TknAnd }
-or                       { doAppendToken TknOr }
-not                      { doAppendToken TknNot }
-none                     { doAppendToken TknNone }
+if                       { appendTokenAction TknIf }
+else                     { appendTokenAction TknElse }
+true                     { appendTokenAction TknTrue }
+false                    { appendTokenAction TknFalse }
+and                      { appendTokenAction TknAnd }
+or                       { appendTokenAction TknOr }
+not                      { appendTokenAction TknNot }
+none                     { appendTokenAction TknNone }
 
-"~"                      { doAppendToken TknTilde }
-"@"                      { doAppendToken TknAt }
-"#"                      { doAppendToken TknHash }
-"$"                      { doAppendToken TknDollar }
-"^"                      { doAppendToken TknCaret }
-"&"                      { doAppendToken TknAmpersand }
-"*"                      { doAppendToken TknStar }
-"("                      { doAppendToken TknLParen }
-")"                      { doAppendToken TknRParen }
-"-"                      { doAppendToken TknMinus }
-"+"                      { doAppendToken TknPlus }
-"="                      { doAppendToken TknEqual }
-"["                      { doAppendToken TknLBracket }
-"]"                      { doAppendToken TknRBracket }
-";"                      { doAppendToken TknSemicolon }
-":"                      { doAppendToken TknColon }
-","                      { doAppendToken TknComma }
-"."                      { doAppendToken TknDot }
-"?"                      { doAppendToken TknQMark }
+"~"                      { appendTokenAction TknTilde }
+"@"                      { appendTokenAction TknAt }
+"#"                      { appendTokenAction TknHash }
+"$"                      { appendTokenAction TknDollar }
+"^"                      { appendTokenAction TknCaret }
+"&"                      { appendTokenAction TknAmpersand }
+"*"                      { appendTokenAction TknStar }
+"("                      { appendTokenAction TknLParen }
+")"                      { appendTokenAction TknRParen }
+"-"                      { appendTokenAction TknMinus }
+"+"                      { appendTokenAction TknPlus }
+"="                      { appendTokenAction TknEqual }
+"["                      { appendTokenAction TknLBracket }
+"]"                      { appendTokenAction TknRBracket }
+";"                      { appendTokenAction TknSemicolon }
+":"                      { appendTokenAction TknColon }
+","                      { appendTokenAction TknComma }
+"."                      { appendTokenAction TknDot }
+"?"                      { appendTokenAction TknQMark }
 
-"->"                     { doAppendToken TknThinArrow }
-"=>"                     { doAppendToken TknFatArrow }
+"->"                     { appendTokenAction TknThinArrow }
+"=>"                     { appendTokenAction TknFatArrow }
 
-@litChar                 { doLexToken $ TknLitChr . read }
-@litInt                  { doLexToken $ TknLitInt . read }
-@litFlt                  { doLexToken $ TknLitFlt . read }
-@litString               { doLexToken $ TknLitStr . init . tail }
+@litChar                 { lexTokenAction $ TknLitChr . read }
+@litInt                  { lexTokenAction $ TknLitInt . read }
+@litFlt                  { lexTokenAction $ TknLitFlt . read }
+@litString               { lexTokenAction $ TknLitStr . init . tail }
 
-@nameLower               { doLexToken $ TknName }
-@nameUpper               { doLexToken $ TknTypename }
+@nameLower               { lexTokenAction $ TknName }
+@nameUpper               { lexTokenAction $ TknTypename }
 
 
 {
@@ -119,20 +117,20 @@ updateUserState update = (Alex $ \state ->
 -- Update and types of updates
 type Update = (AlexUserState -> AlexUserState)
 
-doUpdate :: Update -> AlexAction ()
-doUpdate update _ _ = updateUserState update
+updateAction :: Update -> AlexAction ()
+updateAction update _ _ = updateUserState update
 
 appendToken :: Token -> Update
 appendToken tkn state = state { tokens = (tokens state) ++ [tkn]}
 
-doAppendToken :: Token -> AlexAction ()
-doAppendToken = doUpdate . appendToken
+appendTokenAction :: Token -> AlexAction ()
+appendTokenAction = updateAction . appendToken
 
 appendTokens :: [Token] -> Update
 appendTokens tkns state = state { tokens = (tokens state) ++ tkns}
 
-doAppendTokens :: [Token] -> AlexAction ()
-doAppendTokens = doUpdate . appendTokens
+appendTokensAction :: [Token] -> AlexAction ()
+appendTokensAction = updateAction . appendTokens
 
 setIndentDepth :: Int -> Update
 setIndentDepth n state = state { indentDepth = n }
@@ -148,14 +146,14 @@ alexToUserInput (posn, prevChar, pending, s) len = UserInput (take len s) posn
 
 type UserInputUpdate = UserInput -> Update
 
-doInputUpdate :: UserInputUpdate -> AlexAction ()
-doInputUpdate userInputUpdate alexInput len = updateUserState $ userInputUpdate $ alexToUserInput alexInput len
+updateInputAction :: UserInputUpdate -> AlexAction ()
+updateInputAction userInputUpdate alexInput len = updateUserState $ userInputUpdate $ alexToUserInput alexInput len
 
 lexToken :: (String -> Token) -> UserInputUpdate
 lexToken lex (UserInput str _) = appendToken $ lex str
 
-doLexToken :: (String -> Token) -> AlexAction ()
-doLexToken = doInputUpdate . lexToken
+lexTokenAction :: (String -> Token) -> AlexAction ()
+lexTokenAction = updateInputAction . lexToken
 
 spacesPerTab = 4 -- TODO: Make adjustable by user
 
@@ -172,17 +170,17 @@ parseIndentation (UserInput str pos)
 checkIndent' :: Int -> Update
 checkIndent' indent state
   | indent < curIndent = setIndentDepth indent $ appendTokens (replicate (curIndent - indent) TknDedent) state
-  | indent == curIndent = appendToken TknEol state -- state
+  | indent == curIndent = appendToken TknEol state
   | indent == (curIndent + 1) = setIndentDepth indent $ appendToken TknIndent state
-  | indent == (curIndent + 2) = state -- line continuation, parser need not be aware -- appendToken TknLineCont state
+  | indent == (curIndent + 2) = state -- line continuation, parser need not be aware
     where
       curIndent = indentDepth state
 
 checkIndent :: UserInputUpdate
 checkIndent = checkIndent' . parseIndentation
 
-doCheckIndent :: AlexAction ()
-doCheckIndent = doInputUpdate checkIndent
+checkIndentAction :: AlexAction ()
+checkIndentAction = updateInputAction checkIndent
 
 
 -- Utility functions
