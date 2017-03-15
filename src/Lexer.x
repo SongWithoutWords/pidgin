@@ -7,116 +7,101 @@ import Tokens
 
 %wrapper "monadUserState"
 
+$digitNonZero            = 1-9
+$digit                   = 0-9
+$alphaLower              = a-z
+$alphaUpper              = A-Z
 
-$digitNonZero = 1-9
-$digit        = 0-9
-$alphaLower   = a-z
-$alphaUpper   = A-Z
+$alpha                   = [$alphaLower $alphaUpper]
+$alphaNumeral            = [$alpha $digit]
 
-$alpha        = [$alphaLower $alphaUpper]
-$alphaNumeral = [$alpha $digit]
+$space                   = [\ ]
+$tab                     = \t
+$spaceOrTab              = [$space $tab]
+$display                 = [^$white]
 
-$space        = [\ ]
-$tab          = \t
-$spaceOrTab   = [$space $tab]
-$display      = [^$white]
+$quote                   = \"
 
-$quote        = \"
+@char                    = \\? [^\n\t]
+@litChar                 = \' @char \'
+@string                  = ( \\ $quote | [^ $quote \n]) *
+@litString               = $quote @string $quote
 
-@char         = \\? [^\n\t]
-@litChar      = \' @char \'
-@string       = ( \\ $quote | [^ $quote \n]) *
-@litString    = $quote @string $quote
+@litInt                  = (0 | \-?[1-9][0-9]*)
+@litFlt                  = @litInt \. [0-9]+
 
-@litInt       = (0 | \-?[1-9][0-9]*)
-@litFlt       = @litInt \. [0-9]+
+@nameLower               = $alphaLower $alphaNumeral*
+@nameUpper               = $alphaUpper $alphaNumeral*
 
-@nameLower    = $alphaLower $alphaNumeral*
-@nameUpper    = $alphaUpper $alphaNumeral*
+tokens                   :-
 
--- @indentSpaces = ^ $space+ /[^$white]
--- @indentTabs   = ^ $tab+   /[^$white]
+"--".*                   ; -- Comments
 
-tokens        :-
+-- \n+                      { doAppendToken TknEol }
 
--- Comments
-"--".*        ;
+^ $spaceOrTab* /$display { doCheckIndent }
 
--- Syntax
-\n+           { yield TokenEol }
+$white                   ;
 
+Bln                      { doAppendToken TknTypeBln }
+Chr                      { doAppendToken TknTypeChr }
+Flt                      { doAppendToken TknTypeFlt }
+Int                      { doAppendToken TknTypeInt }
+Nat                      { doAppendToken TknTypeNat }
+Str                      { doAppendToken TknTypeStr }
 
-^ $spaceOrTab* /$display { checkIndent }
--- @indentTabs   { yield TokenIndent }
+if                       { doAppendToken TknIf }
+else                     { doAppendToken TknElse }
+true                     { doAppendToken TknTrue }
+false                    { doAppendToken TknFalse }
+and                      { doAppendToken TknAnd }
+or                       { doAppendToken TknOr }
+not                      { doAppendToken TknNot }
+none                     { doAppendToken TknNone }
 
--- Should be able to limit to spaces and tabs!
-$white        ;
+"~"                      { doAppendToken TknTilde }
+"@"                      { doAppendToken TknAt }
+"#"                      { doAppendToken TknHash }
+"$"                      { doAppendToken TknDollar }
+"^"                      { doAppendToken TknCaret }
+"&"                      { doAppendToken TknAmpersand }
+"*"                      { doAppendToken TknStar }
+"("                      { doAppendToken TknLParen }
+")"                      { doAppendToken TknRParen }
+"-"                      { doAppendToken TknMinus }
+"+"                      { doAppendToken TknPlus }
+"="                      { doAppendToken TknEqual }
+"["                      { doAppendToken TknLBracket }
+"]"                      { doAppendToken TknRBracket }
+";"                      { doAppendToken TknSemicolon }
+":"                      { doAppendToken TknColon }
+","                      { doAppendToken TknComma }
+"."                      { doAppendToken TknDot }
+"?"                      { doAppendToken TknQMark }
 
+"->"                     { doAppendToken TknThinArrow }
+"=>"                     { doAppendToken TknFatArrow }
 
-Bln           { yield TokenTypeBln }
-Chr           { yield TokenTypeChr }
-Flt           { yield TokenTypeFlt }
-Int           { yield TokenTypeInt }
-Nat           { yield TokenTypeNat }
-Str           { yield TokenTypeStr }
+@litChar                 { doLexToken $ TknLitChr . read }
+@litInt                  { doLexToken $ TknLitInt . read }
+@litFlt                  { doLexToken $ TknLitFlt . read }
+@litString               { doLexToken $ TknLitStr . init . tail }
 
-if            { yield TokenIf } -- \p _ -> TokenIf }
-else          { yield TokenElse }
-true          { yield TokenTrue }
-false         { yield TokenFalse }
-and           { yield TokenAnd }
-or            { yield TokenOr }
-not           { yield TokenNot }
-none          { yield TokenNone }
+@nameLower               { doLexToken $ TknName }
+@nameUpper               { doLexToken $ TknTypename }
 
--- Stand-in: Will improve lexer to use indentation
--- "{"           { yield TokenIndent }
--- "}"           { yield TokenDedent }
-
-"~"           { yield TokenTilde }
-"@"           { yield TokenAt }
-"#"           { yield TokenHash }
-"$"           { yield TokenDollar }
-"^"           { yield TokenCaret }
-"&"           { yield TokenAmpersand }
-"*"           { yield TokenStar }
-"("           { yield TokenLParen }
-")"           { yield TokenRParen }
-"-"           { yield TokenMinus }
-"+"           { yield TokenPlus }
-"="           { yield TokenEqual }
-"["           { yield TokenLBracket }
-"]"           { yield TokenRBracket }
-";"           { yield TokenSemicolon }
-":"           { yield TokenColon }
-","           { yield TokenComma }
-"."           { yield TokenDot }
-"?"           { yield TokenQMark }
-
-"->"          { yield TokenThinArrow }
-"=>"          { yield TokenFatArrow }
-
-@litChar      { yieldFromStr $ TokenLitChr . read }
-@litInt       { yieldFromStr $ TokenLitInt . read }
-@litFlt       { yieldFromStr $ TokenLitFlt . read }
-@litString    { yieldFromStr $ TokenLitStr . init . tail }
-
-@nameLower    { yieldFromStr $ TokenName }
-@nameUpper    { yieldFromStr $ TokenTypeName }
 
 {
 data AlexUserState = AlexUserState
   { tokens :: [Token]
-  , indChar :: Char
-  , indMult :: Int
-  , indDepth :: Int }
+  , indentDepth :: Int }
 
 type ParseError = String
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState [] ' '0 0
+alexInitUserState = AlexUserState [] 0
 
-alexEOF :: Alex()
+alexEOF :: Alex ()
 alexEOF = return ()
 
 ignore input len = alexMonadScan
@@ -124,55 +109,83 @@ ignore input len = alexMonadScan
 getUserState :: Alex AlexUserState
 getUserState = Alex $ \s -> Right (s, alex_ust s)
 
-type Update = (AlexUserState -> AlexUserState)
-
 updateUserState :: Update -> Alex ()
 updateUserState update = (Alex $ \state ->
   let current = alex_ust state
       next = update current
       in Right (state { alex_ust = next}, ())) >> alexMonadScan
 
-actionUpdate :: Update -> AlexAction ()
-actionUpdate update = \_ _ -> updateUserState update
 
+-- Update and types of updates
+type Update = (AlexUserState -> AlexUserState)
+
+doUpdate :: Update -> AlexAction ()
+doUpdate update _ _ = updateUserState update
+
+appendToken :: Token -> Update
+appendToken tkn state = state { tokens = (tokens state) ++ [tkn]}
+
+doAppendToken :: Token -> AlexAction ()
+doAppendToken = doUpdate . appendToken
+
+appendTokens :: [Token] -> Update
+appendTokens tkns state = state { tokens = (tokens state) ++ tkns}
+
+doAppendTokens :: [Token] -> AlexAction ()
+doAppendTokens = doUpdate . appendTokens
+
+setIndentDepth :: Int -> Update
+setIndentDepth n state = state { indentDepth = n }
+
+
+-- Updates with intput
 data UserInput = UserInput
-  { string :: String
-  , posn :: AlexPosn }
-
-type UpdateWithInput = UserInput -> Update
+  { str :: String
+  , pos :: AlexPosn }
 
 alexToUserInput :: AlexInput -> Int -> UserInput
 alexToUserInput (posn, prevChar, pending, s) len = UserInput (take len s) posn
 
-actionInputUpdate :: UpdateWithInput -> AlexAction ()
-actionInputUpdate updateWithInput = \alexInput len -> updateUserState $ updateWithInput (alexToUserInput alexInput len)
+type UserInputUpdate = UserInput -> Update
+
+doInputUpdate :: UserInputUpdate -> AlexAction ()
+doInputUpdate userInputUpdate alexInput len = updateUserState $ userInputUpdate $ alexToUserInput alexInput len
+
+lexToken :: (String -> Token) -> UserInputUpdate
+lexToken lex (UserInput str _) = appendToken $ lex str
+
+doLexToken :: (String -> Token) -> AlexAction ()
+doLexToken = doInputUpdate . lexToken
+
+spacesPerTab = 4 -- TODO: Make adjustable by user
+
+parseIndentation :: UserInput -> Int
+parseIndentation (UserInput str pos)
+  | str == [] = 0
+  | not $ alleq str = error $ lexError pos "mixed spaces and tabs indent"
+  | head str == ' ' = if (length str `mod` spacesPerTab == 0)
+    then length str `div` spacesPerTab
+    else error $ lexError pos "indentation must occur in multiples of "++show spacesPerTab++" spaces"
+  | head str == '\t' = length str
+  | otherwise = error $ lexError pos "invalid indentation string \""++str++"\""
+
+checkIndent' :: Int -> Update
+checkIndent' indent state
+  | indent < curIndent = setIndentDepth indent $ appendTokens (replicate (curIndent - indent) TknDedent) state
+  | indent == curIndent = appendToken TknEol state -- state
+  | indent == (curIndent + 1) = setIndentDepth indent $ appendToken TknIndent state
+  | indent == (curIndent + 2) = state -- line continuation, parser need not be aware -- appendToken TknLineCont state
+    where
+      curIndent = indentDepth state
+
+checkIndent :: UserInputUpdate
+checkIndent = checkIndent' . parseIndentation
+
+doCheckIndent :: AlexAction ()
+doCheckIndent = doInputUpdate checkIndent
 
 
--- transformUserState :: (AlexUserState -> AlexUserState) -> Alex ()
--- transformUserState transform = (modifyUserState transform) >> alexMonadScan
-
-appendTokens :: [Token] -> (AlexUserState -> AlexUserState)
-appendTokens newTokens state = state { tokens = (tokens state) ++ newTokens}
-
-yieldFromStr :: (String -> Token) -> AlexAction ()
-yieldFromStr lex =
-  \(posn, prevChar, pending, s) len -> updateUserState (appendTokens [lex $ take len s])
-
-yield :: Token -> AlexAction ()
-yield token = actionUpdate $ appendTokens [token]
-
-lineNumber :: AlexPosn -> Int
-lineNumber (AlexPn charOffset line column) = line
-
-checkIndent :: AlexAction ()
-checkIndent (posn, prevChar, pending, s) len = updateUserState (checkIndent' $ take len s)
-  where
-    checkIndent' :: String -> AlexUserState -> AlexUserState
-    checkIndent' str state
-      | str == [] = appendTokens (replicate (indDepth state) TokenDedent) state
-      | not $ alleq str = error $ "Mixed spaces and tabs in indentation of line " ++ show (lineNumber posn)
-      | otherwise = error ""
-
+-- Utility functions
 alleq :: Eq a => [a] -> Bool
 alleq [] = True
 alleq (x:xs)
@@ -180,12 +193,21 @@ alleq (x:xs)
   | x == head xs = alleq xs
   | otherwise = False
 
+lineNumber :: AlexPosn -> Int
+lineNumber (AlexPn charOffset line column) = line
+
+showLineNumber pos = show $ lineNumber pos
+
+lexError :: AlexPosn -> String -> String
+lexError pos msg = "Lexical error, line " ++ showLineNumber pos ++ ": " ++ msg
+
+
+-- Interface
 runAlexScan :: String -> Either ParseError AlexUserState
 runAlexScan s = runAlex s $ alexMonadScan >> getUserState
 
 scanTokens :: String -> [Token]
 scanTokens s = case runAlexScan s of
-           (Right state) -> tokens state
-           (Left parseError) -> error $ parseError
-
+  (Right state) -> tokens state ++ replicate (indentDepth state) TknDedent
+  (Left parseError) -> error $ parseError
 }
