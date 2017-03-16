@@ -169,7 +169,7 @@ parseIndentation (UserInput str pos)
 
 checkIndent' :: Int -> Update
 checkIndent' indent state
-  | indent < curIndent = setIndentDepth indent $ appendTokens (replicate (curIndent - indent) TknDedent) state
+  | indent < curIndent = setIndentDepth indent $ appendTokens ((replicate (curIndent - indent) TknDedent) ++ [TknEol]) state
   | indent == curIndent = appendToken TknEol state
   | indent == (curIndent + 1) = setIndentDepth indent $ appendToken TknIndent state
   | indent == (curIndent + 2) = state -- line continuation, parser need not be aware
