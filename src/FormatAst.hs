@@ -25,6 +25,6 @@ formatTokens tokens = formatTokens' $ show tokens
     formatTokens' ('T':'k':'n':cs) = formatTokens' cs
     formatTokens' (c:cs)
       | c == '[' || c == ']' || c == '\"' = formatTokens' cs
-      | c == ',' = '\n' : formatTokens' cs
+      | c == ',' = ' ' : formatTokens' cs
       | otherwise = c : formatTokens' cs
 
