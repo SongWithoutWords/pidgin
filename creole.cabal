@@ -19,6 +19,7 @@ library
                      , Lexer
                      , ParseError
                      , Parser
+                     , SymbolTree
                      , Syntax         
                      , Tokens 
 
