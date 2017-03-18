@@ -23,7 +23,10 @@ library
                      , Syntax         
                      , Tokens 
 
-  build-depends:       base >= 4.7 && < 5, array
+  build-depends:       base
+                     , containers
+                     , array
+
   default-language:    Haskell2010
 
 executable creole-exe
