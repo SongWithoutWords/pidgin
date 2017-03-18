@@ -1,4 +1,5 @@
 {
+{-# OPTIONS_GHC -w #-}
 module Parser where
 import Tokens
 import Syntax
@@ -74,33 +75,26 @@ fileContents
   | function fileContents { $1 : $2 }
   | eol fileContents  { $2 }
 
-
 type
-  : "~" "^" type     { TempRef Mutable $3 }
-  | "~" "&" type     { PersRef Mutable $3 }
-  | "~" "?" type     { Option Mutable $3}
-  | "~"     dataType { DataType Mutable $2 }
-  | "~"     "$"      { DataType Mutable TypeInferred }
-  |     "^" type     { TempRef Immutable $2 }
-  |     "&" type     { PersRef Immutable $2 }
-  |     "?" type     { Option Immutable $2 }
-  |     "*" type     { ZeroOrMore $2 }
-  |     "+" type     { OneOrMore $2 }
-  |         dataType { DataType Immutable $1 }
-  |         "$"      { DataType Immutable TypeInferred }
+  : "~" utype { Type Mutable $2 }
+  | utype     { Type Immutable $1 }
 
-dataType
-  : Bln { TypeBln }
-  | Chr { TypeChr }
-  | Flt { TypeFlt }
-  | Int { TypeInt }
-  | Nat { TypeNat }
-  | Str { TypeStr }
-  -- Should None be a type?
-  | typeName { TypeUser $1 }
+utype
+  : typename  { TypeClass $1 }
+  | "^" type  { TempRef $2 }
+  | "&" type  { PersRef $2 }
+  | "?" type  { Option $2 }
+  | "*" type  { ZeroOrMore $2 }
+  | "+" type  { OneOrMore $2 }
+  | Bln       { TypeBln }
+  | Chr       { TypeChr }
+  | Flt       { TypeFlt }
+  | Int       { TypeInt }
+  | Nat       { TypeNat }
+  | Str       { TypeStr }
 
-typeName
-  : tokenTypeName { Typename $1 }
+typename
+  : tokenTypeName { $1 }
 
 indentedBlock
   : ind block ded { $2 }
@@ -181,7 +175,7 @@ access
   : expr "." name { Access $1 $3 }
 
 name
-  : tokenName { Name $1 }
+  : tokenName { $1 }
 
 lit
   : litChr {LitChr $1}

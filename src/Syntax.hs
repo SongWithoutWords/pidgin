@@ -30,14 +30,8 @@ data AccessMod
   = Pub | Pro | Pri
   deriving(Eq, Show)
 
--- TODO: add support for templated types and functions :)
 data Type
-  = TempRef Mutability Type
-  | PersRef Mutability Type
-  | Option Mutability Type
-  | DataType Mutability DataType
-  | ZeroOrMore Type -- Cannot be mutable
-  | OneOrMore Type  -- Cannot be mutable
+  = Type Mutability UType
   deriving(Eq, Show)
 
 data Mutability
@@ -47,20 +41,27 @@ data Mutability
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
-data DataType
-  = TypeBln
+-- Unqualified type
+data UType
+-- User type
+  = TypeClass Typename
+-- Plurality
+  | TempRef Type
+  | PersRef Type
+  | Option Type
+  | ZeroOrMore Type
+  | OneOrMore Type
+-- Primitive
+  | TypeBln
   | TypeChr
   | TypeFlt
   | TypeInt
   | TypeNat
   | TypeStr
-  | TypeUser Typename
-  | TypeInferred
   deriving(Eq, Show)
 
-data Typename
-  = Typename String
-  deriving(Eq, Show)
+
+type Typename = String
 
 data Block
   = Block [Stmt]
@@ -139,9 +140,7 @@ data Access
   = Access Expr Name
   deriving(Eq, Show)
 
-data Name
-  = Name String
-  deriving(Eq, Show)
+type Name = String
 
 data Lit
   = LitBln Bool
