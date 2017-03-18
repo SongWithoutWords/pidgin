@@ -6,14 +6,14 @@ import Tokens()
 
 -- Finite number of steps friend!
 
-data Module
-  = Module [TopLevel]
+data Ast
+  = Ast [Unit]
   deriving(Eq, Show)
 
-data TopLevel
-  = Namespace Name [TopLevel]
-  | TopLevelClass Class
-  | TopLevelFunction Function
+data Unit
+  = UnitNamespace Name [Unit]
+  | UnitClass Class
+  | UnitFunction Function
   deriving(Eq, Show)
 
 data Class
