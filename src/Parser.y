@@ -75,17 +75,17 @@ fileContents
   | function fileContents { $1 : $2 }
   | eol fileContents  { $2 }
 
-type
-  : "~" utype { Type Mutable $2 }
-  | utype     { Type Immutable $1 }
+qtype
+  : "~" type { (Mutable, $2) }
+  | type     { (Immutable, $1) }
 
-utype
+type
   : typename  { TypeClass $1 }
-  | "^" type  { TempRef $2 }
-  | "&" type  { PersRef $2 }
-  | "?" type  { Option $2 }
-  | "*" type  { ZeroOrMore $2 }
-  | "+" type  { OneOrMore $2 }
+  | "^" qtype { TempRef $2 }
+  | "&" qtype { PersRef $2 }
+  | "?" qtype { Option $2 }
+  | "*" qtype { ZeroOrMore $2 }
+  | "+" qtype { OneOrMore $2 }
   | Bln       { TypeBln }
   | Chr       { TypeChr }
   | Flt       { TypeFlt }
@@ -120,7 +120,7 @@ lexpr
   | name            { LexprName $1 }
 
 variable
-  : type name "=" expr { Variable $1 $2 $4 }
+  : qtype name "=" expr { Variable $1 $2 $4 }
 
 function
   : signature indentedBlock { Function $1 $2 }
@@ -142,7 +142,7 @@ parametersCS
   | parameter "," parametersCS  { $1 : $3 }
 
 parameter
-  : type name {Parameter $1 $2}
+  : qtype name {Parameter $1 $2}
 
 exprsCS
   : {- none -}        { [] }
