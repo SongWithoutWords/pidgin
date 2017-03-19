@@ -1,67 +1,58 @@
-module SymbolTree(SymTable, astToSymTable) where
+{-#LANGUAGE FlexibleInstances#-}
+module SymbolTree(SymTable, symTableFromAst) where
 
 import qualified Syntax as Ast
-
+import AstUtil
 import qualified Data.Map.Strict as Map
 
-
--- Types
 
 type Table a = Map.Map String a
 type Entry a = (String, a)
 
-type SymTable = Table Unit
+type SymTable = UnitTable
+
+type UnitTable = Table Unit
+type MemberTable = Table Member
 
 data Unit
-  = UnitNamespace Namespace
-  | UnitClass Class
-  | UnitFunction Function
+  = UnitNamespace UnitTable
+  | UnitClass MemberTable
+  | UnitLeaf Ast.Type -- May want to add accessmods to top level declarations also
   deriving(Eq, Show)
 
-type Namespace = Table Unit
-type Class = Table (Ast.AccessMod Member)
-
--- Access-qualified member
-data QMember
-  = QMember Ast.AccessMod Member
-
 data Member
-  = MemberClass Class
-  | MemberFunction Function
+  = MemberClass Ast.AccessMod MemberTable
+  | MemberFunction Ast.AccessMod Ast.Mutability Ast.Type
   | MemberVariable Ast.AccessMod Ast.Type
   deriving(Eq, Show)
 
-data Function
-  = Function Ast.Purity [Ast.Type] Ast.Type
-  deriving(Eq, Show)
 
+symTableFromAst :: Ast.Root -> SymTable
+symTableFromAst = unitsFromAst
 
--- Construction
+unitsFromAst :: [Ast.Unit] -> UnitTable
+unitsFromAst = Map.fromList . map unitEntryFromAst
 
-astToSymTable :: Ast.Root -> SymTable
-astToSymTable = unitsToTable
+unitEntryFromAst :: Ast.Unit -> Entry Unit
+unitEntryFromAst u = (nameOf u, unitFromAst u)
 
-unitsToTable :: [Ast.Unit] -> Table Unit
-unitsToTable = Map.fromList . (map unitToEntry)
+unitFromAst :: Ast.Unit -> Unit
+unitFromAst (Ast.UnitNamespace _ units) = UnitNamespace $ unitsFromAst units
+unitFromAst (Ast.UnitClass c) = UnitClass $ membersFromAstClass c
+unitFromAst (Ast.UnitFunction f) = UnitLeaf $ typeOf f
+unitFromAst (Ast.UnitVariable v) = UnitLeaf $ typeOf v
 
-unitToEntry :: Ast.Unit -> Entry Unit
-unitToEntry (Ast.UnitNamespace name units) = (name, Namespace $ unitsToTable units)
-unitToEntry (Ast.UnitClass c) = classToEntry c
-unitToEntry (Ast.UnitFunction f) = functionToEntry f
+membersFromAstClass :: Ast.Class -> MemberTable
+membersFromAstClass (Ast.Class _ members) = membersFromAst members
 
-classToEntry :: Ast.Class -> Entry Unit
-classToEntry (Ast.Class name members) = (name, Class $ membersToTable members)
+membersFromAst :: [Ast.Member] -> MemberTable
+membersFromAst = Map.fromList . map memberEntryFromAst
 
-membersToTable :: [Ast.Member] -> Table QMember
-membersToTable = Map.fromList . (map memberToEntry)
+memberEntryFromAst :: Ast.Member -> Entry Member
+memberEntryFromAst m = (nameOf m, memberFromAst m)
 
-memberToEntry :: Ast.Member -> Entry QMember
-memberToEntry (access m) = (umemberName m, (access, umemberTo))
-
-umemberName :: Ast.UMember -> String
-
-
-
-functionToEntry :: Ast.Function -> Entry
-
+memberFromAst :: Ast.Member -> Member
+memberFromAst (Ast.MemberClass a c) = MemberClass a $ membersFromAstClass c
+memberFromAst (Ast.MemberFunction a mut f) = MemberFunction a mut (typeOf f)
+memberFromAst (Ast.MemberVariable a v) = MemberVariable a $ typeOf v
 

@@ -1,4 +1,4 @@
--- {-# LANGUAGE GADTs #-}
+-- {-# LANGUAGE DataKinds #-}
 
 module Syntax where
 
@@ -12,19 +12,20 @@ data Unit
   = UnitNamespace Name [Unit]
   | UnitClass Class
   | UnitFunction Function
+  | UnitVariable Variable -- May want to disallow global mutable variables
   deriving(Eq, Show)
 
 data Class
-  = Class Name {-[Parameter]-} [Member]
+  = Class Name {-[TypedName]-} [Member]
   deriving(Eq, Show)
 
 -- Qualified member
-type QMember = (AccessMod, Member)
+-- type QMember = (AccessMod, Member)
 
 data Member
-  = MemberClass Class
-  | MemberFunction Mutability Function
-  | MemberVariable Variable
+  = MemberClass AccessMod Class
+  | MemberFunction AccessMod Mutability Function
+  | MemberVariable AccessMod Variable
   deriving(Eq, Show)
 
 data AccessMod
@@ -32,7 +33,37 @@ data AccessMod
   deriving(Eq, Show)
 
 -- Qualified type
-type QType = (Mutability, Type)
+-- type QType = (Mutability, Type)
+
+
+-- data MemberType
+  -- = MTFunction 
+
+-- What happened to type inferred?
+data Type
+
+  = TypeUser Mutability Typename
+  | TypeFunction Purity [Type] Type
+  | TypeInferred Mutability
+
+  | TypeTempRef Mutability Type
+  | TypePersRef Mutability Type
+  | TypeOption Mutability Type
+  | TypeZeroPlus Type
+  | TypeOnePlus Type
+
+  | TypeBln Mutability
+  | TypeChr Mutability
+  | TypeFlt Mutability
+  | TypeInt Mutability
+  | TypeNat Mutability
+  | TypeStr Mutability
+  deriving(Eq, Show)
+
+-- -- Function Type
+-- data FnType
+--   = FnType
+--   deriving(Eq, Show)
 
 data Mutability
   = Mutable     -- Mutable in present scope
@@ -41,24 +72,6 @@ data Mutability
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
-data Type
--- User type
-  = TypeClass Typename
-  | TypeFunction [Type] Type
--- Plurality
-  | TempRef QType
-  | PersRef QType
-  | Option QType
-  | ZeroOrMore QType
-  | OneOrMore QType
--- Primitive
-  | TypeBln
-  | TypeChr
-  | TypeFlt
-  | TypeInt
-  | TypeNat
-  | TypeStr
-  deriving(Eq, Show)
 
 type Typename = String
 
@@ -75,7 +88,7 @@ data Stmt
   deriving(Eq, Show)
 
 data Variable
-  = Variable QType Name Expr
+  = Variable TypedName Expr
   deriving(Eq, Show)
 
 data Function
@@ -83,7 +96,7 @@ data Function
   deriving(Eq, Show)
 
 data Signature
-  = Signature Purity Name [Parameter] Type
+  = Signature Name AnonSig
   deriving(Eq, Show)
 
 data Purity
@@ -120,11 +133,16 @@ data CondBlock
 
 -- Not sure what to do about lambdas and purity. Capture lists?
 data Lambda
-  = Lambda [Parameter] Block
+  = Lambda AnonSig Block
   deriving(Eq, Show)
 
-data Parameter
-  = Parameter QType Name
+-- Anonymous function signature
+data AnonSig
+  = AnonSig Purity [TypedName] Type
+  deriving(Eq, Show)
+
+data TypedName
+  = TypedName Type Name
   deriving(Eq, Show)
 
 data Apply

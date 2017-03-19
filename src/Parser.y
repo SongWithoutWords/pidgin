@@ -1,5 +1,4 @@
 {
-{-# OPTIONS_GHC -w #-}
 module Parser where
 import Tokens
 import Syntax
@@ -75,23 +74,23 @@ fileContents
   | function fileContents { $1 : $2 }
   | eol fileContents  { $2 }
 
-qtype
-  : "~" type { (Mutable, $2) }
-  | type     { (Immutable, $1) }
-
 type
-  : typename  { TypeClass $1 }
-  | "^" qtype { TempRef $2 }
-  | "&" qtype { PersRef $2 }
-  | "?" qtype { Option $2 }
-  | "*" qtype { ZeroOrMore $2 }
-  | "+" qtype { OneOrMore $2 }
-  | Bln       { TypeBln }
-  | Chr       { TypeChr }
-  | Flt       { TypeFlt }
-  | Int       { TypeInt }
-  | Nat       { TypeNat }
-  | Str       { TypeStr }
+  : mutability typename  { TypeUser $1 $2 }
+  | mutability "^" type  { TypeTempRef $1 $3 }
+  | mutability "&" type  { TypePersRef $1 $3 }
+  | mutability "?" type  { TypeOption $1 $3 }
+  | "*" type             { TypeZeroPlus $2 }
+  | "+" type             { TypeOnePlus $2 }
+  | mutability Bln       { TypeBln $1 }
+  | mutability Chr       { TypeChr $1 }
+  | mutability Flt       { TypeFlt $1 }
+  | mutability Int       { TypeInt $1 }
+  | mutability Nat       { TypeNat $1 }
+  | mutability Str       { TypeStr $1 }
+
+mutability
+  : {- none -} { Immutable }
+  | "~"        { Mutable }
 
 typename
   : tokenTypeName { $1 }
@@ -120,13 +119,13 @@ lexpr
   | name            { LexprName $1 }
 
 variable
-  : qtype name "=" expr { Variable $1 $2 $4 }
+  : typedName "=" expr { Variable $1 $3 }
 
 function
   : signature indentedBlock { Function $1 $2 }
 
 signature
-  : purity name parameterList "->" type { Signature $1 $2 $3 $5 }
+  : purity name parameterList "->" type { Signature $2 $ AnonSig $1 $3 $5 }
 
 purity
   : {- none -} { Pure }
@@ -138,11 +137,11 @@ parameterList
 
 parametersCS
   : {- none -}                  { [] }
-  | parameter                   { [$1] }
-  | parameter "," parametersCS  { $1 : $3 }
+  | typedName { [$1] }
+  | typedName "," parametersCS  { $1 : $3 }
 
-parameter
-  : qtype name {Parameter $1 $2}
+typedName
+  : type name { TypedName $1 $2 }
 
 exprsCS
   : {- none -}        { [] }
@@ -166,7 +165,11 @@ condBlock
   : expr indentedBlock  { CondBlock $1 $2 } -- Would be nice to have one-line ifs
 
 lambda
-  : parameterList "=>" indentedBlock { Lambda $1 $3 }
+  : purity parameterList optionRet "=>" indentedBlock { Lambda (AnonSig $1 $2 $3) $5 }
+
+optionRet
+  : {- none -} { TypeInferred Mutable }
+  | "->" type  { $2 }
 
 apply
   : expr "(" exprsCS ")"  { Apply $1 $3 }
