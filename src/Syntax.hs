@@ -18,10 +18,10 @@ data Class
   = Class Name {-[Parameter]-} [Member]
   deriving(Eq, Show)
 
-type Member = (AccessMod, UMember)
+-- Qualified member
+type QMember = (AccessMod, Member)
 
--- Unqualified member
-data UMember
+data Member
   = MemberClass Class
   | MemberFunction Mutability Function
   | MemberVariable Variable
@@ -31,7 +31,8 @@ data AccessMod
   = Pub | Pro | Pri
   deriving(Eq, Show)
 
-type Type = (Mutability, UType)
+-- Qualified type
+type QType = (Mutability, Type)
 
 data Mutability
   = Mutable     -- Mutable in present scope
@@ -40,17 +41,16 @@ data Mutability
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
--- Unqualified type
-data UType
+data Type
 -- User type
   = TypeClass Typename
   | TypeFunction [Type] Type
 -- Plurality
-  | TempRef Type
-  | PersRef Type
-  | Option Type
-  | ZeroOrMore Type
-  | OneOrMore Type
+  | TempRef QType
+  | PersRef QType
+  | Option QType
+  | ZeroOrMore QType
+  | OneOrMore QType
 -- Primitive
   | TypeBln
   | TypeChr
@@ -75,7 +75,7 @@ data Stmt
   deriving(Eq, Show)
 
 data Variable
-  = Variable Type Name Expr
+  = Variable QType Name Expr
   deriving(Eq, Show)
 
 data Function
@@ -108,10 +108,6 @@ data Expr
   | ExprLit Lit
   deriving(Eq, Show)
 
--- data IfStruct
-  -- = IfStruct CondBlock [CondBlock] (Maybe Block) -- if [else if] else?
-  -- deriving(Eq, Show)
-
 data IfChain
   = IfChainIf CondBlock IfChain
   | IfChainElse Block
@@ -128,7 +124,7 @@ data Lambda
   deriving(Eq, Show)
 
 data Parameter
-  = Parameter Type Name
+  = Parameter QType Name
   deriving(Eq, Show)
 
 data Apply
