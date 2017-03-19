@@ -6,9 +6,7 @@ import Tokens()
 
 -- Finite number of steps friend!
 
-data Ast
-  = Ast [Unit]
-  deriving(Eq, Show)
+type Root = [Unit]
 
 data Unit
   = UnitNamespace Name [Unit]
@@ -17,22 +15,23 @@ data Unit
   deriving(Eq, Show)
 
 data Class
-  = Class Name [Parameter] [Member]
+  = Class Name {-[Parameter]-} [Member]
   deriving(Eq, Show)
 
-data Member
-  = MemberClass AccessMod Class
-  | MemberFunction AccessMod Mutability Function
-  | MemberVariable AccessMod Variable
+type Member = (AccessMod, UMember)
+
+-- Unqualified member
+data UMember
+  = MemberClass Class
+  | MemberFunction Mutability Function
+  | MemberVariable Variable
   deriving(Eq, Show)
 
 data AccessMod
   = Pub | Pro | Pri
   deriving(Eq, Show)
 
-data Type
-  = Type Mutability UType
-  deriving(Eq, Show)
+type Type = (Mutability, UType)
 
 data Mutability
   = Mutable     -- Mutable in present scope
@@ -45,6 +44,7 @@ data Mutability
 data UType
 -- User type
   = TypeClass Typename
+  | TypeFunction [Type] Type
 -- Plurality
   | TempRef Type
   | PersRef Type
@@ -59,7 +59,6 @@ data UType
   | TypeNat
   | TypeStr
   deriving(Eq, Show)
-
 
 type Typename = String
 

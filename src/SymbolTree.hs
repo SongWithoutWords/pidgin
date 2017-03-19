@@ -1,26 +1,67 @@
-module SymbolTree(astToSymbolTree) where
+module SymbolTree(SymTable, astToSymTable) where
 
-import qualified Syntax as Syn
+import qualified Syntax as Ast
+
+import qualified Data.Map.Strict as Map
 
 
-astToSymbolTree :: Syn.Ast -> SymbolTree
-astToSymbolTree _ = []
+-- Types
 
-type SymbolTree = [Unit]
+type Table a = Map.Map String a
+type Entry a = (String, a)
+
+type SymTable = Table Unit
 
 data Unit
-  = UnitNamespace String [Unit]
+  = UnitNamespace Namespace
   | UnitClass Class
-  | UnitFunction String Syn.Type
+  | UnitFunction Function
+  deriving(Eq, Show)
 
-data Class
-  = Class String [Member]
+type Namespace = Table Unit
+type Class = Table (Ast.AccessMod Member)
+
+-- Access-qualified member
+data QMember
+  = QMember Ast.AccessMod Member
 
 data Member
-  = MemberClass Syn.AccessMod Class
-  | MemberFunction Syn.AccessMod Function
-  | MemberVariable Syn.AccessMod Variable
+  = MemberClass Class
+  | MemberFunction Function
+  | MemberVariable Ast.AccessMod Ast.Type
+  deriving(Eq, Show)
 
 data Function
-  = 
+  = Function Ast.Purity [Ast.Type] Ast.Type
+  deriving(Eq, Show)
+
+
+-- Construction
+
+astToSymTable :: Ast.Root -> SymTable
+astToSymTable = unitsToTable
+
+unitsToTable :: [Ast.Unit] -> Table Unit
+unitsToTable = Map.fromList . (map unitToEntry)
+
+unitToEntry :: Ast.Unit -> Entry Unit
+unitToEntry (Ast.UnitNamespace name units) = (name, Namespace $ unitsToTable units)
+unitToEntry (Ast.UnitClass c) = classToEntry c
+unitToEntry (Ast.UnitFunction f) = functionToEntry f
+
+classToEntry :: Ast.Class -> Entry Unit
+classToEntry (Ast.Class name members) = (name, Class $ membersToTable members)
+
+membersToTable :: [Ast.Member] -> Table QMember
+membersToTable = Map.fromList . (map memberToEntry)
+
+memberToEntry :: Ast.Member -> Entry QMember
+memberToEntry (access m) = (umemberName m, (access, umemberTo))
+
+umemberName :: Ast.UMember -> String
+
+
+
+functionToEntry :: Ast.Function -> Entry
+
 
