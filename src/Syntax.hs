@@ -1,5 +1,3 @@
--- {-# LANGUAGE DataKinds #-}
-
 module Syntax where
 
 import Tokens()
@@ -19,9 +17,6 @@ data Class
   = Class Name {-[TypedName]-} [Member]
   deriving(Eq, Show)
 
--- Qualified member
--- type QMember = (AccessMod, Member)
-
 data Member
   = MemberClass AccessMod Class
   | MemberFunction AccessMod Mutability Function
@@ -31,13 +26,6 @@ data Member
 data AccessMod
   = Pub | Pro | Pri
   deriving(Eq, Show)
-
--- Qualified type
--- type QType = (Mutability, Type)
-
-
--- data MemberType
-  -- = MTFunction 
 
 -- What happened to type inferred?
 data Type
@@ -60,18 +48,12 @@ data Type
   | TypeStr Mutability
   deriving(Eq, Show)
 
--- -- Function Type
--- data FnType
---   = FnType
---   deriving(Eq, Show)
-
 data Mutability
   = Mutable     -- Mutable in present scope
   | Immutable   -- Not mutable in present scope
   -- Constant   -- Not mutable in any scope - planned
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
-
 
 type Typename = String
 
