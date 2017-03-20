@@ -57,9 +57,7 @@ data Mutability
 
 type Typename = String
 
-data Block
-  = Block [Stmt]
-  deriving(Eq, Show)
+type Block = [Stmt]
 
 data Stmt
   = StmtAssign Lexpr Expr

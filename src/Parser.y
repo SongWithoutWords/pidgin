@@ -136,7 +136,7 @@ mutability
 indentedBlock
   : ind block ded { $2 }
 
-block : stmts { Block $1 }
+block : stmts { $1 }
 
 stmts
   : {- none -}      { [] }
