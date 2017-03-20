@@ -116,6 +116,7 @@ accessMod
 
 type
   : mutability typename  { TypeUser $1 $2 }
+  | mutability "$"       { TypeInferred $1 }
   | mutability "^" type  { TypeTempRef $1 $3 }
   | mutability "&" type  { TypePersRef $1 $3 }
   | mutability "?" type  { TypeOption $1 $3 }
