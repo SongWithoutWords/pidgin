@@ -1,5 +1,4 @@
-{-#LANGUAGE FlexibleInstances#-}
-module SymbolTree(SymTable, symTableFromAst) where
+module SymTable(SymTable, symTableFromAst) where
 
 import qualified Syntax as Ast
 import AstUtil

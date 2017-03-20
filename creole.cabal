@@ -20,7 +20,7 @@ library
                      , Lexer
                      , ParseError
                      , Parser
-                     , SymbolTree
+                     , SymTable
                      , Syntax         
                      , Tokens 
 
@@ -28,7 +28,8 @@ library
                      , containers
                      , array
 
-  ghc-options:         -XDataKinds
+  ghc-options:
+              --XDataKinds
 
   default-language:    Haskell2010
 

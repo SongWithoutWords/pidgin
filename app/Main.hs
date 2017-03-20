@@ -2,7 +2,7 @@ module Main where
 
 import Lexer
 import Parser
-import SymbolTree
+import SymTable
 
 import FormatAst
 
