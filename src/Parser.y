@@ -31,6 +31,9 @@ import ParseError
   not           { TknNot }
   none          { TknNone }
 
+  tknNamespace  { TknNamespace }
+  tknClass      { TknClass }
+
   pub           { TknPub }
   pro           { TknPro }
   pri           { TknPri }
@@ -71,12 +74,40 @@ import ParseError
 -- If performance becomes a concern will need to parse sequences another way
 -- (see Happy docs)
 
-file : fileContents { $1 }
+root : units { $1 }
 
-fileContents
-  : {- none -}       { [] }
-  | function fileContents { $1 : $2 }
-  | eol fileContents  { $2 }
+indentedUnits
+  : {- none -}    { [] }
+  | ind units ded { $2 } 
+
+units
+  : unit            { [$1] }
+  | unit eol units  { $1 : $3}
+
+unit
+  : namespace       { $1 }
+  | class           { UnitClass $1 }
+  | function        { UnitFunction $1 }
+  | variable        { UnitVariable $1 }
+
+namespace
+  : tknNamespace name indentedUnits { UnitNamespace $2 $3 }
+
+class
+  : tknClass typename indentedMembers  { Class $2 $3 } 
+
+indentedMembers
+  : {- none -}      { [] }
+  | ind members ded { $2 }
+
+members
+  : member              { [$1] }
+  | member eol members  { $1 : $3 }
+
+member
+  : accessMod class               { MemberClass $1 $2 }
+  | accessMod mutability function { MemberFunction $1 $2 $3 }
+  | accessMod variable            { MemberVariable $1 $2}
 
 accessMod
   : pub   { Pub }  
@@ -100,9 +131,6 @@ type
 mutability
   : {- none -} { Immutable }
   | "~"        { Mutable }
-
--- typename
---   : tokenTypeName { $1 }
 
 indentedBlock
   : ind block ded { $2 }
@@ -185,9 +213,6 @@ apply
 
 access
   : expr "." name { Access $1 $3 }
-
--- name
---   : tokenName { $1 }
 
 lit
   : litChr {LitChr $1}
