@@ -22,6 +22,9 @@ data Token
   | TknNot
   | TknNone
 
+  | TknNamespace
+  | TknClass
+
   | TknPub
   | TknPro
   | TknPri

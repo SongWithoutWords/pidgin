@@ -57,6 +57,9 @@ or                       { appendTokenAction TknOr }
 not                      { appendTokenAction TknNot }
 none                     { appendTokenAction TknNone }
 
+namespace                { appendTokenAction TknNamespace }
+class                    { appendTokenAction TknClass }
+
 pub                      { appendTokenAction TknPub }
 pro                      { appendTokenAction TknPro }
 pri                      { appendTokenAction TknPri }
