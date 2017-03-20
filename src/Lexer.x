@@ -57,6 +57,10 @@ or                       { appendTokenAction TknOr }
 not                      { appendTokenAction TknNot }
 none                     { appendTokenAction TknNone }
 
+pub                      { appendTokenAction TknPub }
+pro                      { appendTokenAction TknPro }
+pri                      { appendTokenAction TknPri }
+
 "~"                      { appendTokenAction TknTilde }
 "@"                      { appendTokenAction TknAt }
 "#"                      { appendTokenAction TknHash }

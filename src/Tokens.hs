@@ -22,6 +22,10 @@ data Token
   | TknNot
   | TknNone
 
+  | TknPub
+  | TknPro
+  | TknPri
+
   | TknTilde
   | TknAt
   | TknHash
