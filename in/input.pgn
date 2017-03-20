@@ -1,6 +1,5 @@
-
-class MyClass
-    pub myFunction() -> None
+class A
+    pub f() -> None
 
         a()
         b = c
@@ -9,7 +8,4 @@ class MyClass
             g = h
         x()
         y = z
-
-
-
 
