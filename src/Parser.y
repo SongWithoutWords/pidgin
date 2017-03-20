@@ -12,6 +12,9 @@ import ParseError
 %token
   eol           { TknEol }
 
+  ind           { TknIndent }
+  ded           { TknDedent }
+
   Bln           { TknTypeBln }
   Chr           { TknTypeChr }
   Flt           { TknTypeFlt }
@@ -28,8 +31,9 @@ import ParseError
   not           { TknNot }
   none          { TknNone }
 
-  ind           { TknIndent }
-  ded           { TknDedent }
+  pub           { TknPub }
+  pro           { TknPro }
+  pri           { TknPri }
 
   "~"           { TknTilde }
   "@"           { TknAt }
@@ -59,8 +63,8 @@ import ParseError
   litInt        { TknLitInt $$ }
   litStr        { TknLitStr $$ }
 
-  tokenName     { TknName $$ }
-  tokenTypeName { TknTypename $$ }
+  name     { TknName $$ }
+  typename { TknTypename $$ }
 
 %%
 
@@ -73,6 +77,11 @@ fileContents
   : {- none -}       { [] }
   | function fileContents { $1 : $2 }
   | eol fileContents  { $2 }
+
+accessMod
+  : pub   { Pub }  
+  | pro   { Pro }
+  | pri   { Pri }
 
 type
   : mutability typename  { TypeUser $1 $2 }
@@ -92,8 +101,8 @@ mutability
   : {- none -} { Immutable }
   | "~"        { Mutable }
 
-typename
-  : tokenTypeName { $1 }
+-- typename
+--   : tokenTypeName { $1 }
 
 indentedBlock
   : ind block ded { $2 }
@@ -177,8 +186,8 @@ apply
 access
   : expr "." name { Access $1 $3 }
 
-name
-  : tokenName { $1 }
+-- name
+--   : tokenName { $1 }
 
 lit
   : litChr {LitChr $1}
