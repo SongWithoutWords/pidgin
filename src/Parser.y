@@ -122,12 +122,15 @@ type
   | mutability "?" type  { TypeOption $1 $3 }
   | "*" type             { TypeZeroPlus $2 }
   | "+" type             { TypeOnePlus $2 }
-  | mutability Bln       { TypeBln $1 }
-  | mutability Chr       { TypeChr $1 }
-  | mutability Flt       { TypeFlt $1 }
-  | mutability Int       { TypeInt $1 }
-  | mutability Nat       { TypeNat $1 }
-  | mutability Str       { TypeStr $1 }
+  | mutability prim      { TypePrim $1 $2 }
+
+prim
+  : Bln { PrimBln }
+  | Chr { PrimChr }
+  | Flt { PrimFlt }
+  | Int { PrimInt }
+  | Nat { PrimNat }
+  | Str { PrimStr } 
 
 mutability
   : {- none -} { Immutable }

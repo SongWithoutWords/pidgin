@@ -40,12 +40,17 @@ data Type
   | TypeZeroPlus Type
   | TypeOnePlus Type
 
-  | TypeBln Mutability
-  | TypeChr Mutability
-  | TypeFlt Mutability
-  | TypeInt Mutability
-  | TypeNat Mutability
-  | TypeStr Mutability
+  | TypePrim Mutability Prim
+
+    deriving(Eq, Show)
+
+data Prim
+  = PrimBln
+  | PrimChr
+  | PrimFlt
+  | PrimInt
+  | PrimNat
+  | PrimStr
   deriving(Eq, Show)
 
 data Mutability
