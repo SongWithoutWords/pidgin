@@ -32,23 +32,22 @@ instance Named Variable where
 instance Named TypedName where
   nameOf (TypedName _ n) = n
 
-class TypeOf a where
 
-class Typed a where
-  typeOf :: a -> Type
+class TypeDecl a where
+  typeDeclared:: a -> Type
 
-instance Typed Function where
-  typeOf (Function s _) = typeOf s
+instance TypeDecl Function where
+  typeDeclared (Function s _) = typeDeclared s
 
-instance Typed Signature where
-  typeOf (Signature _ anonSig) = typeOf anonSig
+instance TypeDecl Signature where
+  typeDeclared (Signature _ anonSig) = typeDeclared anonSig
 
-instance Typed AnonSig where
-  typeOf (AnonSig purity params ret) = TypeFunction purity (map typeOf params) ret
+instance TypeDecl AnonSig where
+  typeDeclared (AnonSig purity params ret) = TypeFunction purity (map typeDeclared params) ret
 
-instance Typed Variable where
-  typeOf (Variable tn _) = typeOf tn
+instance TypeDecl Variable where
+  typeDeclared (Variable tn _) = typeDeclared tn
 
-instance Typed TypedName where
-  typeOf (TypedName t _) = t
+instance TypeDecl TypedName where
+  typeDeclared (TypedName t _) = t
 
