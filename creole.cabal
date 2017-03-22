@@ -15,13 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     AstUtil
+  exposed-modules:     Ast
+                     , AstUtil
                      , FormatAst
                      , Lexer
                      , ParseError
                      , Parser
                      , SymTable
-                     , Syntax         
                      , Tokens 
 
   build-depends:       base
@@ -29,7 +29,6 @@ library
                      , array
 
   ghc-options:
-              --XDataKinds
 
   default-language:    Haskell2010
 

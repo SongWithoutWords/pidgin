@@ -1,4 +1,4 @@
-module Syntax where
+module Ast where
 
 import Tokens()
 
@@ -29,7 +29,6 @@ data AccessMod
 
 -- What happened to type inferred?
 data Type
-
   = TypeUser Mutability Typename
   | TypeFunction Purity [Type] Type
   | TypeInferred Mutability

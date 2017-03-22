@@ -1,8 +1,8 @@
 {
 module Parser where
-import Tokens
-import Syntax
+import Ast
 import ParseError
+import Tokens
 }
 
 %name parse

@@ -1,6 +1,6 @@
 module SymTable(SymTable, symTableFromAst) where
 
-import qualified Syntax as Ast
+import qualified Ast
 import AstUtil
 import qualified Data.Map.Strict as Map
 

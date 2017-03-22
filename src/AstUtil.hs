@@ -1,7 +1,7 @@
 {-#LANGUAGE FlexibleInstances, TypeSynonymInstances#-}
 module AstUtil where
 
-import Syntax
+import Ast
 
 class Named a where
   nameOf :: a -> String
