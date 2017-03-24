@@ -41,7 +41,7 @@ data Type
 
   | TypePrim Mutability Prim
 
-    deriving(Eq, Show)
+  deriving(Eq, Show)
 
 data Prim
   = PrimBln

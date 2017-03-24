@@ -34,7 +34,7 @@ instance Named TypedName where
 
 
 class TypeDecl a where
-  typeDeclared:: a -> Type
+  typeDeclared :: a -> Type
 
 instance TypeDecl Function where
   typeDeclared (Function s _) = typeDeclared s
