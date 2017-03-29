@@ -27,7 +27,6 @@ data AccessMod
   = Pub | Pro | Pri
   deriving(Eq, Show)
 
--- What happened to type inferred?
 data Type
   = TypeUser Mutability Typename
   | TypeFunction Purity [Type] Type
