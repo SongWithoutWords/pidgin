@@ -51,3 +51,16 @@ instance TypeDecl Variable where
 instance TypeDecl TypedName where
   typeDeclared (TypedName t _) = t
 
+
+class Returns a where
+  returnType :: a -> Type
+
+instance Returns Function where
+  returnType (Function s _) = returnType s
+
+instance Returns Signature where
+  returnType (Signature _ anonSig) = returnType anonSig
+
+instance Returns AnonSig where
+  returnType (AnonSig _ _ t) = t
+
