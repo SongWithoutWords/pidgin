@@ -3,7 +3,7 @@
 echo "Making directories" &&
         mkdir -p gen &&
         mkdir -p out &&
-        mkdir -p
+        mkdir -p info &&
         echo "" > out/parser.info &&
 
 echo "Generating lexer" && alex src/Lexer.x -o gen/Lexer.hs &&
