@@ -50,6 +50,11 @@ data Token
   | TknDot
   | TknQMark
 
+  | TknLess
+  | TknGreater
+  | TknLessOrEqual
+  | TknGreaterOrEqual
+
   | TknThinArrow
   | TknFatArrow
 

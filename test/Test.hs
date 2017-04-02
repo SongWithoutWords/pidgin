@@ -1,17 +1,23 @@
-import Test.Tasty
---import Test.Tast.SmallCheck as SC
-import Test.Tasty.HUnit
 
+import Test.Tasty
+
+import TestLexer
 
 
 main :: IO ()
-main = defaultMain unitTests --putStrLn "Test suite not yet implemented"
+main = defaultMain tests 
 
-unitTests :: TestTree
-unitTests = testGroup "Unit tests"
-  [
-    testCase "Addition" $ 1+1 @?= 2,
-    testCase "Subtraction" $ 1-1 @=? 0
-  ]
+tests :: TestTree
+tests = testGroup "Tests" [lexerTests]
+
+
+
+
+-- unitTests :: TestTree
+-- unitTests = testGroup "Unit tests"
+--   [
+--     testCase "Addition" $ 1+1 @?= 2,
+--     testCase "Subtraction" $ 1-1 @=? 0
+--   ]
 
 

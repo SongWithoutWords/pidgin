@@ -53,6 +53,8 @@ test-suite creole-test
 
   main-is:             Test.hs
 
+  other-modules:       TestLexer
+
   build-depends:       base
                      , tasty
                      , tasty-hunit
