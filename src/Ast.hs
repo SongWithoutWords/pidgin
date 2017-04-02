@@ -31,7 +31,7 @@ data AccessMod
 
 data Type
   = TypeUser Mutability Typename
-  | TypeFunction FunctionType -- Purity [Type] Type
+  | TypeFunction FunctionType
   | TypeInferred Mutability
   | TypeTempRef Mutability Type
   | TypePersRef Mutability Type
