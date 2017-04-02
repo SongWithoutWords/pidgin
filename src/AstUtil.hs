@@ -1,36 +1,38 @@
-{-#LANGUAGE FlexibleInstances, TypeSynonymInstances#-}
+{-# language DuplicateRecordFields, FlexibleInstances, TypeSynonymInstances #-}
+{-# language OverloadedLabels #-}
+
 module AstUtil where
 
 import Ast
 
-class Named a where
+class HasName a where
   nameOf :: a -> String
 
-instance Named Unit where
+instance HasName Unit where
   nameOf (UnitNamespace n _) = n
   nameOf (UnitClass c) = nameOf c
   nameOf (UnitFunction f) = nameOf f
   nameOf (UnitVariable v) = nameOf v
 
-instance Named Class where
-  nameOf (Class n _) = n
+instance HasName Class where
+  nameOf = name --(Class n _) = n
 
-instance Named Function where
+instance HasName Function where
   nameOf (Function s _) = nameOf s
 
-instance Named Signature where
+instance HasName Signature where
   nameOf (Signature n _) = n
 
-instance Named Member where
+instance HasName Member where
   nameOf (MemberClass _ c) = nameOf c
   nameOf (MemberFunction _ _ f) = nameOf f
   nameOf (MemberVariable _ v) = nameOf v
 
-instance Named Variable where
-  nameOf (Variable typedName _) = nameOf typedName
+instance HasName Variable where
+  nameOf = nameOf . typedName --(Variable typedName _) = nameOf typedName
 
-instance Named TypedName where
-  nameOf (TypedName _ n) = n
+instance HasName TypedName where
+  nameOf = name
 
 
 class TypeDecl a where
@@ -40,27 +42,27 @@ instance TypeDecl Function where
   typeDeclared (Function s _) = typeDeclared s
 
 instance TypeDecl Signature where
-  typeDeclared (Signature _ anonSig) = typeDeclared anonSig
+  typeDeclared = typeDeclared . anonSig
 
 instance TypeDecl AnonSig where
-  typeDeclared (AnonSig purity params ret) = TypeFunction purity (map typeDeclared params) ret
+  typeDeclared a = TypeFunction (purity a) (map typeDeclared $ params a) $ ret a
 
 instance TypeDecl Variable where
-  typeDeclared (Variable tn _) = typeDeclared tn
+  typeDeclared = typeDeclared . typedName --(Variable tn _) = typeDeclared tn
 
 instance TypeDecl TypedName where
-  typeDeclared (TypedName t _) = t
+  typeDeclared = typ -- (TypedName t _) = t
 
 
 class Returns a where
   returnType :: a -> Type
 
 instance Returns Function where
-  returnType (Function s _) = returnType s
+  returnType = returnType . sig
 
 instance Returns Signature where
-  returnType (Signature _ anonSig) = returnType anonSig
+  returnType = returnType . anonSig
 
 instance Returns AnonSig where
-  returnType (AnonSig _ _ t) = t
+  returnType = ret
 

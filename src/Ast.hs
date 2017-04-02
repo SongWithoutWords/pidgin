@@ -1,3 +1,5 @@
+{-# language DuplicateRecordFields #-}
+{-# language OverloadedLabels #-}
 module Ast where
 
 import Tokens()
@@ -7,14 +9,14 @@ import Tokens()
 type Root = [Unit]
 
 data Unit
-  = UnitNamespace Name [Unit]
-  | UnitClass Class
-  | UnitFunction Function
-  | UnitVariable Variable -- May want to disallow global mutable variables
+  = UnitNamespace {name::Name, contents::[Unit]}
+  | UnitClass {cls::Class}
+  | UnitFunction {func::Function}
+  | UnitVariable {var::Variable} -- May want to disallow global mutable variables
   deriving(Eq, Show)
 
 data Class
-  = Class Name {-[TypedName]-} [Member]
+  = Class {name::Name, members::[Member]}
   deriving(Eq, Show)
 
 data Member
@@ -71,15 +73,15 @@ data Stmt
   deriving(Eq, Show)
 
 data Variable
-  = Variable TypedName Expr
+  = Variable {typedName::TypedName, expr::Expr }
   deriving(Eq, Show)
 
 data Function
-  = Function Signature Block
+  = Function {sig::Signature, block::Block}
   deriving(Eq, Show)
 
 data Signature
-  = Signature Name AnonSig
+  = Signature {name::Name, anonSig::AnonSig}
   deriving(Eq, Show)
 
 data Purity
@@ -116,24 +118,25 @@ data CondBlock
 
 -- Not sure what to do about lambdas and purity. Capture lists?
 data Lambda
-  = Lambda AnonSig Block
+  = Lambda {anonSig::AnonSig, block::Block}
   deriving(Eq, Show)
 
 -- Anonymous function signature
 data AnonSig
-  = AnonSig Purity [TypedName] Type
+  = AnonSig {purity::Purity, params::[TypedName], ret::Type}
   deriving(Eq, Show)
 
 data TypedName
-  = TypedName Type Name
+  = TypedName {typ::Type, name::Name}
+
   deriving(Eq, Show)
 
 data Apply
-  = Apply Expr [Expr]
+  = Apply {expr::Expr, args::[Expr]}
   deriving(Eq, Show)
 
 data Access
-  = Access Expr Name
+  = Access {expr::Expr, name::Name}
   deriving(Eq, Show)
 
 type Name = String
