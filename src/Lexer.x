@@ -47,6 +47,7 @@ Flt                      { appendTokenAction TknTypeFlt }
 Int                      { appendTokenAction TknTypeInt }
 Nat                      { appendTokenAction TknTypeNat }
 Str                      { appendTokenAction TknTypeStr }
+This                     { appendTokenAction TknTypeThis }
 
 if                       { appendTokenAction TknIf }
 else                     { appendTokenAction TknElse }

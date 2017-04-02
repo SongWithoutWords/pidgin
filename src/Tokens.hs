@@ -12,6 +12,7 @@ data Token
   | TknTypeInt
   | TknTypeNat
   | TknTypeStr
+  | TknTypeThis
 
   | TknIf
   | TknElse

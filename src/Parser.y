@@ -21,6 +21,7 @@ import Tokens
   Int           { TknTypeInt }
   Nat           { TknTypeNat }
   Str           { TknTypeStr }
+  This          { TknTypeThis }
 
   if            { TknIf }
   else          { TknElse }
@@ -107,6 +108,7 @@ members
 member
   : accessMod class               { MemberClass $1 $2 }
   | accessMod mutability function { MemberFunction $1 $2 $3 }
+  | accessMod purity This parameterList { MemberConstructor $1 $2 $4 }
   | accessMod variable            { MemberVariable $1 $2}
 
 accessMod

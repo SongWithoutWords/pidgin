@@ -14,12 +14,13 @@ data Unit
   deriving(Eq, Show)
 
 data Class
-  = Class Name {-[TypedName]-} [Member]
+  = Class Name [Member]
   deriving(Eq, Show)
 
 data Member
   = MemberClass AccessMod Class
   | MemberFunction AccessMod Mutability Function
+  | MemberConstructor AccessMod Purity [TypedName]
   | MemberVariable AccessMod Variable
   deriving(Eq, Show)
 
