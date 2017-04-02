@@ -106,10 +106,10 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod class               { MemberClass $1 $2 }
-  | accessMod mutability function { MemberFunction $1 $2 $3 }
-  | accessMod purity This parameterList { MemberConstructor $1 $2 $4 }
-  | accessMod variable            { MemberVariable $1 $2}
+  : accessMod class                                   { MemberClass $1 $2 }
+  | accessMod mutability function                     { MemberFunction $1 $2 $3 }
+  | accessMod purity This parameterList indentedBlock { MemberConstructor $1 $2 $4 $5 }
+  | accessMod variable                                { MemberVariable $1 $2}
 
 accessMod
   : pub   { Pub }  
@@ -125,15 +125,15 @@ typesCS
   | type "," typesCS  { $1 : $3 }
 
 type
-  : mutability typename       { TypeUser $1 $2 }
+  : mutability typename         { TypeUser $1 $2 }
   | purity paramTypes "->" type { TypeFunction $ FunctionType $1 $2 $4 }
-  | mutability "$"            { TypeInferred $1 }
-  | mutability "^" type       { TypeTempRef $1 $3 }
-  | mutability "&" type       { TypePersRef $1 $3 }
-  | mutability "?" type       { TypeOption $1 $3 }
-  | "*" type                  { TypeZeroPlus $2 }
-  | "+" type                  { TypeOnePlus $2 }
-  | mutability prim           { TypePrim $1 $2 }
+  | mutability "$"              { TypeInferred $1 }
+  | mutability "^" type         { TypeTempRef $1 $3 }
+  | mutability "&" type         { TypePersRef $1 $3 }
+  | mutability "?" type         { TypeOption $1 $3 }
+  | "*" type                    { TypeZeroPlus $2 }
+  | "+" type                    { TypeOnePlus $2 }
+  | mutability prim             { TypePrim $1 $2 }
 
 prim
   : Bln { PrimBln }

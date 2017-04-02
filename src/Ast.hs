@@ -20,7 +20,7 @@ data Class
 data Member
   = MemberClass AccessMod Class
   | MemberFunction AccessMod Mutability Function
-  | MemberConstructor AccessMod Purity [TypedName]
+  | MemberConstructor AccessMod Purity [TypedName] Block
   | MemberVariable AccessMod Variable
   deriving(Eq, Show)
 
