@@ -114,15 +114,24 @@ accessMod
   | pro   { Pro }
   | pri   { Pri }
 
+paramTypes
+  : "("")"          { [] } -- '()' must be implemented differently than for parameters/expressions to avoid reduce/reduce conflict
+  | "(" typesCS ")" { $2 }
+
+typesCS
+  : type              { [$1] }
+  | type "," typesCS  { $1 : $3 }
+
 type
-  : mutability typename  { TypeUser $1 $2 }
-  | mutability "$"       { TypeInferred $1 }
-  | mutability "^" type  { TypeTempRef $1 $3 }
-  | mutability "&" type  { TypePersRef $1 $3 }
-  | mutability "?" type  { TypeOption $1 $3 }
-  | "*" type             { TypeZeroPlus $2 }
-  | "+" type             { TypeOnePlus $2 }
-  | mutability prim      { TypePrim $1 $2 }
+  : mutability typename       { TypeUser $1 $2 }
+  | purity paramTypes "->" type { TypeFunction $ FunctionType $1 $2 $4 }
+  | mutability "$"            { TypeInferred $1 }
+  | mutability "^" type       { TypeTempRef $1 $3 }
+  | mutability "&" type       { TypePersRef $1 $3 }
+  | mutability "?" type       { TypeOption $1 $3 }
+  | "*" type                  { TypeZeroPlus $2 }
+  | "+" type                  { TypeOnePlus $2 }
+  | mutability prim           { TypePrim $1 $2 }
 
 prim
   : Bln { PrimBln }
@@ -150,7 +159,7 @@ stmts
 stmt
   : lexpr "=" expr  { StmtAssign $1 $3 }
   | variable        { StmtVariable $1 }
-  -- | function        { StmtFunction $1 } -- causing some conflicts 
+  | function        { StmtFunction $1 } -- causing some conflicts 
   | ifChain         { StmtIf $1 }
   | apply           { StmtApply $1 }
 
@@ -173,12 +182,13 @@ purity
   | "@"        { Impure }
   | "~""@"     { SideEffecting }
 
+
 parameterList
-  : "(" parametersCS ")" { $2 }
+  : "(" parametersCS ")"  { $2 }
 
 parametersCS
   : {- none -}                  { [] }
-  | typedName { [$1] }
+  | typedName                   { [$1] }
   | typedName "," parametersCS  { $1 : $3 }
 
 typedName
@@ -187,7 +197,7 @@ typedName
 exprsCS
   : {- none -}        { [] }
   | expr              { [$1]}
-  -- | expr "," exprsCS  { $1 : $3 } -- also causing conficts. Hmm...
+  | expr "," exprsCS  { $1 : $3 } -- also causing conficts. Hmm...
 
 expr
   : ifChain   { ExprIf $1 }
