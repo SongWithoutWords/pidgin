@@ -205,6 +205,7 @@ expr
   : ifChain   { ExprIf $1 }
   | lambda    { ExprLambda $1 }
   | apply     { ExprApply $1 }
+  | construct { ExprConstruct $1 }
   | access    { ExprAccess $1 }
   | name      { ExprName $1 }
   | lit       { ExprLit $1 }
@@ -226,6 +227,9 @@ optionRet
 
 apply
   : expr "(" exprsCS ")"  { Apply $1 $3 }
+
+construct
+  : typename "(" exprsCS ")" { Construct $1 $3 }
 
 access
   : expr "." name { Access $1 $3 }

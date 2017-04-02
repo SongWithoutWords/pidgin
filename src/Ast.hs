@@ -103,6 +103,7 @@ data Expr
   = ExprIf IfChain
   | ExprLambda Lambda
   | ExprApply Apply
+  | ExprConstruct Construct
   | ExprAccess Access
   | ExprName Name
   | ExprLit Lit
@@ -118,7 +119,6 @@ data CondBlock
   = CondBlock Expr Block
   deriving(Eq, Show)
 
--- Not sure what to do about lambdas and purity. Capture lists?
 data Lambda
   = Lambda AnonSig Block
   deriving(Eq, Show)
@@ -134,6 +134,10 @@ data TypedName
 
 data Apply
   = Apply Expr [Expr]
+  deriving(Eq, Show)
+
+data Construct
+  = Construct Typename [Expr]
   deriving(Eq, Show)
 
 data Access
