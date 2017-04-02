@@ -1,5 +1,7 @@
 module Tokens where
 
+type Tokens = [Token]
+
 data Token
   = TknEol
 
