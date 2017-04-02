@@ -33,25 +33,25 @@ unitsFromAst :: [Ast.Unit] -> UnitTable
 unitsFromAst = Map.fromList . map unitEntryFromAst
 
 unitEntryFromAst :: Ast.Unit -> Entry Unit
-unitEntryFromAst u = (nameOf u, unitFromAst u)
+unitEntryFromAst u = (name u, unitFromAst u)
 
 unitFromAst :: Ast.Unit -> Unit
 unitFromAst (Ast.UnitNamespace _ units) = UnitNamespace $ unitsFromAst units
 unitFromAst (Ast.UnitClass c) = UnitClass $ membersFromAstClass c
-unitFromAst (Ast.UnitFunction f) = UnitLeaf $ typeDeclared f
-unitFromAst (Ast.UnitVariable v) = UnitLeaf $ typeDeclared v
+unitFromAst (Ast.UnitFunction f) = UnitLeaf $ explicitType f
+unitFromAst (Ast.UnitVariable v) = UnitLeaf $ explicitType v
 
 membersFromAstClass :: Ast.Class -> MemberTable
-membersFromAstClass (Ast.Class _ members) = membersFromAst members
+membersFromAstClass = membersFromAst . members
 
 membersFromAst :: [Ast.Member] -> MemberTable
 membersFromAst = Map.fromList . map memberEntryFromAst
 
 memberEntryFromAst :: Ast.Member -> Entry Member
-memberEntryFromAst m = (nameOf m, memberFromAst m)
+memberEntryFromAst m = (name m, memberFromAst m)
 
 memberFromAst :: Ast.Member -> Member
 memberFromAst (Ast.MemberClass a c) = MemberClass a $ membersFromAstClass c
-memberFromAst (Ast.MemberFunction a mut f) = MemberFunction a mut (typeDeclared f)
-memberFromAst (Ast.MemberVariable a v) = MemberVariable a $ typeDeclared v
+memberFromAst (Ast.MemberFunction a mut f) = MemberFunction a mut $ explicitType f
+memberFromAst (Ast.MemberVariable a v) = MemberVariable a $ explicitType v
 

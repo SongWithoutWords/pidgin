@@ -24,22 +24,25 @@ data Member
   deriving(Eq, Show)
 
 data AccessMod
-  = Pub | Pro | Pri
+  = Pub
+  | Pro
+  | Pri
   deriving(Eq, Show)
 
 data Type
   = TypeUser Mutability Typename
-  | TypeFunction Purity [Type] Type
+  | TypeFunction FunctionType -- Purity [Type] Type
   | TypeInferred Mutability
-
   | TypeTempRef Mutability Type
   | TypePersRef Mutability Type
   | TypeOption Mutability Type
   | TypeZeroPlus Type
   | TypeOnePlus Type
-
   | TypePrim Mutability Prim
+  deriving(Eq, Show)
 
+data FunctionType
+  = FunctionType Purity [Type] Type
   deriving(Eq, Show)
 
 data Prim
