@@ -1,4 +1,4 @@
-module TestInput(TestCase(..), testCases) where
+module TestCases(TestCase(..), testCases) where
 
 import Ast
 -- import SymTable

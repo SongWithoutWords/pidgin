@@ -5,7 +5,7 @@ import Test.Tasty.HUnit
 import Lexer
 import Parser
 
-import TestInput
+import TestCases
 
 
 main :: IO ()
