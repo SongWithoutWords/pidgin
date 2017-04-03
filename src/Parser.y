@@ -2,73 +2,73 @@
 module Parser where
 import Ast
 import ParseError
-import Tokens
+import qualified Tokens as T
 }
 
 %name parse
-%tokentype { Token }
+%tokentype { T.Token }
 %error { parseError }
 
 %token
-  eol           { TknEol }
+  eol           { T.Eol }
 
-  ind           { TknIndent }
-  ded           { TknDedent }
+  ind           { T.Indent }
+  ded           { T.Dedent }
 
-  Bln           { TknTypeBln }
-  Chr           { TknTypeChr }
-  Flt           { TknTypeFlt }
-  Int           { TknTypeInt }
-  Nat           { TknTypeNat }
-  Str           { TknTypeStr }
-  This          { TknTypeThis }
+  Bln           { T.TypeBln }
+  Chr           { T.TypeChr }
+  Flt           { T.TypeFlt }
+  Int           { T.TypeInt }
+  Nat           { T.TypeNat }
+  Str           { T.TypeStr }
+  This          { T.TypeThis }
 
-  if            { TknIf }
-  else          { TknElse }
-  true          { TknTrue }
-  false         { TknFalse }
-  and           { TknAnd }
-  or            { TknOr }
-  not           { TknNot }
-  none          { TknNone }
+  if            { T.If }
+  else          { T.Else }
+  true          { T.True }
+  false         { T.False }
+  and           { T.And }
+  or            { T.Or }
+  not           { T.Not }
+  none          { T.None }
 
-  tknNamespace  { TknNamespace }
-  tknClass      { TknClass }
+  tknNamespace  { T.Namespace }
+  tknClass      { T.Class }
 
-  pub           { TknPub }
-  pro           { TknPro }
-  pri           { TknPri }
+  pub           { T.Pub }
+  pro           { T.Pro }
+  pri           { T.Pri }
 
-  "~"           { TknTilde }
-  "@"           { TknAt }
-  "#"           { TknHash }
-  "$"           { TknDollar }
-  "^"           { TknCaret }
-  "&"           { TknAmpersand }
-  "*"           { TknStar }
-  "("           { TknLParen }
-  ")"           { TknRParen }
-  "-"           { TknMinus }
-  "+"           { TknPlus }
-  "="           { TknEqual }
-  "["           { TknLBracket }
-  "]"           { TknRBracket }
-  ";"           { TknSemicolon}
-  ":"           { TknColon }
-  ","           { TknComma }
-  "."           { TknDot }
-  "?"           { TknQMark }
+  "~"           { T.Tilde }
+  "@"           { T.At }
+  "#"           { T.Hash }
+  "$"           { T.Dollar }
+  "^"           { T.Caret }
+  "&"           { T.Ampersand }
+  "*"           { T.Star }
+  "("           { T.LParen }
+  ")"           { T.RParen }
+  "-"           { T.Minus }
+  "+"           { T.Plus }
+  "="           { T.Equal }
+  "["           { T.LBracket }
+  "]"           { T.RBracket }
+  ";"           { T.Semicolon}
+  ":"           { T.Colon }
+  ","           { T.Comma }
+  "."           { T.Dot }
+  "?"           { T.QMark }
 
-  "->"          { TknThinArrow }
-  "=>"          { TknFatArrow }
+  "->"          { T.ThinArrow }
+  "=>"          { T.FatArrow }
 
-  litChr        { TknLitChr $$ }
-  litFlt        { TknLitFlt $$ }
-  litInt        { TknLitInt $$ }
-  litStr        { TknLitStr $$ }
+  litChr        { T.LitChr $$ }
+  litFlt        { T.LitFlt $$ }
+  litInt        { T.LitInt $$ }
+  litStr        { T.LitStr $$ }
 
-  name     { TknName $$ }
-  typename { TknTypename $$ }
+  name     { T.Name $$ }
+  typename { T.Typename $$ }
 
 %%
 

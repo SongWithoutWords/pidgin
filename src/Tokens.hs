@@ -3,70 +3,70 @@ module Tokens where
 type Tokens = [Token]
 
 data Token
-  = TknEol
+  = Eol
 
-  | TknIndent
-  | TknDedent
+  | Indent
+  | Dedent
 
-  | TknTypeBln
-  | TknTypeChr
-  | TknTypeFlt
-  | TknTypeInt
-  | TknTypeNat
-  | TknTypeStr
-  | TknTypeThis
+  | TypeBln
+  | TypeChr
+  | TypeFlt
+  | TypeInt
+  | TypeNat
+  | TypeStr
+  | TypeThis
 
-  | TknIf
-  | TknElse
-  | TknTrue
-  | TknFalse
-  | TknAnd
-  | TknOr
-  | TknNot
-  | TknNone
+  | If
+  | Else
+  | True
+  | False
+  | And
+  | Or
+  | Not
+  | None
 
-  | TknNamespace
-  | TknClass
+  | Namespace
+  | Class
 
-  | TknPub
-  | TknPro
-  | TknPri
+  | Pub
+  | Pro
+  | Pri
 
-  | TknTilde
-  | TknAt
-  | TknHash
-  | TknDollar
-  | TknCaret
-  | TknAmpersand
-  | TknStar
-  | TknLParen
-  | TknRParen
-  | TknMinus
-  | TknPlus
-  | TknEqual
-  | TknLBracket
-  | TknRBracket
-  | TknSemicolon
-  | TknColon
-  | TknComma
-  | TknDot
-  | TknQMark
+  | Tilde
+  | At
+  | Hash
+  | Dollar
+  | Caret
+  | Ampersand
+  | Star
+  | LParen
+  | RParen
+  | Minus
+  | Plus
+  | Equal
+  | LBracket
+  | RBracket
+  | Semicolon
+  | Colon
+  | Comma
+  | Dot
+  | QMark
 
-  | TknLess
-  | TknGreater
-  | TknLessOrEqual
-  | TknGreaterOrEqual
+  | Lesser
+  | Greater
+  | LesserOrEq
+  | GreaterOrEq
 
-  | TknThinArrow
-  | TknFatArrow
+  | ThinArrow
+  | FatArrow
 
-  | TknLitChr Char
-  | TknLitInt Int
-  | TknLitFlt Float
-  | TknLitStr String
+  | LitChr Char
+  | LitInt Int
+  | LitFlt Float
+  | LitStr String
 
-  | TknName String
-  | TknTypename String
+  | Name String
+  | Typename String
 
   deriving (Eq, Show)
 

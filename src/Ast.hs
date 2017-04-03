@@ -4,7 +4,7 @@ import Tokens()
 
 -- Finite number of steps friend!
 
-type Root = [Unit]
+type Ast = [Unit]
 
 data Unit
   = UnitNamespace Name [Unit]

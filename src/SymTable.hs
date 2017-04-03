@@ -26,7 +26,7 @@ data Member
   deriving(Eq, Show)
 
 
-symTableFromAst :: Ast.Root -> SymTable
+symTableFromAst :: Ast.Ast -> SymTable
 symTableFromAst = unitsFromAst
 
 unitsFromAst :: [Ast.Unit] -> UnitTable

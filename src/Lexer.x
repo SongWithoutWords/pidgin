@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -w #-}
 
 module Lexer (scanTokens) where
-import Tokens
+import qualified Tokens as T
 }
 
 %wrapper "monadUserState"
@@ -41,70 +41,73 @@ tokens                   :-
 
 $white                   ;
 
-Bln                      { appendTokenAction TknTypeBln }
-Chr                      { appendTokenAction TknTypeChr }
-Flt                      { appendTokenAction TknTypeFlt }
-Int                      { appendTokenAction TknTypeInt }
-Nat                      { appendTokenAction TknTypeNat }
-Str                      { appendTokenAction TknTypeStr }
-This                     { appendTokenAction TknTypeThis }
+Bln                      { appendTokenAction T.TypeBln }
+Chr                      { appendTokenAction T.TypeChr }
+Flt                      { appendTokenAction T.TypeFlt }
+Int                      { appendTokenAction T.TypeInt }
+Nat                      { appendTokenAction T.TypeNat }
+Str                      { appendTokenAction T.TypeStr }
+This                     { appendTokenAction T.TypeThis }
 
-if                       { appendTokenAction TknIf }
-else                     { appendTokenAction TknElse }
-true                     { appendTokenAction TknTrue }
-false                    { appendTokenAction TknFalse }
-and                      { appendTokenAction TknAnd }
-or                       { appendTokenAction TknOr }
-not                      { appendTokenAction TknNot }
-none                     { appendTokenAction TknNone }
+if                       { appendTokenAction T.If }
+else                     { appendTokenAction T.Else }
+true                     { appendTokenAction T.True }
+false                    { appendTokenAction T.False }
+and                      { appendTokenAction T.And }
+or                       { appendTokenAction T.Or }
+not                      { appendTokenAction T.Not }
+none                     { appendTokenAction T.None }
 
-namespace                { appendTokenAction TknNamespace }
-class                    { appendTokenAction TknClass }
+namespace                { appendTokenAction T.Namespace }
+class                    { appendTokenAction T.Class }
 
-pub                      { appendTokenAction TknPub }
-pro                      { appendTokenAction TknPro }
-pri                      { appendTokenAction TknPri }
+pub                      { appendTokenAction T.Pub }
+pro                      { appendTokenAction T.Pro }
+pri                      { appendTokenAction T.Pri }
 
-"~"                      { appendTokenAction TknTilde }
-"@"                      { appendTokenAction TknAt }
-"#"                      { appendTokenAction TknHash }
-"$"                      { appendTokenAction TknDollar }
-"^"                      { appendTokenAction TknCaret }
-"&"                      { appendTokenAction TknAmpersand }
-"*"                      { appendTokenAction TknStar }
-"("                      { appendTokenAction TknLParen }
-")"                      { appendTokenAction TknRParen }
-"-"                      { appendTokenAction TknMinus }
-"+"                      { appendTokenAction TknPlus }
-"="                      { appendTokenAction TknEqual }
-"["                      { appendTokenAction TknLBracket }
-"]"                      { appendTokenAction TknRBracket }
-";"                      { appendTokenAction TknSemicolon }
-":"                      { appendTokenAction TknColon }
-","                      { appendTokenAction TknComma }
-"."                      { appendTokenAction TknDot }
-"?"                      { appendTokenAction TknQMark }
+"~"                      { appendTokenAction T.Tilde }
+"@"                      { appendTokenAction T.At }
+"#"                      { appendTokenAction T.Hash }
+"$"                      { appendTokenAction T.Dollar }
+"^"                      { appendTokenAction T.Caret }
+"&"                      { appendTokenAction T.Ampersand }
+"*"                      { appendTokenAction T.Star }
+"("                      { appendTokenAction T.LParen }
+")"                      { appendTokenAction T.RParen }
+"-"                      { appendTokenAction T.Minus }
+"+"                      { appendTokenAction T.Plus }
+"="                      { appendTokenAction T.Equal }
+"["                      { appendTokenAction T.LBracket }
+"]"                      { appendTokenAction T.RBracket }
+";"                      { appendTokenAction T.Semicolon }
+":"                      { appendTokenAction T.Colon }
+","                      { appendTokenAction T.Comma }
+"."                      { appendTokenAction T.Dot }
+"?"                      { appendTokenAction T.QMark }
 
-"<"                      { appendTokenAction TknLess }
-">"                      { appendTokenAction TknGreater }
-"<="                     { appendTokenAction TknLessOrEqual }
-">="                     { appendTokenAction TknGreaterOrEqual }
+"<"                      { appendTokenAction T.Lesser }
+">"                      { appendTokenAction T.Greater }
+"<="                     { appendTokenAction T.LesserOrEq }
+">="                     { appendTokenAction T.GreaterOrEq }
 
-"->"                     { appendTokenAction TknThinArrow }
-"=>"                     { appendTokenAction TknFatArrow }
+"->"                     { appendTokenAction T.ThinArrow }
+"=>"                     { appendTokenAction T.FatArrow }
 
-@litChar                 { lexTokenAction $ TknLitChr . read }
-@litInt                  { lexTokenAction $ TknLitInt . read }
-@litFlt                  { lexTokenAction $ TknLitFlt . read }
-@litString               { lexTokenAction $ TknLitStr . init . tail }
+@litChar                 { lexTokenAction $ T.LitChr . read }
+@litInt                  { lexTokenAction $ T.LitInt . read }
+@litFlt                  { lexTokenAction $ T.LitFlt . read }
+@litString               { lexTokenAction $ T.LitStr . init . tail }
 
-@nameLower               { lexTokenAction $ TknName }
-@nameUpper               { lexTokenAction $ TknTypename }
+@nameLower               { lexTokenAction $ T.Name }
+@nameUpper               { lexTokenAction $ T.Typename }
 
 
 {
+type Token = T.Token
+type Tokens = T.Tokens
+
 data AlexUserState = AlexUserState
-  { tokens :: [Token]
+  { tokens :: Tokens
   , indentDepth :: Int }
 
 type ParseError = String
@@ -139,10 +142,10 @@ appendToken tkn state = state { tokens = (tokens state) ++ [tkn]}
 appendTokenAction :: Token -> AlexAction ()
 appendTokenAction = updateAction . appendToken
 
-appendTokens :: [Token] -> Update
+appendTokens :: Tokens -> Update
 appendTokens tkns state = state { tokens = (tokens state) ++ tkns}
 
-appendTokensAction :: [Token] -> AlexAction ()
+appendTokensAction :: Tokens -> AlexAction ()
 appendTokensAction = updateAction . appendTokens
 
 setIndentDepth :: Int -> Update
@@ -182,9 +185,9 @@ parseIndentation (UserInput str pos)
 
 checkIndent' :: Int -> Update
 checkIndent' indent state
-  | indent < curIndent = setIndentDepth indent $ appendTokens ((replicate (curIndent - indent) TknDedent) ++ [TknEol]) state
-  | indent == curIndent = appendToken TknEol state
-  | indent == (curIndent + 1) = setIndentDepth indent $ appendToken TknIndent state
+  | indent < curIndent = setIndentDepth indent $ appendTokens ((replicate (curIndent - indent) T.Dedent) ++ [T.Eol]) state
+  | indent == curIndent = appendToken T.Eol state
+  | indent == (curIndent + 1) = setIndentDepth indent $ appendToken T.Indent state
   | indent == (curIndent + 2) = state -- line continuation, parser need not be aware
     where
       curIndent = indentDepth state
@@ -219,6 +222,6 @@ runAlexScan s = runAlex s $ alexMonadScan >> getUserState
 
 scanTokens :: String -> [Token]
 scanTokens s = case runAlexScan s of
-  (Right state) -> tokens state ++ replicate (indentDepth state) TknDedent
+  (Right state) -> tokens state ++ replicate (indentDepth state) T.Dedent
   (Left parseError) -> error $ parseError
 }

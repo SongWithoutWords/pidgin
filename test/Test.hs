@@ -1,23 +1,32 @@
 
 import Test.Tasty
+import Test.Tasty.HUnit
 
-import TestLexer
+import Lexer
+import Parser
+
+import TestInput
 
 
 main :: IO ()
-main = defaultMain tests 
+main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [lexerTests]
+tests = testGroup "tests" [lexerTests, parserTests]
 
 
+lexerTests :: TestTree
+lexerTests = testGroup  "lexer" $ map lexTest testCases
+
+lexTest :: TestCase -> TestTree
+lexTest tc = testCase (nme tc) $ scanTokens (src tc) @?= tks tc
 
 
--- unitTests :: TestTree
--- unitTests = testGroup "Unit tests"
---   [
---     testCase "Addition" $ 1+1 @?= 2,
---     testCase "Subtraction" $ 1-1 @=? 0
---   ]
+parserTests :: TestTree
+parserTests = testGroup  "parser" $ map parserTest testCases
+
+parserTest :: TestCase -> TestTree
+parserTest tc = testCase (nme tc) $ parse (tks tc) @?= ast tc
+
 
 
