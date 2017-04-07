@@ -24,7 +24,7 @@ test: $(build) $(lex-test) $(parse-test)
 run: build
 	@stack exec creole-exe
 
-$(build): $(dirs) $(lexer-gen) $(parser-gen) src
+$(build): $(lexer-gen) $(parser-gen) src
 	@stack build
 	@touch $(build)
 
@@ -38,11 +38,11 @@ $(lex-test): $(lexer-gen) $(tkn-src) $(test-cases)
 	@touch $(lex-test)
 	@stack test --test-arguments '-p lexer'
 
-$(parser-gen): $(parser-src)
+$(parser-gen): $(dirs) $(parser-src)
 	@echo "Generating parser"
 	@happy -o $(parser-gen) -i$(parser-inf) $(parser-src)
 
-$(lexer-gen): $(lexer-src)
+$(lexer-gen): $(dirs) $(lexer-src)
 	@echo "Generating lexer"
 	@alex $(lexer-src) -o gen/Lexer.hs
 
