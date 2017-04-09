@@ -19,5 +19,6 @@ cabal.sandbox.config
 cabal.project.local
 
 *.directory
+info/*
 gen/*
 mk/*
