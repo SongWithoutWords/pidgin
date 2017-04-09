@@ -108,7 +108,7 @@ members
 member
   : accessMod class                                   { MemberClass $1 $2 }
   | accessMod mutability function                     { MemberFunction $1 $2 $3 }
-  | accessMod purity This parameterList indentedBlock { MemberConstructor $1 $2 $4 $5 }
+  | accessMod purity This parameterList indentedBlock         { MemberConstructor $1 $2 $4 $5 }
   | accessMod variable                                { MemberVariable $1 $2}
 
 accessMod
@@ -147,23 +147,35 @@ mutability
   : {- none -} { Immutable }
   | "~"        { Mutable }
 
+
+block
+  : indentedBlock { $1 }
+  | inlineBlock   { $1 }
+
 indentedBlock
-  : ind block ded { $2 }
+  : ind subBlocks ded { $2 }
 
-block : stmts { $1 }
+subBlocks
+  : subBlock                  { $1 }
+  | subBlock eol subBlocks    { $1 ++ $3 }
 
-stmts
-  : {- none -}      { [] }
-  | stmt            { [$1] }
-  | stmt eol stmts  { $1 : $3 }
-  | stmt ";" stmts  { $1 : $3 }
+subBlock
+  : inlineBlock                 { $1 }
+  | nestedBlock                 { [$1] }
+
+inlineBlock
+  : stmt                  { [$1] }
+  | stmt ";" inlineBlock  { $1 : $3 }
+
+nestedBlock
+  : function        { StmtFunction $1 }
+  | ifChain         { StmtIf $1 }
 
 stmt
   : lexpr "=" expr  { StmtAssign $1 $3 }
   | variable        { StmtVariable $1 }
-  | function        { StmtFunction $1 } -- causing some conflicts 
-  | ifChain         { StmtIf $1 }
-  | apply           { StmtApply $1 }
+  -- | apply           { StmtApply $1 }
+  | expr            { StmtExpr $1 }
 
 lexpr
   : apply           { LexprApply $1 }
@@ -174,7 +186,7 @@ variable
   : typedName "=" expr { Variable $1 $3 }
 
 function
-  : signature indentedBlock { Function $1 $2 }
+  : signature "=>" block { Function $1 $3 }
 
 signature
   : purity name parameterList "->" type { Signature $2 $ AnonSig $1 $3 $5 }
@@ -202,9 +214,12 @@ exprsCS
   | expr "," exprsCS  { $1 : $3 } -- also causing conficts. Hmm...
 
 expr
-  : ifChain   { ExprIf $1 }
+  : ifExpr    { ExprIf $1 }
   | lambda    { ExprLambda $1 }
-  | apply     { ExprApply $1 }
+  | shallowExpr { $1 }
+
+shallowExpr
+  : apply     { ExprApply $1 }
   | construct { ExprConstruct $1 }
   | access    { ExprAccess $1 }
   | name      { ExprName $1 }
@@ -218,8 +233,14 @@ ifChain
 condBlock
   : expr indentedBlock  { CondBlock $1 $2 } -- Would be nice to have one-line ifs
 
+
+ifExpr
+  : expr if shallowExpr else expr { IfExpr $1 $3 $5 }
+  -- | expr if expr else
+
 lambda
-  : purity parameterList optionRet "=>" indentedBlock { Lambda (AnonSig $1 $2 $3) $5 }
+  : purity parameterList optionRet "=>"  indentedBlock { Lambda (AnonSig $1 $2 $3) $5 }
+  -- : purity parameterList optionRet "=>"  block { Lambda (AnonSig $1 $2 $3) $5 }
 
 optionRet
   : {- none -} { TypeInferred Mutable }
@@ -235,8 +256,13 @@ access
   : expr "." name { Access $1 $3 }
 
 lit
-  : litChr {LitChr $1}
+  : litBln {LitBln $1}
+  | litChr {LitChr $1}
   | litFlt {LitFlt $1}
   | litInt {LitInt $1}
   | litStr {LitStr $1}
+
+litBln
+  : true  {True}
+  | false {False}
 

@@ -1,7 +1,6 @@
 module TestCases(TestCase(..), testCases) where
 
 import Ast
--- import SymTable
 import qualified Tokens as T
 
 
@@ -16,6 +15,7 @@ testCases :: TestCases
 testCases =
   [ emptyStr
   , defPi
+  , ifExpr
   , defNegateInline
   , defNegateBlock
   , defFactorial
@@ -37,12 +37,28 @@ defPi = TestCase
   , ast = [UnitVariable $ Variable (TypedName (TypeInferred Immutable) "pi") $ ExprLit $ LitFlt 3.14159265]
   }
 
+ifExpr :: TestCase
+ifExpr = TestCase
+  { nme = "if expr"
+  , src = "$ msg = \"it works!\" if true else \"or not :(\""
+  , tks = [T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :("]
+  , ast = [UnitVariable $ Variable (TypedName (TypeInferred Immutable) "msg") $ ExprIf $ IfExpr (ExprLit $ LitStr "it works!") (ExprLit $ LitBln True) (ExprLit $ LitStr "or not :(")]
+  }
+
+opExpr :: TestCase
+opExpr = TestCase
+  { nme = "operator expr"
+  , src = "$ three = 1 + 2"
+  , tks = [T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.LitInt 1, T.Lesser, T.LitInt 2, T.Else, T.LitStr "or not :("]
+  , ast = [UnitVariable $ Variable (TypedName (TypeInferred Immutable) "pi") $ ExprLit $ LitFlt 3.14159265]
+  }
+
 defNegateInline :: TestCase
 defNegateInline = TestCase
   { nme = "def negate (one line)"
   , src = "negate(Bln b) -> Bln => false if b else true"
   , tks = [T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow, T.False, T.If, T.Name "b", T.Else, T.True]
-  , ast = []
+  , ast = [UnitFunction $ Function (Signature "negate" $ AnonSig Pure [TypedName (TypePrim Immutable PrimBln)"b"] (TypePrim Mutable PrimBln)) []]
   }
 
 defNegateBlock :: TestCase
@@ -74,4 +90,16 @@ defFactorial = TestCase
 
   , ast = []
   }
+
+
+-- class A
+--     pub f() -> None
+--         a()
+--         b = c
+--         if q
+--             f()
+--             g = h
+--         x()
+--         y = z
+
 

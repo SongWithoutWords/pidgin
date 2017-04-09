@@ -72,6 +72,7 @@ data Stmt
   | StmtFunction Function
   | StmtIf IfChain
   | StmtApply Apply
+  | StmtExpr Expr
   deriving(Eq, Show)
 
 data Variable
@@ -100,13 +101,17 @@ data Lexpr
   deriving(Eq, Show)
 
 data Expr
-  = ExprIf IfChain
+  = ExprIf IfExpr -- Expr Expr Expr-- IfChain
   | ExprLambda Lambda
   | ExprApply Apply
   | ExprConstruct Construct
   | ExprAccess Access
   | ExprName Name
   | ExprLit Lit
+  deriving(Eq, Show)
+
+data IfExpr
+  = IfExpr {iff :: Expr, cond :: Expr, els :: Expr}
   deriving(Eq, Show)
 
 data IfChain
