@@ -1,6 +1,6 @@
 module SymTable(SymTable, symTableFromAst) where
 
-import qualified Ast
+import qualified Ast as A
 import AstUtil
 import qualified Data.Map.Strict as Map
 
@@ -14,44 +14,44 @@ type UnitTable = Table Unit
 type MemberTable = Table Member
 
 data Unit
-  = UnitNamespace UnitTable
-  | UnitClass MemberTable
-  | UnitLeaf Ast.Type -- May want to add accessmods to top level declarations also
+  = UNamespace UnitTable
+  | UClass MemberTable
+  | UnitLeaf A.Type -- May want to add accessmods to top level declarations also
   deriving(Eq, Show)
 
 data Member
-  = MemberClass Ast.AccessMod MemberTable
-  | MemberFunction Ast.AccessMod Ast.Mutability Ast.Type
-  | MemberVariable Ast.AccessMod Ast.Type
+  = MClass A.Access MemberTable
+  | MFunc A.Access A.Mut A.Type
+  | MVar A.Access A.Type
   deriving(Eq, Show)
 
 
-symTableFromAst :: Ast.Ast -> SymTable
+symTableFromAst :: A.Ast -> SymTable
 symTableFromAst = unitsFromAst
 
-unitsFromAst :: [Ast.Unit] -> UnitTable
+unitsFromAst :: [A.Unit] -> UnitTable
 unitsFromAst = Map.fromList . map unitEntryFromAst
 
-unitEntryFromAst :: Ast.Unit -> Entry Unit
+unitEntryFromAst :: A.Unit -> Entry Unit
 unitEntryFromAst u = (name u, unitFromAst u)
 
-unitFromAst :: Ast.Unit -> Unit
-unitFromAst (Ast.UnitNamespace _ units) = UnitNamespace $ unitsFromAst units
-unitFromAst (Ast.UnitClass c) = UnitClass $ membersFromAstClass c
-unitFromAst (Ast.UnitFunction f) = UnitLeaf $ explicitType f
-unitFromAst (Ast.UnitVariable v) = UnitLeaf $ explicitType v
+unitFromAst :: A.Unit -> Unit
+unitFromAst (A.UNamespace _ units) = UNamespace $ unitsFromAst units
+unitFromAst (A.UClass c) = UClass $ membersFromAstClass c
+unitFromAst (A.UFunc f) = UnitLeaf $ explicitType f
+unitFromAst (A.UVar v) = UnitLeaf $ explicitType v
 
-membersFromAstClass :: Ast.Class -> MemberTable
+membersFromAstClass :: A.Class -> MemberTable
 membersFromAstClass = membersFromAst . members
 
-membersFromAst :: [Ast.Member] -> MemberTable
+membersFromAst :: [A.Member] -> MemberTable
 membersFromAst = Map.fromList . map memberEntryFromAst
 
-memberEntryFromAst :: Ast.Member -> Entry Member
+memberEntryFromAst :: A.Member -> Entry Member
 memberEntryFromAst m = (name m, memberFromAst m)
 
-memberFromAst :: Ast.Member -> Member
-memberFromAst (Ast.MemberClass a c) = MemberClass a $ membersFromAstClass c
-memberFromAst (Ast.MemberFunction a mut f) = MemberFunction a mut $ explicitType f
-memberFromAst (Ast.MemberVariable a v) = MemberVariable a $ explicitType v
+memberFromAst :: A.Member -> Member
+memberFromAst (A.MClass a c) = MClass a $ membersFromAstClass c
+memberFromAst (A.MFunc a mut f) = MFunc a mut $ explicitType f
+memberFromAst (A.MVar a v) = MVar a $ explicitType v
 

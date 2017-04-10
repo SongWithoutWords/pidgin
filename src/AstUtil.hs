@@ -14,27 +14,27 @@ class HasName a where
 
 instance HasName Unit where
   name unit = case unit of
-    (UnitNamespace n _) -> n
-    (UnitClass c) -> name c
-    (UnitFunction f) -> name f
-    (UnitVariable v) -> name v
+    (UNamespace n _) -> n
+    (UClass c) -> name c
+    (UFunc f) -> name f
+    (UVar v) -> name v
 
 instance HasName Class where
   name (Class n _) = n
 
-instance HasName Function where
-  name (Function s _) = name s
+instance HasName Func where
+  name (Func s _) = name s
 
-instance HasName Signature where
-  name (Signature n _) = n
+instance HasName Sig where
+  name (Sig n _) = n
 
 instance HasName Member where
   name member = case member of
-    (MemberClass _ c) -> name c
-    (MemberFunction _ _ f) -> name f
-    (MemberVariable _ v) -> name v
+    (MClass _ c) -> name c
+    (MFunc _ _ f) -> name f
+    (MVar _ v) -> name v
 
-instance HasName Variable where
+instance HasName Var where
   name = name . typedName
 
 instance HasName TypedName where
@@ -50,39 +50,44 @@ instance HasMembers Class where
 
 
 --------------------------------------------------------------------------------------------------------------------------------
-class HasAccessMod a where
-  accessMod :: a -> AccessMod
+class HasAccess a where
+  accessMod :: a -> Access
 
-instance HasAccessMod Member where
+instance HasAccess Member where
   accessMod member = case member of
-    (MemberClass a _) -> a
-    (MemberFunction a _ _) -> a
-    (MemberVariable a _) -> a
+    (MClass a _) -> a
+    (MFunc a _ _) -> a
+    (MVar a _) -> a
 
 
 --------------------------------------------------------------------------------------------------------------------------------
-class HasMutability a where
-  mutability :: a -> Mutability
+class HasMut a where
+  mutability :: a -> Mut
 
-instance HasMutability Type where
+instance HasMut Type where
   mutability t = case t of
-    (TypeUser m _) -> m
-    TypeFunction {} -> Immutable
-    (TypeInferred m) -> m
-    (TypeTempRef m _) -> m
-    (TypePersRef m _) -> m
-    (TypeOption m _) -> m
-    TypeZeroPlus {} -> Immutable
-    TypeOnePlus  {} -> Immutable
-    (TypePrim m _) -> m
+    (TUser m _) -> m
+    TFunc {} -> Immutable
+    (TInferred m) -> m
+    (TTempRef m _) -> m
+    (TPersRef m _) -> m
+    (TOption m _) -> m
+    TZeroPlus {} -> Immutable
+    TOnePlus  {} -> Immutable
+    (TBln m) -> m
+    (TChr m) -> m
+    (TFlt m) -> m
+    (TInt m) -> m
+    (TNat m) -> m
+    (TStr m) -> m
 
 
 --------------------------------------------------------------------------------------------------------------------------------
 class HasTypedName a where
   typedName :: a -> TypedName
 
-instance HasTypedName Variable where
-  typedName (Variable t _) = t
+instance HasTypedName Var where
+  typedName (Var t _) = t
 
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -93,9 +98,9 @@ instance (HasAnonSig a) => HasExplicitType a where
   explicitType = explicitType . anonSig
 
 instance {-#OVERLAPPING#-} HasExplicitType AnonSig where
-  explicitType a = TypeFunction $ FunctionType (purity a) (paramTypes a) (returnType a)
+  explicitType a = TFunc (purity a) (paramTypes a) (returnType a)
 
-instance  {-#OVERLAPPING#-} HasExplicitType Variable where
+instance  {-#OVERLAPPING#-} HasExplicitType Var where
   explicitType = explicitType . typedName
 
 instance  {-#OVERLAPPING#-} HasExplicitType TypedName where
@@ -103,35 +108,35 @@ instance  {-#OVERLAPPING#-} HasExplicitType TypedName where
 
 
 --------------------------------------------------------------------------------------------------------------------------------
-class HasFunctionType a where
-  functionType :: a -> FunctionType
+-- class HasFunctionType a where
+--   functionType :: a -> FuncType
 
-instance (HasAnonSig a) => HasFunctionType a where
-  functionType = functionType . anonSig
+-- instance (HasAnonSig a) => HasFunctionType a where
+--   functionType = functionType . anonSig
 
-instance {-#OVERLAPPING#-} HasFunctionType AnonSig where
-  functionType a = FunctionType (purity a) (paramTypes a) (returnType a)
+-- instance {-#OVERLAPPING#-} HasFunctionType AnonSig where
+--   functionType a = FuncType (purity a) (paramTypes a) (returnType a)
 
 
 --------------------------------------------------------------------------------------------------------------------------------
 class HasSignature a where
-  signature :: a -> Signature
+  signature :: a -> Sig
 
-instance HasSignature Function where
-  signature (Function s _) = s
+instance HasSignature Func where
+  signature (Func s _) = s
 
--- Constructor
+-- Cons
 
 
 --------------------------------------------------------------------------------------------------------------------------------
 class HasAnonSig a where
   anonSig :: a -> AnonSig
 
-instance HasAnonSig Function where
+instance HasAnonSig Func where
   anonSig = anonSig . signature
 
-instance HasAnonSig Signature where
-  anonSig (Signature _ a) = a
+instance HasAnonSig Sig where
+  anonSig (Sig _ a) = a
 
 instance HasAnonSig Lambda where
   anonSig (Lambda a _) = a
@@ -185,8 +190,8 @@ instance {-#OVERLAPPING#-} HasReturnType AnonSig where
 class HasBlock a where
   block :: a -> Block
 
-instance HasBlock Function where
-  block (Function _ b) = b
+instance HasBlock Func where
+  block (Func _ b) = b
 
 instance HasBlock Lambda where
   block (Lambda _ b) = b

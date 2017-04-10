@@ -87,12 +87,12 @@ units
 
 unit
   : namespace       { $1 }
-  | class           { UnitClass $1 }
-  | function        { UnitFunction $1 }
-  | variable        { UnitVariable $1 }
+  | class           { UClass $1 }
+  | function        { UFunc $1 }
+  | variable        { UVar $1 }
 
 namespace
-  : tknNamespace name indentedUnits { UnitNamespace $2 $3 }
+  : tknNamespace name indentedUnits { UNamespace $2 $3 }
 
 class
   : tknClass typename indentedMembers  { Class $2 $3 } 
@@ -106,10 +106,10 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod class                                   { MemberClass $1 $2 }
-  | accessMod mutability function                     { MemberFunction $1 $2 $3 }
-  | accessMod purity This parameterList indentedBlock         { MemberConstructor $1 $2 $4 $5 }
-  | accessMod variable                                { MemberVariable $1 $2}
+  : accessMod class                                   { MClass $1 $2 }
+  | accessMod mut function                            { MFunc $1 $2 $3 }
+  | accessMod purity This parameterList indentedBlock { MCons $1 $2 $4 $5 }
+  | accessMod variable                                { MVar $1 $2}
 
 accessMod
   : pub   { Pub }  
@@ -125,25 +125,34 @@ typesCS
   | type "," typesCS  { $1 : $3 }
 
 type
-  : mutability typename         { TypeUser $1 $2 }
-  | purity paramTypes "->" type { TypeFunction $ FunctionType $1 $2 $4 }
-  | mutability "$"              { TypeInferred $1 }
-  | mutability "^" type         { TypeTempRef $1 $3 }
-  | mutability "&" type         { TypePersRef $1 $3 }
-  | mutability "?" type         { TypeOption $1 $3 }
-  | "*" type                    { TypeZeroPlus $2 }
-  | "+" type                    { TypeOnePlus $2 }
-  | mutability prim             { TypePrim $1 $2 }
+  : mut typename                { TUser $1 $2 }
+  | purity paramTypes "->" type { TFunc $1 $2 $4 }
+  | mut "$"                     { TInferred $1 }
+  | mut "^" type                { TTempRef $1 $3 }
+  | mut "&" type                { TPersRef $1 $3 }
+  | mut "?" type                { TOption $1 $3 }
+  | "*" type                    { TZeroPlus $2 }
+  | "+" type                    { TOnePlus $2 }
 
-prim
-  : Bln { PrimBln }
-  | Chr { PrimChr }
-  | Flt { PrimFlt }
-  | Int { PrimInt }
-  | Nat { PrimNat }
-  | Str { PrimStr } 
+  | mut Bln                     { TBln $1 }
+  | mut Chr                     { TChr $1 }
+  | mut Flt                     { TFlt $1 }
+  | mut Int                     { TInt $1 }
+  | mut Nat                     { TNat $1 }
+  | mut Str                     { TStr $1 }
+  
 
-mutability
+  -- | mutability prim             { TPrim $1 $2 }
+
+-- prim
+  -- : Bln { PrimBln }
+  -- | Chr { PrimChr }
+  -- | Flt { PrimFlt }
+  -- | Int { PrimInt }
+  -- | Nat { PrimNat }
+  -- | Str { PrimStr } 
+
+mut
   : {- none -} { Immutable }
   | "~"        { Mutable }
 
@@ -168,28 +177,28 @@ inlineBlock
   | stmt ";" inlineBlock  { $1 : $3 }
 
 nestedBlock
-  : function        { StmtFunction $1 }
-  | ifChain         { StmtIf $1 }
+  : function        { SFunc $1 }
+  | ifChain         { SIf $1 }
 
 stmt
-  : lexpr "=" expr  { StmtAssign $1 $3 }
-  | variable        { StmtVariable $1 }
-  -- | apply           { StmtApply $1 }
-  | expr            { StmtExpr $1 }
+  : lexpr "=" expr  { SAssign $1 $3 }
+  | variable        { SVar $1 }
+  -- | apply           { SApply $1 }
+  | expr            { SExpr $1 }
 
 lexpr
-  : apply           { LexprApply $1 }
-  | access          { LexprAccess $1 }
-  | name            { LexprName $1 }
+  : apply           { LApply $1 }
+  | select          { LSelect $1 }
+  | name            { LName $1 }
 
 variable
-  : typedName "=" expr { Variable $1 $3 }
+  : typedName "=" expr { Var $1 $3 }
 
 function
-  : signature "=>" block { Function $1 $3 }
+  : signature "=>" block { Func $1 $3 }
 
 signature
-  : purity name parameterList "->" type { Signature $2 $ AnonSig $1 $3 $5 }
+  : purity name parameterList "->" type { Sig $2 $ AnonSig $1 $3 $5 }
 
 purity
   : {- none -} { Pure }
@@ -214,16 +223,27 @@ exprsCS
   | expr "," exprsCS  { $1 : $3 } -- also causing conficts. Hmm...
 
 expr
-  : ifExpr    { ExprIf $1 }
-  | lambda    { ExprLambda $1 }
+  : expr if shallowExpr else expr         { EIf $1 $3 $5 }
+  | lambda      { ELambda $1 }
   | shallowExpr { $1 }
 
+ 
+-- lit
+
 shallowExpr
-  : apply     { ExprApply $1 }
-  | construct { ExprConstruct $1 }
-  | access    { ExprAccess $1 }
-  | name      { ExprName $1 }
-  | lit       { ExprLit $1 }
+  : apply     { EApply $1 }
+  | construct { ECons $1 }
+  | select    { ESelect $1 }
+  | name      { EName $1 }
+  | op        { $1 }
+  -- | lit       { ELit $1 }
+
+  | litBln {ELitBln $1}
+  | litChr {ELitChr $1}
+  | litFlt {ELitFlt $1}
+  | litInt {ELitInt $1}
+  | litStr {ELitStr $1}
+
 
 ifChain
   : if condBlock                    { IfChainIf $2 IfChainNone }
@@ -234,8 +254,8 @@ condBlock
   : expr indentedBlock  { CondBlock $1 $2 } -- Would be nice to have one-line ifs
 
 
-ifExpr
-  : expr if shallowExpr else expr { IfExpr $1 $3 $5 }
+-- ifExpr
+  -- : expr if shallowExpr else expr { $1 $3 $5 }
   -- | expr if expr else
 
 lambda
@@ -243,24 +263,31 @@ lambda
   -- : purity parameterList optionRet "=>"  block { Lambda (AnonSig $1 $2 $3) $5 }
 
 optionRet
-  : {- none -} { TypeInferred Mutable }
+  : {- none -} { TInferred Mutable }
   | "->" type  { $2 }
 
 apply
   : expr "(" exprsCS ")"  { Apply $1 $3 }
 
 construct
-  : typename "(" exprsCS ")" { Construct $1 $3 }
+  : typename "(" exprsCS ")" { Cons $1 $3 }
 
-access
-  : expr "." name { Access $1 $3 }
+select
+  : expr "." name { Select $1 $3 }
 
-lit
-  : litBln {LitBln $1}
-  | litChr {LitChr $1}
-  | litFlt {LitFlt $1}
-  | litInt {LitInt $1}
-  | litStr {LitStr $1}
+op
+  : expr operator expr { EApply $ Apply (ESelect $ Select $1 $2) [$3] }
+
+operator
+  : "+" { "+" }
+  | "-" { "-" }
+
+-- lit
+--   : litBln {LBln $1}
+--   | litChr {LChr $1}
+--   | litFlt {LFlt $1}
+--   | litInt {LInt $1}
+--   | litStr {LStr $1}
 
 litBln
   : true  {True}

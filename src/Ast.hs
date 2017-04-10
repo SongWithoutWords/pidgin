@@ -7,10 +7,10 @@ import Tokens()
 type Ast = [Unit]
 
 data Unit
-  = UnitNamespace Name [Unit]
-  | UnitClass Class
-  | UnitFunction Function
-  | UnitVariable Variable -- May want to disallow global mutable variables
+  = UNamespace Name [Unit]
+  | UClass Class
+  | UFunc Func
+  | UVar Var -- May want to disallow global mutable variables
   deriving(Eq, Show)
 
 data Class
@@ -18,44 +18,38 @@ data Class
   deriving(Eq, Show)
 
 data Member
-  = MemberClass AccessMod Class
-  | MemberFunction AccessMod Mutability Function
-  | MemberConstructor AccessMod Purity [TypedName] Block
-  | MemberVariable AccessMod Variable
+  = MClass Access Class
+  | MFunc Access Mut Func
+  | MCons Access Purity [TypedName] Block
+  | MVar Access Var
   deriving(Eq, Show)
 
-data AccessMod
+data Access
   = Pub
   | Pro
   | Pri
   deriving(Eq, Show)
 
 data Type
-  = TypeUser Mutability Typename
-  | TypeFunction FunctionType
-  | TypeInferred Mutability
-  | TypeTempRef Mutability Type
-  | TypePersRef Mutability Type
-  | TypeOption Mutability Type
-  | TypeZeroPlus Type
-  | TypeOnePlus Type
-  | TypePrim Mutability Prim
+  = TUser Mut Typename
+  | TFunc Purity [Type] Type
+  | TInferred Mut
+  | TTempRef Mut Type
+  | TPersRef Mut Type
+  | TOption Mut Type
+  | TZeroPlus Type
+  | TOnePlus Type
+
+  | TBln Mut
+  | TChr Mut
+  | TFlt Mut
+  | TInt Mut
+  | TNat Mut
+  | TStr Mut
+
   deriving(Eq, Show)
 
-data FunctionType
-  = FunctionType Purity [Type] Type
-  deriving(Eq, Show)
-
-data Prim
-  = PrimBln
-  | PrimChr
-  | PrimFlt
-  | PrimInt
-  | PrimNat
-  | PrimStr
-  deriving(Eq, Show)
-
-data Mutability
+data Mut
   = Mutable     -- Mutable in present scope
   | Immutable   -- Not mutable in present scope
   -- Constant   -- Not mutable in any scope - planned
@@ -67,24 +61,23 @@ type Typename = String
 type Block = [Stmt]
 
 data Stmt
-  = StmtAssign Lexpr Expr
-  | StmtVariable Variable
-  | StmtFunction Function
-  | StmtIf IfChain
-  | StmtApply Apply
-  | StmtExpr Expr
+  = SAssign Lexpr Expr
+  | SVar Var
+  | SFunc Func
+  | SIf IfChain
+  | SExpr Expr
   deriving(Eq, Show)
 
-data Variable
-  = Variable TypedName Expr
+data Var
+  = Var TypedName Expr
   deriving(Eq, Show)
 
-data Function
-  = Function Signature Block
+data Func
+  = Func Sig Block
   deriving(Eq, Show)
 
-data Signature
-  = Signature Name AnonSig
+data Sig
+  = Sig Name AnonSig
   deriving(Eq, Show)
 
 data Purity
@@ -95,23 +88,25 @@ data Purity
 
 -- Expressions that can appear on the left side of an assignment
 data Lexpr
-  = LexprApply Apply
-  | LexprAccess Access
-  | LexprName Name
+  = LApply Apply
+  | LSelect Select
+  | LName Name
   deriving(Eq, Show)
 
 data Expr
-  = ExprIf IfExpr -- Expr Expr Expr-- IfChain
-  | ExprLambda Lambda
-  | ExprApply Apply
-  | ExprConstruct Construct
-  | ExprAccess Access
-  | ExprName Name
-  | ExprLit Lit
-  deriving(Eq, Show)
+  = EIf Expr {- if -} Expr {- else -} Expr
+  | ELambda Lambda
+  | EApply Apply
+  | ECons Cons
+  | ESelect Select
+  | EName Name
 
-data IfExpr
-  = IfExpr {iff :: Expr, cond :: Expr, els :: Expr}
+  | ELitBln Bool
+  | ELitChr Char
+  | ELitFlt Float
+  | ELitInt Int
+  | ELitStr String
+
   deriving(Eq, Show)
 
 data IfChain
@@ -141,20 +136,13 @@ data Apply
   = Apply Expr [Expr]
   deriving(Eq, Show)
 
-data Construct
-  = Construct Typename [Expr]
+data Cons
+  = Cons Typename [Expr]
   deriving(Eq, Show)
 
-data Access
-  = Access Expr Name
+data Select
+  = Select Expr Name
   deriving(Eq, Show)
 
 type Name = String
 
-data Lit
-  = LitBln Bool
-  | LitChr Char
-  | LitFlt Float
-  | LitInt Int
-  | LitStr String
-  deriving(Eq, Show)
