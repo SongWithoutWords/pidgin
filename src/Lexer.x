@@ -46,6 +46,7 @@ Chr                      { appendTokenAction T.TypeChr }
 Flt                      { appendTokenAction T.TypeFlt }
 Int                      { appendTokenAction T.TypeInt }
 Nat                      { appendTokenAction T.TypeNat }
+None                     { appendTokenAction T.TypeNone }
 Str                      { appendTokenAction T.TypeStr }
 This                     { appendTokenAction T.TypeThis }
 

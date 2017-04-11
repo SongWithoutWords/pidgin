@@ -45,6 +45,7 @@ data Type
   | TFlt Mut
   | TInt Mut
   | TNat Mut
+  | TNone
   | TStr Mut
 
   deriving(Eq, Show)

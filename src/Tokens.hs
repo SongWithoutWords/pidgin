@@ -13,6 +13,7 @@ data Token
   | TypeFlt
   | TypeInt
   | TypeNat
+  | TypeNone
   | TypeStr
   | TypeThis
 

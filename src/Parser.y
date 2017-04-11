@@ -20,6 +20,7 @@ import qualified Tokens as T
   Flt           { T.TypeFlt }
   Int           { T.TypeInt }
   Nat           { T.TypeNat }
+  None          { T.TypeNone }
   Str           { T.TypeStr }
   This          { T.TypeThis }
 
@@ -139,6 +140,7 @@ type
   | mut Flt                     { TFlt $1 }
   | mut Int                     { TInt $1 }
   | mut Nat                     { TNat $1 }
+  | None                        { TNone }
   | mut Str                     { TStr $1 }
   
 
