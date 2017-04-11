@@ -88,8 +88,8 @@ pri                      { appendTokenAction T.Pri }
 
 "<"                      { appendTokenAction T.Lesser }
 ">"                      { appendTokenAction T.Greater }
-"<="                     { appendTokenAction T.LesserOrEq }
-">="                     { appendTokenAction T.GreaterOrEq }
+"<="                     { appendTokenAction T.LesserEq }
+">="                     { appendTokenAction T.GreaterEq }
 
 "->"                     { appendTokenAction T.ThinArrow }
 "=>"                     { appendTokenAction T.FatArrow }

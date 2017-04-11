@@ -62,7 +62,7 @@ type Typename = String
 type Block = [Stmt]
 
 data Stmt
-  = SAssign Lexpr Expr
+  = SAssign LExpr Expr
   | SVar Var
   | SFunc Func
   | SIf IfChain
@@ -88,7 +88,7 @@ data Purity
   deriving(Eq, Show)
 
 -- Expressions that can appear on the left side of an assignment
-data Lexpr
+data LExpr
   = LApply Apply
   | LSelect Select
   | LName Name

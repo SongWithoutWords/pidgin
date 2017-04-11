@@ -60,6 +60,11 @@ import qualified Tokens as T
   "."           { T.Dot }
   "?"           { T.QMark }
 
+  "<"           { T.Lesser }
+  ">"           { T.Greater }
+  "<="          { T.LesserEq }
+  ">="          { T.GreaterEq}
+
   "->"          { T.ThinArrow }
   "=>"          { T.FatArrow }
 
@@ -68,19 +73,23 @@ import qualified Tokens as T
   litInt        { T.LitInt $$ }
   litStr        { T.LitStr $$ }
 
-  name     { T.Name $$ }
-  typename { T.Typename $$ }
+  name          { T.Name $$ }
+  typename      { T.Typename $$ }
 
 %%
 
 -- If performance becomes a concern will need to parse sequences another way
 -- (see Happy docs)
 
-root : units { $1 }
+root : unitsOrNone { $1 }
 
 indentedUnits
   : {- none -}    { [] }
   | ind units ded { $2 } 
+
+unitsOrNone
+  : {- none -}    { [] }
+  | units         { $1 }
 
 units
   : unit            { [$1] }
@@ -280,9 +289,15 @@ select
 op
   : expr operator expr { EApply $ Apply (ESelect $ Select $1 $2) [$3] }
 
-operator
-  : "+" { "+" }
-  | "-" { "-" }
+-- This is ridiculous, come up with some rules in the lexer if this is how it's going to be
+operator 
+  : "+"   { "+" }
+  | "-"   { "-" }
+  | "*"   { "*" }
+  | ">"   { ">" }
+  | "<"   { "<" }
+  | ">="  { ">=" }
+  | "<="  { "<=" }
 
 -- lit
 --   : litBln {LBln $1}

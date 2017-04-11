@@ -55,8 +55,8 @@ data Token
 
   | Lesser
   | Greater
-  | LesserOrEq
-  | GreaterOrEq
+  | LesserEq
+  | GreaterEq
 
   | ThinArrow
   | FatArrow
