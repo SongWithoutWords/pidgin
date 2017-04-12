@@ -87,7 +87,7 @@ testCases =
             \    $ w = Widget(width, height)\n\
             \    if w.exists\n\
             \        w.@draw()\n"
-    , tks = [ T.Name "drawWidget", T.LParen, T.TypeNat, T.Name "width", T.Comma, T.TypeNat, T.Name "height", T.RParen, T.ThinArrow, T.TypeNone
+    , tks = [ T.Name "drawWidget", T.LParen, T.TypeNat, T.Name "width", T.Comma, T.TypeNat, T.Name "height", T.RParen, T.ThinArrow, T.TypeNone, T.FatArrow
             , T.Indent
               , T.Dollar, T.Name "w", T.Equal, T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
               , T.Eol
