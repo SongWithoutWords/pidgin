@@ -45,7 +45,7 @@ testCases =
     { nme = "def negate inline"
     , src = "negate(Bln b) -> Bln => false if b else true"
     , tks = [T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow, T.False, T.If, T.Name "b", T.Else, T.True]
-    , ast = [UFunc $ Func (Sig "negate" $ AnonSig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable)) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
+    , ast = [UFunc $ Func "negate" $ Lambda (Sig [TypedName (TBln Immutable) "b"] (TBln Immutable)) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
     }
 
   , TestCase
@@ -59,7 +59,7 @@ testCases =
             , T.False, T.If, T.Name "b", T.Else, T.True
             , T.Dedent]
 
-    , ast = [UFunc $ Func (Sig "negate" $ AnonSig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
+    , ast = [UFunc $ Func "negate" $ Lambda (Sig [TypedName (TBln Immutable) "b"] $ TBln Immutable) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
     }
 
   , TestCase
@@ -73,7 +73,7 @@ testCases =
             , T.LitInt 1, T.If, T.Name "n", T.LesserEq, T.LitInt 0, T.Else, T.Name "n", T.Star, T.Name "factorial", T.LParen, T.Name "n", T.Minus, T.LitInt 1, T.RParen
             , T.Dedent]
 
-    , ast = [ UFunc $ Func (Sig "factorial" $ AnonSig Pure [TypedName (TNat Immutable) "n"] $ TNat Immutable)
+    , ast = [ UFunc $ Func "factorial" $ Lambda (Sig [TypedName (TNat Immutable) "n"] $ TNat Immutable)
               [ SExpr $ EIf
                 (ELitInt 1)
                 (EApply $ Apply (ESelect $ Select (EName "n") "<=") [ELitInt 0])
@@ -83,17 +83,21 @@ testCases =
 
   , TestCase
     { nme = "draw widget"
-    , src = "drawWidget(Nat width, Nat height) -> None =>\n\
+    , src = "drawWidget(~@, Nat width, Nat height) -> None =>\n\
             \    $ w = Widget(width, height)\n\
             \    if w.exists\n\
-            \        w.@draw()\n"
-    , tks = [ T.Name "drawWidget", T.LParen, T.TypeNat, T.Name "width", T.Comma, T.TypeNat, T.Name "height", T.RParen, T.ThinArrow, T.TypeNone, T.FatArrow
+            \        w.draw(~@)\n"
+    , tks = [ T.Name "drawWidget"
+            , T.LParen, T.Tilde, T.At
+            , T.Comma, T.TypeNat, T.Name "width"
+            , T.Comma, T.TypeNat, T.Name "height"
+            , T.RParen, T.ThinArrow, T.TypeNone, T.FatArrow
             , T.Indent
               , T.Dollar, T.Name "w", T.Equal, T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
               , T.Eol
               , T.If, T.Name "w", T.Dot, T.Name "exists"
               , T.Indent
-                , T.Name "w", T.Dot, T.At, T.Name "draw", T.LParen, T.RParen
+                , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
               , T.Dedent
             , T.Dedent]
     , ast = []

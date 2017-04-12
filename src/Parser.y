@@ -116,10 +116,10 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod class                                   { MClass $1 $2 }
-  | accessMod mut function                            { MFunc $1 $2 $3 }
-  | accessMod purity This parameterList indentedBlock { MCons $1 $2 $4 $5 }
-  | accessMod variable                                { MVar $1 $2}
+  : accessMod class                             { MClass $1 $2 }
+  | accessMod mut function                      { MFunc $1 $2 $3 }
+  | accessMod This lambda                       { MCons $1 $3 }
+  | accessMod variable                          { MVar $1 $2}
 
 accessMod
   : pub   { Pub }  
@@ -127,7 +127,7 @@ accessMod
   | pri   { Pri }
 
 paramTypes
-  : "("")"          { [] } -- '()' must be implemented differently than for parameters/expressions to avoid reduce/reduce conflict
+  : "("")"          { [] } -- '()' must be implemented differently than for application parameters to avoid reduce/reduce conflict
   | "(" typesCS ")" { $2 }
 
 typesCS
@@ -136,7 +136,7 @@ typesCS
 
 type
   : mut typename                { TUser $1 $2 }
-  | purity paramTypes "->" type { TFunc $1 $2 $4 }
+  | paramTypes "->" type        { TFunc $1 $3 }
   | mut "$"                     { TInferred $1 }
   | mut "^" type                { TTempRef $1 $3 }
   | mut "&" type                { TPersRef $1 $3 }
@@ -151,22 +151,10 @@ type
   | mut Nat                     { TNat $1 }
   | None                        { TNone }
   | mut Str                     { TStr $1 }
-  
-
-  -- | mutability prim             { TPrim $1 $2 }
-
--- prim
-  -- : Bln { PrimBln }
-  -- | Chr { PrimChr }
-  -- | Flt { PrimFlt }
-  -- | Int { PrimInt }
-  -- | Nat { PrimNat }
-  -- | Str { PrimStr } 
 
 mut
   : {- none -} { Immutable }
   | "~"        { Mutable }
-
 
 block
   : indentedBlock { $1 }
@@ -176,12 +164,12 @@ indentedBlock
   : ind subBlocks ded { $2 }
 
 subBlocks
-  : subBlock                  { $1 }
-  | subBlock eol subBlocks    { $1 ++ $3 }
+  : subBlock                { $1 }
+  | subBlock eol subBlocks  { $1 ++ $3 }
 
 subBlock
-  : inlineBlock                 { $1 }
-  | nestedBlock                 { [$1] }
+  : inlineBlock { $1 }
+  | nestedBlock { [$1] }
 
 inlineBlock
   : stmt                  { [$1] }
@@ -206,24 +194,31 @@ variable
   : typedName "=" expr { Var $1 $3 }
 
 function
-  : signature "=>" block { Func $1 $3 }
+  : name lambda { Func $1 $2 }
 
+lambda
+  -- Use of block here (instead of indentedBlock) causes many conflicts, likely due to ambigueties surrounding nested one line lambdas.
+  : signature "=>" block { Lambda $1 $3 }
+ 
 signature
-  : purity name parameterList "->" type { Sig $2 $ AnonSig $1 $3 $5 }
+  : namedParamList "->" type { Sig $1 $3  }
 
-purity
-  : {- none -} { Pure }
-  | "@"        { Impure }
-  | "~""@"     { SideEffecting }
+optionRet
+  : {- none -} { TInferred Mutable }
+  | "->" type  { $2 }
 
+namedParamList
+  : "(" namedParams ")"  { $2 }
 
-parameterList
-  : "(" parametersCS ")"  { $2 }
-
-parametersCS
+namedParams
   : {- none -}                  { [] }
-  | typedName                   { [$1] }
-  | typedName "," parametersCS  { $1 : $3 }
+  | namedParam                  { [$1] }
+  | namedParam "," namedParams  { $1 : $3 }
+
+namedParam
+  -- : "@"         {  }
+  -- | "~""@"      {  }
+  : typedName   { $1 }
 
 typedName
   : type name { TypedName $1 $2 }
@@ -231,15 +226,12 @@ typedName
 exprsCS
   : {- none -}        { [] }
   | expr              { [$1]}
-  | expr "," exprsCS  { $1 : $3 } -- also causing conficts. Hmm...
+  | expr "," exprsCS  { $1 : $3 }
 
 expr
   : expr if shallowExpr else expr         { EIf $1 $3 $5 }
   | lambda      { ELambda $1 }
   | shallowExpr { $1 }
-
- 
--- lit
 
 shallowExpr
   : apply     { EApply $1 }
@@ -247,14 +239,14 @@ shallowExpr
   | select    { ESelect $1 }
   | name      { EName $1 }
   | op        { $1 }
-  -- | lit       { ELit $1 }
 
-  | litBln {ELitBln $1}
-  | litChr {ELitChr $1}
-  | litFlt {ELitFlt $1}
-  | litInt {ELitInt $1}
-  | litStr {ELitStr $1}
+  | litBln { ELitBln $1 }
+  | litChr { ELitChr $1 }
+  | litFlt { ELitFlt $1 }
+  | litInt { ELitInt $1 }
+  | litStr { ELitStr $1 }
 
+  | "@"    { EWorld  }
 
 ifChain
   : if condBlock                    { IfChainIf $2 IfChainNone }
@@ -262,23 +254,10 @@ ifChain
   | if condBlock else indentedBlock { IfChainIf $2 $ IfChainElse $4 }
 
 condBlock
-  : expr indentedBlock  { CondBlock $1 $2 } -- Would be nice to have one-line ifs
-
-
--- ifExpr
-  -- : expr if shallowExpr else expr { $1 $3 $5 }
-  -- | expr if expr else
-
-lambda
-  : purity parameterList optionRet "=>"  indentedBlock { Lambda (AnonSig $1 $2 $3) $5 }
-  -- : purity parameterList optionRet "=>"  block { Lambda (AnonSig $1 $2 $3) $5 }
-
-optionRet
-  : {- none -} { TInferred Mutable }
-  | "->" type  { $2 }
+  : expr indentedBlock { CondBlock $1 $2 }
 
 apply
-  : expr "(" exprsCS ")"  { Apply $1 $3 }
+  : expr "(" exprsCS ")" { Apply $1 $3 }
 
 construct
   : typename "(" exprsCS ")" { Cons $1 $3 }
@@ -298,13 +277,6 @@ operator
   | "<"   { "<" }
   | ">="  { ">=" }
   | "<="  { "<=" }
-
--- lit
---   : litBln {LBln $1}
---   | litChr {LChr $1}
---   | litFlt {LFlt $1}
---   | litInt {LInt $1}
---   | litStr {LStr $1}
 
 litBln
   : true  {True}

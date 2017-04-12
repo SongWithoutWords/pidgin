@@ -20,7 +20,7 @@ data Class
 data Member
   = MClass Access Class
   | MFunc Access Mut Func
-  | MCons Access Purity [TypedName] Block
+  | MCons Access Lambda
   | MVar Access Var
   deriving(Eq, Show)
 
@@ -32,13 +32,15 @@ data Access
 
 data Type
   = TUser Mut Typename
-  | TFunc Purity [Type] Type
+  | TFunc [Type] Type
   | TInferred Mut
   | TTempRef Mut Type
   | TPersRef Mut Type
   | TOption Mut Type
   | TZeroPlus Type
   | TOnePlus Type
+
+  | TWorld Mut
 
   | TBln Mut
   | TChr Mut
@@ -74,17 +76,19 @@ data Var
   deriving(Eq, Show)
 
 data Func
-  = Func Sig Block
+  = Func Name Lambda
+  deriving(Eq, Show)
+
+data Lambda
+  = Lambda Sig Block
   deriving(Eq, Show)
 
 data Sig
-  = Sig Name AnonSig
+  = Sig [TypedName] Type
   deriving(Eq, Show)
 
-data Purity
-  = Pure          -- A function that operates independently of global state
-  | Impure        -- A function that may read global state
-  | SideEffecting -- A function that may read or write global state
+data TypedName
+  = TypedName Type Name
   deriving(Eq, Show)
 
 -- Expressions that can appear on the left side of an assignment
@@ -102,6 +106,12 @@ data Expr
   | ESelect Select
   | EName Name
 
+  | EWorld
+
+  -- | LExpr LExpr -- Consider folding LExprs into expressions, and removing apply, cons, select etc.
+
+  -- Consider adding EOp, to avoid some of the ast horror in TestCases.hs
+
   | ELitBln Bool
   | ELitChr Char
   | ELitFlt Float
@@ -118,19 +128,6 @@ data IfChain
 
 data CondBlock
   = CondBlock Expr Block
-  deriving(Eq, Show)
-
-data Lambda
-  = Lambda AnonSig Block
-  deriving(Eq, Show)
-
--- Anonymous function signature
-data AnonSig
-  = AnonSig Purity [TypedName] Type
-  deriving(Eq, Show)
-
-data TypedName
-  = TypedName Type Name
   deriving(Eq, Show)
 
 data Apply

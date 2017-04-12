@@ -23,10 +23,10 @@ instance HasName Class where
   name (Class n _) = n
 
 instance HasName Func where
-  name (Func s _) = name s
+  name (Func n _) = n
 
-instance HasName Sig where
-  name (Sig n _) = n
+-- instance HasName Sig where
+  -- name (Sig n _) = n
 
 instance HasName Member where
   name member = case member of
@@ -94,11 +94,11 @@ instance HasTypedName Var where
 class HasExplicitType a where
   explicitType :: a -> Type
 
-instance (HasAnonSig a) => HasExplicitType a where
-  explicitType = explicitType . anonSig
+instance HasSig a => HasExplicitType a where
+  explicitType = explicitType . sig
 
-instance {-#OVERLAPPING#-} HasExplicitType AnonSig where
-  explicitType a = TFunc (purity a) (paramTypes a) (returnType a)
+instance {-#OVERLAPPING#-} HasExplicitType Sig where
+  explicitType a = TFunc (paramTypes a) (returnType a)
 
 instance  {-#OVERLAPPING#-} HasExplicitType Var where
   explicitType = explicitType . typedName
@@ -119,59 +119,48 @@ instance  {-#OVERLAPPING#-} HasExplicitType TypedName where
 
 
 --------------------------------------------------------------------------------------------------------------------------------
-class HasSignature a where
-  signature :: a -> Sig
+-- class HasSignature a where
+--   signature :: a -> Sig
 
-instance HasSignature Func where
-  signature (Func s _) = s
+-- instance HasSignature Func where
+--   signature (Func s _) = s
 
 -- Cons
 
 
 --------------------------------------------------------------------------------------------------------------------------------
-class HasAnonSig a where
-  anonSig :: a -> AnonSig
+class HasSig a where
+  sig :: a -> Sig
 
-instance HasAnonSig Func where
-  anonSig = anonSig . signature
+instance HasSig Func where
+  sig (Func _ l) = sig l
+  -- sig = Sig . signature
 
-instance HasAnonSig Sig where
-  anonSig (Sig _ a) = a
+-- instance HasSig Sig where
+  -- sig (Sig _ a) = a
 
-instance HasAnonSig Lambda where
-  anonSig (Lambda a _) = a
-
-
---------------------------------------------------------------------------------------------------------------------------------
-class HasPurity a where
-  purity :: a -> Purity
-
-instance (HasAnonSig a) => HasPurity a where
-  purity = purity . anonSig
-
-instance {-#OVERLAPPING#-} HasPurity AnonSig where
-  purity (AnonSig p _ _) = p
-
+instance HasSig Lambda where
+  sig (Lambda s _) = s
 
 --------------------------------------------------------------------------------------------------------------------------------
 class HasNamedParams a where
   namedParams :: a -> [TypedName]
 
-instance (HasAnonSig a) => HasNamedParams a where
-  namedParams = namedParams . anonSig
+instance HasSig a => HasNamedParams a where
+  namedParams = namedParams . sig
 
-instance {-#overlapping#-} HasNamedParams AnonSig where
-  namedParams (AnonSig _ args _) = args
+instance {-#overlapping#-} HasNamedParams Sig where
+  namedParams (Sig args _) = args
 
 
 --------------------------------------------------------------------------------------------------------------------------------
 class HasParamTypes a where
   paramTypes :: a -> [Type]
 
-instance (HasAnonSig a) => HasParamTypes a where
-  paramTypes = paramTypes . anonSig
+instance HasSig a => HasParamTypes a where
+  paramTypes = paramTypes . sig
 
-instance {-#overlapping#-} HasParamTypes AnonSig where
+instance {-#overlapping#-} HasParamTypes Sig where
   paramTypes a = map explicitType $ namedParams a
 
 
@@ -179,11 +168,11 @@ instance {-#overlapping#-} HasParamTypes AnonSig where
 class HasReturnType a where
   returnType :: a -> Type
 
-instance (HasAnonSig a) => HasReturnType a where
-  returnType = returnType . anonSig
+instance HasSig a => HasReturnType a where
+  returnType = returnType . sig
 
-instance {-#OVERLAPPING#-} HasReturnType AnonSig where
-  returnType (AnonSig _ _ t) = t
+instance {-#OVERLAPPING#-} HasReturnType Sig where
+  returnType (Sig _ t) = t
 
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -191,7 +180,7 @@ class HasBlock a where
   block :: a -> Block
 
 instance HasBlock Func where
-  block (Func _ b) = b
+  block (Func _ l) = block l
 
 instance HasBlock Lambda where
   block (Lambda _ b) = b
