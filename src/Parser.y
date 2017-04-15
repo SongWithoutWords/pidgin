@@ -126,17 +126,85 @@ accessMod
   | pro   { Pro }
   | pri   { Pri }
 
-paramTypes
-  : "("")"          { [] } -- '()' must be implemented differently than for application parameters to avoid reduce/reduce conflict
-  | "(" typesCS ")" { $2 }
+function
+  : name lambda { Func $1 $2 }
 
-typesCS
-  : type              { [$1] }
-  | type "," typesCS  { $1 : $3 }
+lambda
+  -- Use of block here (instead of indentedBlock) causes many conflicts, likely due to ambiguities surrounding nested one line lambdas.
+  : signature "=>" block { Lambda $1 $3 }
+ 
+-- signature V1
+-- signature
+--   : "(" purityAndTypedNames ")" retType { Sig (fst $2) (snd $2) $4}
+
+-- purityAndTypedNames
+--   : {- none -}              { (Pure, []) }
+--   | typedNames              { (Pure, $1) }
+--   | purity                  { ($1, []) }
+--   | purity "," typedNames   { ($1, $3) }
+
+-- signature V2
+signature
+  : purityAndTypedNames retType { Sig (fst $1) (snd $1) $2}
+
+purityAndTypedNames
+  : "(" ")"              { (Pure, []) }
+  | "(" typedNames ")"             { (Pure, $2) }
+  | "(" purity ")"                  { ($2, []) }
+  | "(" purity "," typedNames ")"  { ($2, $4) }
+
+typedNames
+  : typedName                 { [$1] }
+  | typedName "," typedNames  { $1 : $3 }
+
+typedName
+  : type name { TypedName $1 $2 }
+
+paramTypeList
+  : type        { (Pure, [$1]) }
+
+-- funcType V1
+funcType
+  : type                   retType  { TFunc Pure [$1] $2 }
+  | purity                 retType  { TFunc $1 [] $2 }
+  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
+
+purityAndTypes
+  : {- none -}              { (Pure, []) }
+  | types                   { (Pure, $1) }
+  | purity                  { ($1, []) }
+  | purity "," types        { ($1, $3) }
+
+-- funcType V2
+-- funcType
+--   : purityAndParamTypes retType  { TFunc (fst $1) (snd $1) $2 }
+
+-- purityAndParamTypes
+--   : "(" ")"                   { (Pure, []) }
+--   | type                      { (Pure, [$1]) }
+--   | purity                    { ($1, []) }
+--   | "(" types ")"             { (Pure, $2 )}
+--   | "(" purity ")"            { ($2, []) }
+--   | "(" purity "," types ")"  { ($2, $4) }
+
+retType
+  : "->" type { $2 }
+
+types
+  : type                 { [$1] }
+  | type "," types  { $1 : $3 }
+
+purityOrNone
+  : purity "," { $1 }
+  | {- none -} { Pure }
+
+purity
+  : "@"         { ReadWorld }
+  | "~""@"      { WriteWorld }
 
 type
   : mut typename                { TUser $1 $2 }
-  | paramTypes "->" type        { TFunc $1 $3 }
+  | funcType                    { $1 }
   | mut "$"                     { TInferred $1 }
   | mut "^" type                { TTempRef $1 $3 }
   | mut "&" type                { TPersRef $1 $3 }
@@ -185,43 +253,13 @@ stmt
   -- | apply           { SApply $1 }
   | expr            { SExpr $1 }
 
+variable
+  : typedName "=" expr { Var $1 $3 }
+
 lexpr
   : apply           { LApply $1 }
   | select          { LSelect $1 }
   | name            { LName $1 }
-
-variable
-  : typedName "=" expr { Var $1 $3 }
-
-function
-  : name lambda { Func $1 $2 }
-
-lambda
-  -- Use of block here (instead of indentedBlock) causes many conflicts, likely due to ambigueties surrounding nested one line lambdas.
-  : signature "=>" block { Lambda $1 $3 }
- 
-signature
-  : namedParamList "->" type { Sig $1 $3  }
-
-optionRet
-  : {- none -} { TInferred Mutable }
-  | "->" type  { $2 }
-
-namedParamList
-  : "(" namedParams ")"  { $2 }
-
-namedParams
-  : {- none -}                  { [] }
-  | namedParam                  { [$1] }
-  | namedParam "," namedParams  { $1 : $3 }
-
-namedParam
-  -- : "@"         {  }
-  -- | "~""@"      {  }
-  : typedName   { $1 }
-
-typedName
-  : type name { TypedName $1 $2 }
 
 exprsCS
   : {- none -}        { [] }
@@ -245,8 +283,6 @@ shallowExpr
   | litFlt { ELitFlt $1 }
   | litInt { ELitInt $1 }
   | litStr { ELitStr $1 }
-
-  | "@"    { EWorld  }
 
 ifChain
   : if condBlock                    { IfChainIf $2 IfChainNone }

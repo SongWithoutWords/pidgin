@@ -98,7 +98,7 @@ instance HasSig a => HasExplicitType a where
   explicitType = explicitType . sig
 
 instance {-#OVERLAPPING#-} HasExplicitType Sig where
-  explicitType a = TFunc (paramTypes a) (returnType a)
+  explicitType a = TFunc (purity a) (paramTypes a) (returnType a)
 
 instance  {-#OVERLAPPING#-} HasExplicitType Var where
   explicitType = explicitType . typedName
@@ -142,6 +142,18 @@ instance HasSig Func where
 instance HasSig Lambda where
   sig (Lambda s _) = s
 
+
+--------------------------------------------------------------------------------------------------------------------------------
+class HasPurity a where
+  purity :: a -> Purity
+
+instance HasSig a => HasPurity a where
+  purity = purity . sig
+
+instance {-#OVERLAPPING#-} HasPurity Sig where
+  purity (Sig p _ _) = p -- FuncType (purity a) (paramTypes a) (returnType a)
+
+
 --------------------------------------------------------------------------------------------------------------------------------
 class HasNamedParams a where
   namedParams :: a -> [TypedName]
@@ -150,7 +162,7 @@ instance HasSig a => HasNamedParams a where
   namedParams = namedParams . sig
 
 instance {-#overlapping#-} HasNamedParams Sig where
-  namedParams (Sig args _) = args
+  namedParams (Sig _ args _) = args
 
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -172,8 +184,7 @@ instance HasSig a => HasReturnType a where
   returnType = returnType . sig
 
 instance {-#OVERLAPPING#-} HasReturnType Sig where
-  returnType (Sig _ t) = t
-
+  returnType (Sig _ _ t) = t
 
 --------------------------------------------------------------------------------------------------------------------------------
 class HasBlock a where

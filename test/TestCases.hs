@@ -45,7 +45,7 @@ testCases =
     { nme = "def negate inline"
     , src = "negate(Bln b) -> Bln => false if b else true"
     , tks = [T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow, T.False, T.If, T.Name "b", T.Else, T.True]
-    , ast = [UFunc $ Func "negate" $ Lambda (Sig [TypedName (TBln Immutable) "b"] (TBln Immutable)) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
+    , ast = [UFunc $ Func "negate" $ Lambda (Sig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable)) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
     }
 
   , TestCase
@@ -59,7 +59,7 @@ testCases =
             , T.False, T.If, T.Name "b", T.Else, T.True
             , T.Dedent]
 
-    , ast = [UFunc $ Func "negate" $ Lambda (Sig [TypedName (TBln Immutable) "b"] $ TBln Immutable) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
+    , ast = [UFunc $ Func "negate" $ Lambda (Sig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable) [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]]
     }
 
   , TestCase
@@ -73,7 +73,7 @@ testCases =
             , T.LitInt 1, T.If, T.Name "n", T.LesserEq, T.LitInt 0, T.Else, T.Name "n", T.Star, T.Name "factorial", T.LParen, T.Name "n", T.Minus, T.LitInt 1, T.RParen
             , T.Dedent]
 
-    , ast = [ UFunc $ Func "factorial" $ Lambda (Sig [TypedName (TNat Immutable) "n"] $ TNat Immutable)
+    , ast = [ UFunc $ Func "factorial" $ Lambda (Sig Pure [TypedName (TNat Immutable) "n"] $ TNat Immutable)
               [ SExpr $ EIf
                 (ELitInt 1)
                 (EApply $ Apply (ESelect $ Select (EName "n") "<=") [ELitInt 0])
@@ -99,7 +99,25 @@ testCases =
               , T.Indent
                 , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
               , T.Dedent
-            , T.Dedent]
+            , T.Dedent ]
+    , ast = []
+    }
+
+  , TestCase
+    { nme = "quadratic"
+    , src = "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
+            \    (Flt x) -> Flt =>\n\
+            \        a*x*x + b*x + c"
+
+    , tks = [ T.Name "quadratic", T.LParen, T.TypeFlt, T.Name "a", T.Comma, T.TypeFlt, T.Name "b", T.Comma, T.TypeFlt, T.Name "c", T.RParen, T.ThinArrow
+            , T.TypeFlt, T.ThinArrow, T.TypeFlt, T.FatArrow
+            , T.Indent
+              , T.LParen, T.TypeFlt, T.Name "x", T.RParen, T.ThinArrow, T.TypeFlt, T.FatArrow
+              , T.Indent
+                , T.Name "a", T.Star, T.Name "x", T.Star, T.Name "x", T.Plus, T.Name "b", T.Star, T.Name "x", T.Plus, T.Name "c"
+              , T.Dedent
+            , T.Dedent ]
+
     , ast = []
     }
   ]

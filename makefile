@@ -21,6 +21,8 @@ test-cases := test/TestCases.hs
 
 test: $(build) $(lex-test) $(parse-test)
 
+parser: $(parser-gen)
+
 run: build
 	@stack exec creole-exe
 

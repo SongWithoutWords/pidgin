@@ -30,9 +30,35 @@ data Access
   | Pri
   deriving(Eq, Show)
 
+data Func
+  = Func Name Lambda
+  deriving(Eq, Show)
+
+data Lambda
+  = Lambda Sig Block
+  deriving(Eq, Show)
+
+data Sig
+  = Sig Purity [TypedName] Type
+  deriving(Eq, Show)
+
+data Purity
+  = Pure
+  | ReadWorld
+  | WriteWorld
+  deriving(Eq, Show)
+
+data TypedName
+  = TypedName Type Name
+  deriving(Eq, Show)
+
+-- data ParamType
+  -- = PTType
+  -- | PTWorld Mut
+
 data Type
   = TUser Mut Typename
-  | TFunc [Type] Type
+  | TFunc Purity [Type] Type
   | TInferred Mut
   | TTempRef Mut Type
   | TPersRef Mut Type
@@ -40,7 +66,7 @@ data Type
   | TZeroPlus Type
   | TOnePlus Type
 
-  | TWorld Mut
+  -- | TWorld Mut
 
   | TBln Mut
   | TChr Mut
@@ -75,22 +101,6 @@ data Var
   = Var TypedName Expr
   deriving(Eq, Show)
 
-data Func
-  = Func Name Lambda
-  deriving(Eq, Show)
-
-data Lambda
-  = Lambda Sig Block
-  deriving(Eq, Show)
-
-data Sig
-  = Sig [TypedName] Type
-  deriving(Eq, Show)
-
-data TypedName
-  = TypedName Type Name
-  deriving(Eq, Show)
-
 -- Expressions that can appear on the left side of an assignment
 data LExpr
   = LApply Apply
@@ -106,7 +116,7 @@ data Expr
   | ESelect Select
   | EName Name
 
-  | EWorld
+  -- | EWorld
 
   -- | LExpr LExpr -- Consider folding LExprs into expressions, and removing apply, cons, select etc.
 
