@@ -81,7 +81,6 @@ data Mut
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
-type Typename = String
 
 type Block = [Stmt]
 
@@ -112,11 +111,10 @@ data Expr
   | ESelect Select
   | EName Name
 
-  -- | EWorld
+  | EOp Expr Opname Expr
 
   -- | LExpr LExpr -- Consider folding LExprs into expressions, and removing apply, cons, select etc.
 
-  -- Consider adding EOp, to avoid some of the ast horror in TestCases.hs
 
   | ELitBln Bool
   | ELitChr Char
@@ -132,7 +130,6 @@ data IfChain
   | IfElif CondBlock IfChain
   deriving(Eq, Show)
 
--- type CondBlock = (Expr, Block)
 data CondBlock
   = CondBlock Expr Block
   deriving(Eq, Show)
@@ -148,6 +145,10 @@ data Cons
 data Select
   = Select Expr Name
   deriving(Eq, Show)
+
+type Opname = String
+
+type Typename = String
 
 type Name = String
 

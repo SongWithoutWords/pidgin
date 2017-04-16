@@ -47,8 +47,8 @@ testCases =
     , ast = [ UVar
               $ Var
                 ( TypedName (TInferred Immutable) "three")
-                $ EApply
-                  $ Apply (ESelect $ Select (ELitInt 1) "+") Pure [ELitInt 2] ]
+                $ EOp (ELitInt 1) "+" (ELitInt 2)
+            ]
     }
 
   , TestCase
@@ -94,21 +94,19 @@ testCases =
     , ast = [ UFunc
               $ Func "factorial"
                 $ Lambda
-                  ( Sig Pure [TypedName (TNat Immutable) "n"] $ TNat Immutable )
+                  (Sig Pure [TypedName (TNat Immutable) "n"] $ TNat Immutable)
                   [ SExpr
                     $ EIf
-                      ( ELitInt 1 )
-                      ( EApply $ Apply (ESelect $ Select (EName "n") "<=") Pure [ELitInt 0] )
-                      $ EApply
-                        $ Apply
-                          ( ESelect $ Select (EName "n") "*")
-                          Pure
-                          [ EApply
-                            $ Apply
-                              ( EName "factorial" )
-                              Pure
-                              [ EApply $ Apply (ESelect $ Select (EName "n") "-") Pure [ELitInt 1] ]
-                          ]
+                      (ELitInt 1)
+                      (EOp (EName "n") "<=" (ELitInt 0))
+                      $ EOp
+                        (EName "n")
+                        "*"
+                        $ EApply
+                          $ Apply
+                            (EName "factorial")
+                            Pure
+                            [EOp (EName "n") "-" (ELitInt 1)]
                   ]
             ]
     }

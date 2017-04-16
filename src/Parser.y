@@ -279,7 +279,7 @@ select
   : expr "." name { Select $1 $3 }
 
 op
-  : expr oper expr { EApply $ Apply (ESelect $ Select $1 $2) Pure [$3] }
+  : expr oper expr { EOp $1 $2 $3 }
 
 -- This is ridiculous, come up with some rules in the lexer if this is how it's going to be
 oper 
