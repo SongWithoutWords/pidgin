@@ -127,17 +127,16 @@ data Expr
   deriving(Eq, Show)
 
 data IfChain
-  = IfChainIf CondBlock IfChain
-  | IfChainElse Block
-  | IfChainNone
+  = Iff CondBlock
+  | IfElse CondBlock Block
+  | IfElif CondBlock IfChain
   deriving(Eq, Show)
 
-data CondBlock
-  = CondBlock Expr Block
-  deriving(Eq, Show)
+type CondBlock = (Expr, Block)
+  -- deriving(Eq, Show)
 
 data Apply
-  = Apply Expr [Expr]
+  = Apply Expr Purity [Expr]
   deriving(Eq, Show)
 
 data Cons

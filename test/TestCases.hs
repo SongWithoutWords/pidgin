@@ -38,7 +38,7 @@ testCases =
     { nme = "op expr"
     , src = "$ three = 1 + 2"
     , tks = [T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2]
-    , ast = [UVar $ Var (TypedName (TInferred Immutable) "three") $ EApply $ Apply (ESelect $ Select (ELitInt 1) "+") [ELitInt 2]]
+    , ast = [UVar $ Var (TypedName (TInferred Immutable) "three") $ EApply $ Apply (ESelect $ Select (ELitInt 1) "+") Pure [ELitInt 2]]
     }
 
   , TestCase
@@ -76,9 +76,9 @@ testCases =
     , ast = [ UFunc $ Func "factorial" $ Lambda (Sig Pure [TypedName (TNat Immutable) "n"] $ TNat Immutable)
               [ SExpr $ EIf
                 (ELitInt 1)
-                (EApply $ Apply (ESelect $ Select (EName "n") "<=") [ELitInt 0])
-                $ EApply $ Apply (ESelect $ Select (EName "n") "*")
-                [EApply $ Apply (EName "factorial") [EApply $ Apply (ESelect $ Select (EName "n") "-") [ELitInt 1]]] ]]
+                (EApply $ Apply (ESelect $ Select (EName "n") "<=") Pure [ELitInt 0])
+                $ EApply $ Apply (ESelect $ Select (EName "n") "*") Pure
+                [EApply $ Apply (EName "factorial") Pure [EApply $ Apply (ESelect $ Select (EName "n") "-") Pure [ELitInt 1]]] ]]
     }
 
   , TestCase
@@ -100,7 +100,11 @@ testCases =
                 , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
               , T.Dedent
             , T.Dedent ]
-    , ast = []
+    , ast = [UFunc $ Func "drawWidget" $ Lambda (Sig WriteWorld [TypedName (TNat Immutable) "width", TypedName (TNat Immutable) "height"] TNone)
+             [ SVar $ Var (TypedName (TInferred Immutable) "w") (ECons $ Cons "Widget" [EName "width", EName "height"])
+             , SIf $ Iff (ESelect $ Select (EName "w") "exists"
+               , [SExpr $ EApply $ Apply (ESelect $ Select (EName "w") "draw") WriteWorld []])
+             ]]
     }
 
   , TestCase

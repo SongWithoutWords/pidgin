@@ -137,10 +137,10 @@ signature
   : purityAndTypedNames retType { Sig (fst $1) (snd $1) $2}
 
 purityAndTypedNames
-  : "(" ")"              { (Pure, []) }
-  | "(" typedNames ")"             { (Pure, $2) }
-  | "(" purity ")"                  { ($2, []) }
-  | "(" purity "," typedNames ")"  { ($2, $4) }
+  : "(" ")"                       { (Pure, []) }
+  | "(" typedNames ")"            { (Pure, $2) }
+  | "(" purity ")"                { ($2, []) }
+  | "(" purity "," typedNames ")" { ($2, $4) }
 
 typedNames
   : typedName                 { [$1] }
@@ -150,34 +150,45 @@ typedName
   : type name { TypedName $1 $2 }
 
 paramTypeList
-  : type        { (Pure, [$1]) }
+  : type      { (Pure, [$1]) }
 
--- funcType V1
 funcType
   : type                   retType  { TFunc Pure [$1] $2 }
   | purity                 retType  { TFunc $1 [] $2 }
   | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
 
 purityAndTypes
-  : {- none -}              { (Pure, []) }
-  | types                   { (Pure, $1) }
-  | purity                  { ($1, []) }
-  | purity "," types        { ($1, $3) }
+  : {- none -}        { (Pure, []) }
+  | types             { (Pure, $1) }
+  | purity            { ($1, []) }
+  | purity "," types  { ($1, $3) }
 
 retType
   : "->" type { $2 }
 
 types
-  : type                 { [$1] }
+  : type            { [$1] }
   | type "," types  { $1 : $3 }
 
-purityOrNone
-  : purity "," { $1 }
-  | {- none -} { Pure }
+cons
+  : typename "(" exprs ")" { Cons $1 $3 }
+
+apply
+  : expr "(" purityAndExprs ")" { Apply $1 (fst $3) (snd $3) }
+
+purityAndExprs
+  : {- none -}        { (Pure, []) }
+  | exprs             { (Pure, $1) }
+  | purity            { ($1, []) }
+  | purity "," exprs  { ($1, $3) }
+
+exprs
+  : expr            { [$1]}
+  | expr "," exprs  { $1 : $3 }
 
 purity
-  : "@"         { ReadWorld }
-  | "~""@"      { WriteWorld }
+  : "@"     { ReadWorld }
+  | "~""@"  { WriteWorld }
 
 type
   : mut typename                { TUser $1 $2 }
@@ -238,19 +249,14 @@ lexpr
   | select          { LSelect $1 }
   | name            { LName $1 }
 
-exprsCS
-  : {- none -}        { [] }
-  | expr              { [$1]}
-  | expr "," exprsCS  { $1 : $3 }
-
 expr
-  : expr if shallowExpr else expr         { EIf $1 $3 $5 }
+  : expr if shallowExpr else expr { EIf $1 $3 $5 }
   | lambda      { ELambda $1 }
   | shallowExpr { $1 }
 
 shallowExpr
   : apply     { EApply $1 }
-  | construct { ECons $1 }
+  | cons      { ECons $1 }
   | select    { ESelect $1 }
   | name      { EName $1 }
   | op        { $1 }
@@ -262,27 +268,21 @@ shallowExpr
   | litStr { ELitStr $1 }
 
 ifChain
-  : if condBlock                    { IfChainIf $2 IfChainNone }
-  | if condBlock else ifChain       { IfChainIf $2 $4 }
-  | if condBlock else indentedBlock { IfChainIf $2 $ IfChainElse $4 }
+  : if condBlock                    { Iff $2 }
+  | if condBlock else indentedBlock { IfElse $2 $4 }
+  | if condBlock else ifChain       { IfElif $2 $4 }
 
 condBlock
-  : expr indentedBlock { CondBlock $1 $2 }
-
-apply
-  : expr "(" exprsCS ")" { Apply $1 $3 }
-
-construct
-  : typename "(" exprsCS ")" { Cons $1 $3 }
+  : expr indentedBlock { ($1, $2) }
 
 select
   : expr "." name { Select $1 $3 }
 
 op
-  : expr operator expr { EApply $ Apply (ESelect $ Select $1 $2) [$3] }
+  : expr oper expr { EApply $ Apply (ESelect $ Select $1 $2) Pure [$3] }
 
 -- This is ridiculous, come up with some rules in the lexer if this is how it's going to be
-operator 
+oper 
   : "+"   { "+" }
   | "-"   { "-" }
   | "*"   { "*" }
