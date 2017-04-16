@@ -101,7 +101,7 @@ testCases =
               , T.Dedent
             , T.Dedent ]
     , ast = [UFunc $ Func "drawWidget" $ Lambda (Sig WriteWorld [TypedName (TNat Immutable) "width", TypedName (TNat Immutable) "height"] TNone)
-             [ SVar $ Var (TypedName (TInferred Immutable) "w") (ECons $ Cons "Widget" [EName "width", EName "height"])
+             [ SVar $ Var (TypedName (TInferred Immutable) "w") (ECons $ Cons "Widget" Pure [EName "width", EName "height"])
              , SIf $ Iff (ESelect $ Select (EName "w") "exists"
                , [SExpr $ EApply $ Apply (ESelect $ Select (EName "w") "draw") WriteWorld []])
              ]]

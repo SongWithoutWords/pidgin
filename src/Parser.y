@@ -171,7 +171,7 @@ types
   | type "," types  { $1 : $3 }
 
 cons
-  : typename "(" exprs ")" { Cons $1 $3 }
+  : typename "(" purityAndExprs ")" { Cons $1 (fst $3) (snd $3) }
 
 apply
   : expr "(" purityAndExprs ")" { Apply $1 (fst $3) (snd $3) }

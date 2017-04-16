@@ -140,7 +140,7 @@ data Apply
   deriving(Eq, Show)
 
 data Cons
-  = Cons Typename [Expr]
+  = Cons Typename Purity [Expr]
   deriving(Eq, Show)
 
 data Select
