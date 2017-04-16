@@ -52,10 +52,6 @@ data TypedName
   = TypedName Type Name
   deriving(Eq, Show)
 
--- data ParamType
-  -- = PTType
-  -- | PTWorld Mut
-
 data Type
   = TUser Mut Typename
   | TFunc Purity [Type] Type

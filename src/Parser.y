@@ -133,17 +133,6 @@ lambda
   -- Use of block here (instead of indentedBlock) causes many conflicts, likely due to ambiguities surrounding nested one line lambdas.
   : signature "=>" block { Lambda $1 $3 }
  
--- signature V1
--- signature
---   : "(" purityAndTypedNames ")" retType { Sig (fst $2) (snd $2) $4}
-
--- purityAndTypedNames
---   : {- none -}              { (Pure, []) }
---   | typedNames              { (Pure, $1) }
---   | purity                  { ($1, []) }
---   | purity "," typedNames   { ($1, $3) }
-
--- signature V2
 signature
   : purityAndTypedNames retType { Sig (fst $1) (snd $1) $2}
 
@@ -174,18 +163,6 @@ purityAndTypes
   | types                   { (Pure, $1) }
   | purity                  { ($1, []) }
   | purity "," types        { ($1, $3) }
-
--- funcType V2
--- funcType
---   : purityAndParamTypes retType  { TFunc (fst $1) (snd $1) $2 }
-
--- purityAndParamTypes
---   : "(" ")"                   { (Pure, []) }
---   | type                      { (Pure, [$1]) }
---   | purity                    { ($1, []) }
---   | "(" types ")"             { (Pure, $2 )}
---   | "(" purity ")"            { ($2, []) }
---   | "(" purity "," types ")"  { ($2, $4) }
 
 retType
   : "->" type { $2 }
