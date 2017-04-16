@@ -191,22 +191,22 @@ purity
   | "~""@"  { WriteWorld }
 
 type
-  : mut typename                { TUser $1 $2 }
-  | funcType                    { $1 }
-  | mut "$"                     { TInferred $1 }
-  | mut "^" type                { TTempRef $1 $3 }
-  | mut "&" type                { TPersRef $1 $3 }
-  | mut "?" type                { TOption $1 $3 }
-  | "*" type                    { TZeroPlus $2 }
-  | "+" type                    { TOnePlus $2 }
+  : mut typename  { TUser $1 $2 }
+  | funcType      { $1 }
+  | mut "$"       { TInferred $1 }
+  | mut "^" type  { TTempRef $1 $3 }
+  | mut "&" type  { TPersRef $1 $3 }
+  | mut "?" type  { TOption $1 $3 }
+  | "*" type      { TZeroPlus $2 }
+  | "+" type      { TOnePlus $2 }
 
-  | mut Bln                     { TBln $1 }
-  | mut Chr                     { TChr $1 }
-  | mut Flt                     { TFlt $1 }
-  | mut Int                     { TInt $1 }
-  | mut Nat                     { TNat $1 }
-  | None                        { TNone }
-  | mut Str                     { TStr $1 }
+  | mut Bln       { TBln $1 }
+  | mut Chr       { TChr $1 }
+  | mut Flt       { TFlt $1 }
+  | mut Int       { TInt $1 }
+  | mut Nat       { TNat $1 }
+  | None          { TNone }
+  | mut Str       { TStr $1 }
 
 mut
   : {- none -} { Immutable }
@@ -273,7 +273,7 @@ ifChain
   | if condBlock else ifChain       { IfElif $2 $4 }
 
 condBlock
-  : expr indentedBlock { ($1, $2) }
+  : expr indentedBlock { CondBlock $1 $2 }
 
 select
   : expr "." name { Select $1 $3 }

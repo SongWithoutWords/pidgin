@@ -132,8 +132,10 @@ data IfChain
   | IfElif CondBlock IfChain
   deriving(Eq, Show)
 
-type CondBlock = (Expr, Block)
-  -- deriving(Eq, Show)
+-- type CondBlock = (Expr, Block)
+data CondBlock
+  = CondBlock Expr Block
+  deriving(Eq, Show)
 
 data Apply
   = Apply Expr Purity [Expr]
