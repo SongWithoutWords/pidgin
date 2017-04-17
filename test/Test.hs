@@ -7,6 +7,8 @@ import Parser
 
 import TestCases
 
+import Data.Maybe
+
 
 main :: IO ()
 main = defaultMain tests
@@ -16,17 +18,21 @@ tests = testGroup "tests" [lexerTests, parserTests]
 
 
 lexerTests :: TestTree
-lexerTests = testGroup  "lexer" $ map lexTest testCases
+lexerTests = testGroup  "lexer" $ mapMaybe lexTest testCases
 
-lexTest :: TestCase -> TestTree
-lexTest tc = testCase (nme tc) $ scanTokens (src tc) @?= tks tc
-
+lexTest :: TestCase -> Maybe TestTree
+lexTest test = do
+  expected <- tks test
+  return $ testCase (nme test) $ scanTokens (src test) @?= expected
 
 parserTests :: TestTree
-parserTests = testGroup  "parser" $ map parserTest testCases
+parserTests = testGroup  "parser" $ mapMaybe parserTest testCases
 
-parserTest :: TestCase -> TestTree
-parserTest tc = testCase (nme tc) $ parse (tks tc) @?= ast tc
+parserTest :: TestCase -> Maybe TestTree
+parserTest test = do
+  expected <- ast test
+  let tokens = fromMaybe (scanTokens $ src test) (tks test)
+  return $ testCase (nme test) $ parse tokens @?= expected
 
 
 
