@@ -26,8 +26,9 @@ testCases =
     , tks = [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
     , ast = [ UVar
               $ Var
-                ( TypedName (TInferred Immutable) "pi")
-                $ ELitFlt 3.14159265 ]
+                (TypedName (TInferred Immutable) "pi")
+                $ ELitFlt 3.14159265
+            ]
     }
 
   , TestCase
@@ -36,8 +37,9 @@ testCases =
     , tks = [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
     , ast = [ UVar
               $ Var
-                ( TypedName (TInferred Immutable) "msg")
-                $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(")]
+                (TypedName (TInferred Immutable) "msg")
+                $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(")
+            ]
     }
 
   , TestCase
@@ -46,7 +48,7 @@ testCases =
     , tks = [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
     , ast = [ UVar
               $ Var
-                ( TypedName (TInferred Immutable) "three")
+                (TypedName (TInferred Immutable) "three")
                 $ EAdd (ELitInt 1) (ELitInt 2)
             ]
     }
@@ -58,8 +60,9 @@ testCases =
     , ast = [ UFunc
               $ Func "negate"
                 $ Lambda
-                  ( Sig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable) )
-                  [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ] ]
+                  (Sig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable))
+                  [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]
+            ]
     }
 
   , TestCase
@@ -76,8 +79,9 @@ testCases =
     , ast = [ UFunc
               $ Func "negate"
                 $ Lambda
-                  ( Sig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable )
-                  [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ] ]
+                  (Sig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable)
+                  [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)]
+            ]
     }
 
   , TestCase
@@ -177,14 +181,13 @@ testCases =
                           [TypedName (TFlt Immutable) "x"]
                           (TFlt Immutable)
                         )
-                    [ SExpr
-                      $ EAdd
-                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
-                      -- "+"
-                      $ EAdd
-                        ( EMul (EName "b") $ EName "x" )
-                        $ EName "c"
-                    ]
+                        [ SExpr
+                          $ EAdd
+                            ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
+                            $ EAdd
+                              ( EMul (EName "b") $ EName "x" )
+                              $ EName "c"
+                        ]
                   ]
             ]
     }
