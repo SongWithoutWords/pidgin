@@ -79,6 +79,7 @@ import qualified Tokens as T
 
 %right "+" "-" 
 %right "*" "/"
+%right prec_neg
 
 %%
 
@@ -284,25 +285,16 @@ select
   : expr "." name { Select $1 $3 }
 
 op
-  : expr "+" expr   { EAdd $1 $3 }
-  | expr "-" expr   { ESub $1 $3 }
-  | expr "*" expr   { EMul $1 $3 }
-  | expr "/" expr   { EDiv $1 $3 }
-  | expr ">" expr   { EGreater $1 $3 }
-  | expr "<" expr   { ELesser $1 $3 }
-  | expr ">=" expr  { EGreaterEq $1 $3 }
-  | expr "<=" expr  { ELesserEq $1 $3 } 
-  -- : expr oper expr { EOp $1 $2 $3 }
-
--- This is ridiculous, come up with some rules in the lexer if this is how it's going to be
--- oper 
-  -- : "+"   { "+" }
-  -- | "-"   { "-" }
-  -- | "*"   { "*" }
-  -- | ">"   { ">" }
-  -- | "<"   { "<" }
-  -- | ">="  { ">=" }
-  -- | "<="  { "<=" }
+  : "(" expr ")"            { $2 }
+  | "-" expr %prec prec_neg { ENegate $2 }
+  | expr "+" expr           { EAdd $1 $3 }
+  | expr "-" expr           { ESub $1 $3 }
+  | expr "*" expr           { EMul $1 $3 }
+  | expr "/" expr           { EDiv $1 $3 }
+  | expr ">" expr           { EGreater $1 $3 }
+  | expr "<" expr           { ELesser $1 $3 }
+  | expr ">=" expr          { EGreaterEq $1 $3 }
+  | expr "<=" expr          { ELesserEq $1 $3 } 
 
 litBln
   : true  {True}

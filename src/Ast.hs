@@ -111,7 +111,10 @@ data Expr
   | ESelect Select
   | EName Name
 
-  -- operators
+  -- unary operators
+  | ENegate Expr
+
+  -- binary operators
   | EAdd Expr Expr
   | ESub Expr Expr
   | EMul Expr Expr

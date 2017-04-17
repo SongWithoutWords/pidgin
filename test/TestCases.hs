@@ -213,9 +213,35 @@ testCases =
 
   , TestCase
     { nme = "quadratic formula (single root)"
-    , src = "quadraticSingleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
-            \    (-b + Math.sqrt(b*b - 4*a*c)) / 2*a"
+    , src = "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
+            \    (-b + math.sqrt(b*b - 4*a*c)) / 2*a"
     , tks = Nothing
-    , ast = Nothing
+    , ast = Just
+      [ UFunc
+        $ Func "singleRoot"
+          $ Lambda
+          ( Sig
+            Pure
+            [ TypedName (TFlt Immutable) "a"
+            , TypedName (TFlt Immutable) "b"
+            , TypedName (TFlt Immutable) "c" ]
+            $ TFlt Immutable
+          )
+          [ SExpr
+            $ EDiv
+              ( EAdd
+                ( ENegate (EName "b") )
+                $ EApply $ Apply
+                  ( ESelect $ Select (EName "math") "sqrt" )
+                  Pure
+                  [ ESub
+                    (EMul (EName "b") (EName "b"))
+                    (EMul (ELitInt 4) (EMul (EName "a") (EName "c")))
+                  ]
+              )
+              (EMul (ELitInt 2) (EName "a"))
+          ]
+
+      ]
     }
   ]
