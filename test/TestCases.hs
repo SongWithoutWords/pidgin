@@ -47,7 +47,7 @@ testCases =
     , ast = [ UVar
               $ Var
                 ( TypedName (TInferred Immutable) "three")
-                $ EOp (ELitInt 1) "+" (ELitInt 2)
+                $ EAdd (ELitInt 1) (ELitInt 2)
             ]
     }
 
@@ -98,15 +98,14 @@ testCases =
                   [ SExpr
                     $ EIf
                       (ELitInt 1)
-                      (EOp (EName "n") "<=" (ELitInt 0))
-                      $ EOp
-                        (EName "n")
-                        "*"
-                        $ EApply
-                          $ Apply
-                            (EName "factorial")
-                            Pure
-                            [EOp (EName "n") "-" (ELitInt 1)]
+                      (ELesserEq (EName "n") (ELitInt 0))
+                      (EMul
+                         (EName "n")
+                         $ EApply $ Apply
+                           (EName "factorial")
+                           Pure
+                           [ESub (EName "n") (ELitInt 1)]
+                      )
                   ]
             ]
     }
@@ -162,7 +161,32 @@ testCases =
               , T.Dedent
             , T.Dedent ]
 
-    , ast = []
+    , ast = [ UFunc
+              $ Func "quadratic"
+                $ Lambda
+                  ( Sig
+                    Pure
+                    [TypedName (TFlt Immutable) "a", TypedName (TFlt Immutable) "b", TypedName (TFlt Immutable) "c"]
+                    $ TFunc Pure [TFlt Immutable] $ TFlt Immutable
+                  )
+                  [ SExpr
+                    $ ELambda
+                      $ Lambda
+                        ( Sig
+                          Pure
+                          [TypedName (TFlt Immutable) "x"]
+                          (TFlt Immutable)
+                        )
+                    [ SExpr
+                      $ EAdd
+                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
+                      -- "+"
+                      $ EAdd
+                        ( EMul (EName "b") $ EName "x" )
+                        $ EName "c"
+                    ]
+                  ]
+            ]
     }
   ]
 

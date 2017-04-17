@@ -85,6 +85,7 @@ pri                      { appendTokenAction T.Pri }
 ","                      { appendTokenAction T.Comma }
 "."                      { appendTokenAction T.Dot }
 "?"                      { appendTokenAction T.QMark }
+"/"                      { appendTokenAction T.Slash}
 
 "<"                      { appendTokenAction T.Lesser }
 ">"                      { appendTokenAction T.Greater }

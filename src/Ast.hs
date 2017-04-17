@@ -111,11 +111,17 @@ data Expr
   | ESelect Select
   | EName Name
 
-  | EOp Expr Opname Expr
+  -- operators
+  | EAdd Expr Expr
+  | ESub Expr Expr
+  | EMul Expr Expr
+  | EDiv Expr Expr
+  | EGreater Expr Expr
+  | ELesser Expr Expr
+  | EGreaterEq Expr Expr
+  | ELesserEq Expr Expr
 
-  -- | LExpr LExpr -- Consider folding LExprs into expressions, and removing apply, cons, select etc.
-
-
+  -- literals
   | ELitBln Bool
   | ELitChr Char
   | ELitFlt Float
@@ -145,8 +151,6 @@ data Cons
 data Select
   = Select Expr Name
   deriving(Eq, Show)
-
-type Opname = String
 
 type Typename = String
 

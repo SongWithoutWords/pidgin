@@ -52,6 +52,7 @@ data Token
   | Comma
   | Dot
   | QMark
+  | Slash
 
   | Lesser
   | Greater
