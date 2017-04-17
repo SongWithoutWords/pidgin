@@ -210,4 +210,12 @@ testCases =
             ]
     ]
     }
+
+  , TestCase
+    { nme = "quadratic formula (single root)"
+    , src = "quadraticSingleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
+            \    (-b + Math.sqrt(b*b - 4*a*c)) / 2*a"
+    , tks = Nothing
+    , ast = Nothing
+    }
   ]
