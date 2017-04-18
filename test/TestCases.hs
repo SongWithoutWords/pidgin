@@ -120,7 +120,25 @@ testCases =
     }
 
   , TestCase
-    { nme = "draw widget"
+    { nme = "clothing (cascading if exprs inline)"
+    , src =
+      "clothing(Weather w) -> Clothing =>\n\
+      \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
+    , tks = Nothing
+    , ast = Just
+    [ UFunc $ Func "clothing" $ Lambda
+      ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
+      [ SExpr
+        $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
+        $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
+        $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
+        $ EName "jacket"
+      ]
+    ]
+    }
+
+  , TestCase
+    { nme = "draw widget (imperative-style if)"
     , src = "drawWidget(~@, Nat width, Nat height) -> None =>\n\
             \    $ w = Widget(width, height)\n\
             \    if w.exists\n\
