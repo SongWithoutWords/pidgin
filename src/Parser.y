@@ -239,7 +239,7 @@ inlineBlock
 
 nestedBlock
   : function        { SFunc $1 }
-  | ifChain         { SIf $1 }
+  | ifBranch        { SIf $1 }
 
 stmt
   : lexpr "=" expr  { SAssign $1 $3 }
