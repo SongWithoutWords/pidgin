@@ -126,15 +126,36 @@ testCases =
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
     , tks = Nothing
     , ast = Just
-    [ UFunc $ Func "clothing" $ Lambda
-      ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
-      [ SExpr
-        $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
-        $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
-        $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
-        $ EName "jacket"
+      [ UFunc $ Func "clothing" $ Lambda
+        ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
+        [ SExpr
+          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
+          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
+          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
+          $ EName "jacket"
+        ]
       ]
-    ]
+    }
+
+  , TestCase
+    { nme = "clothing (cascading if exprs multiline)"
+    , src =
+      "clothing(Weather w) -> Clothing =>\n\
+      \    rainCoat if w.isRaining else\n\
+      \    coat if w.isCold else\n\
+      \    tShirt if w.isSunny else\n\
+      \    jacket"
+    , tks = Nothing
+    , ast = Just
+      [ UFunc $ Func "clothing" $ Lambda
+        ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
+        [ SExpr
+          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
+          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
+          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
+          $ EName "jacket"
+        ]
+      ]
     }
 
   , TestCase

@@ -264,9 +264,13 @@ lexpr
   | name            { LName $1 }
 
 expr
-  : expr if shallowExpr else expr { EIf $1 $3 $5 }
+  : expr if shallowExpr else optionEol expr { EIf $1 $3 $6 }
   | lambda      { ELambda $1 }
   | shallowExpr { $1 }
+
+optionEol
+  : eol         {}
+  | {- none -}  {}
 
 shallowExpr
   : apply     { EApply $1 }
