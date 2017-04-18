@@ -24,7 +24,7 @@ test: $(build) $(lex-test) $(parse-test)
 parser: $(parser-gen)
 
 run: build
-	@stack exec creole-exe
+	@stack exec pidgin-exe
 
 $(build): $(lexer-gen) $(parser-gen) src
 	@stack build
