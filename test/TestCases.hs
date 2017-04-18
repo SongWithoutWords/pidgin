@@ -262,4 +262,20 @@ testCases =
 
       ]
     }
+
+  -- TODO: quadratic formula that returns a tuple.
+  -- If/when tuples are a thing, I think it may be possible
+  -- to generalize:
+  --   tuple variables,
+  --   tuple construction,
+  --   function application
+  --   multiple returns
+  --
+  -- what implications would this have for single-argument function application?
+  --
+  -- interesting idea in any case, may help to add features and simplify parser.
+  --
+  -- concerns with this idea: items(index).name could be written items index.name. What would this mean?
+  -- would you require haskell style parenthesis like (items index).name ?
+  -- I think I may prefer items(index).name
   ]
