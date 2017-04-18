@@ -247,6 +247,14 @@ stmt
   -- | apply           { SApply $1 }
   | expr            { SExpr $1 }
 
+ifBranch
+  : if condBlock                    { Iff $2 }
+  | if condBlock else indentedBlock { IfElse $2 $4 }
+  | if condBlock else ifBranch      { IfElif $2 $4 }
+
+condBlock
+  : expr indentedBlock { CondBlock $1 $2 }
+
 variable
   : typedName "=" expr { Var $1 $3 }
 
@@ -272,14 +280,6 @@ shallowExpr
   | litFlt { ELitFlt $1 }
   | litInt { ELitInt $1 }
   | litStr { ELitStr $1 }
-
-ifChain
-  : if condBlock                    { Iff $2 }
-  | if condBlock else indentedBlock { IfElse $2 $4 }
-  | if condBlock else ifChain       { IfElif $2 $4 }
-
-condBlock
-  : expr indentedBlock { CondBlock $1 $2 }
 
 select
   : expr "." name { Select $1 $3 }

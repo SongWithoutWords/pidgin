@@ -88,8 +88,18 @@ data Stmt
   = SAssign LExpr Expr
   | SVar Var
   | SFunc Func
-  | SIf IfChain
+  | SIf IfBranch
   | SExpr Expr
+  deriving(Eq, Show)
+
+data IfBranch
+  = Iff CondBlock
+  | IfElse CondBlock Block
+  | IfElif CondBlock IfBranch
+  deriving(Eq, Show)
+
+data CondBlock
+  = CondBlock Expr Block
   deriving(Eq, Show)
 
 data Var
@@ -131,16 +141,6 @@ data Expr
   | ELitInt Int
   | ELitStr String
 
-  deriving(Eq, Show)
-
-data IfChain
-  = Iff CondBlock
-  | IfElse CondBlock Block
-  | IfElif CondBlock IfChain
-  deriving(Eq, Show)
-
-data CondBlock
-  = CondBlock Expr Block
   deriving(Eq, Show)
 
 data Apply
