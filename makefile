@@ -18,8 +18,9 @@ lexer-src := src/Lexer.x
 lexer-gen := gen/Lexer.hs
 
 test-cases := test/TestCases.hs
+test-main := test/Test.hs
 
-test: $(build) $(lex-test) $(parse-test)
+build-and-test: $(build) $(lex-test) $(parse-test)
 
 parser: $(parser-gen)
 
@@ -30,12 +31,12 @@ $(build): $(lexer-gen) $(parser-gen) src
 	@stack build
 	@touch $(build)
 
-$(parse-test): $(parser-gen) $(ast-src) $(test-cases)
+$(parse-test): $(parser-gen) $(ast-src) $(test-cases) $(test-main)
 	@echo "Testing parser"
 	@touch $(parse-test)
 	@stack test --test-arguments '-p parser'
 
-$(lex-test): $(lexer-gen) $(tkn-src) $(test-cases)
+$(lex-test): $(lexer-gen) $(tkn-src) $(test-cases) $(test-main)
 	@echo "Testing lexer"
 	@touch $(lex-test)
 	@stack test --test-arguments '-p lexer'
