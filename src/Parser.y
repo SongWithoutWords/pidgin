@@ -138,7 +138,7 @@ lambda
   : signature "=>" block { Lambda $1 $3 }
  
 signature
-  : purityAndTypedNames retType { Sig (fst $1) (snd $1) $2}
+  : purityAndTypedNames optionRetType { Sig (fst $1) (snd $1) $2}
 
 purityAndTypedNames
   : "(" ")"                       { (Pure, []) }
@@ -167,8 +167,12 @@ purityAndTypes
   | purity            { ($1, []) }
   | purity "," types  { ($1, $3) }
 
+optionRetType
+  : {- none -}  { TInferred Immutable}
+  | retType     { $1 }
+
 retType
-  : "->" type { $2 }
+  : "->" type   { $2 }
 
 types
   : type            { [$1] }
@@ -256,7 +260,6 @@ condBlock
 
 variable
   : typedName "=" expr { Var $1 $3 }
-
 
 expr
   : expr if shallowExpr else optionEol expr { EIf $1 $3 $6 }

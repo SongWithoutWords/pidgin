@@ -198,7 +198,7 @@ testCases =
     }
 
   , TestCase
-    { nme = "quadratic"
+    { nme = "quadratic (explicit return type)"
     , src = "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
             \    (Flt x) -> Flt =>\n\
             \        a*x*x + b*x + c"
@@ -238,6 +238,44 @@ testCases =
                     Pure
                     [TypedName (TFlt Immutable) "x"]
                     (TFlt Immutable)
+                  )
+                  [ SExpr
+                    $ EAdd
+                      ( EMul (LExpr $ EName "a") $ EMul (LExpr $ EName "x") (LExpr $ EName "x") )
+                      $ EAdd
+                        ( EMul (LExpr $ EName "b") $ LExpr $ EName "x" )
+                        $ LExpr $ EName "c"
+                  ]
+            ]
+    ]
+    }
+
+  , TestCase
+    { nme = "quadratic (implicit return type)"
+    , src = "quadratic(Flt a, Flt b, Flt c) =>\n\
+            \    (Flt x) =>\n\
+            \        a*x*x + b*x + c"
+
+    , tks = Nothing
+
+    , ast = Just
+      [ UFunc
+        $ Func "quadratic"
+          $ Lambda
+            ( Sig
+              Pure
+              [ TypedName (TFlt Immutable) "a"
+              , TypedName (TFlt Immutable) "b"
+              , TypedName (TFlt Immutable) "c" ]
+              $ TInferred Immutable
+            )
+            [ SExpr
+              $ ELambda
+                $ Lambda
+                  ( Sig
+                    Pure
+                    [ TypedName (TFlt Immutable) "x" ]
+                    $ TInferred Immutable
                   )
                   [ SExpr
                     $ EAdd
