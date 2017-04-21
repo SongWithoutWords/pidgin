@@ -135,7 +135,6 @@ function
   : name lambda { Func $1 $2 }
 
 lambda
-  -- Use of block here (instead of indentedBlock) causes many conflicts, likely due to ambiguities surrounding nested one line lambdas.
   : signature "=>" block { Lambda $1 $3 }
  
 signature
@@ -176,10 +175,10 @@ types
   | type "," types  { $1 : $3 }
 
 cons
-  : typename "(" purityAndExprs ")" { Cons $1 (fst $3) (snd $3) }
+  : typename "(" purityAndExprs ")" { ECons $1 (fst $3) (snd $3) }
 
 apply
-  : expr "(" purityAndExprs ")" { Apply $1 (fst $3) (snd $3) }
+  : expr "(" purityAndExprs ")" { EApply $1 (fst $3) (snd $3) }
 
 purityAndExprs
   : {- none -}        { (Pure, []) }
@@ -258,10 +257,6 @@ condBlock
 variable
   : typedName "=" expr { Var $1 $3 }
 
-lexpr
-  : apply           { LApply $1 }
-  | select          { LSelect $1 }
-  | name            { LName $1 }
 
 expr
   : expr if shallowExpr else optionEol expr { EIf $1 $3 $6 }
@@ -273,10 +268,9 @@ optionEol
   | {- none -}  {}
 
 shallowExpr
-  : apply     { EApply $1 }
-  | cons      { ECons $1 }
-  | select    { ESelect $1 }
-  | name      { EName $1 }
+  : lexpr     { LExpr $1 }
+  | cons      { $1 }
+
   | op        { $1 }
 
   | litBln { ELitBln $1 }
@@ -285,8 +279,10 @@ shallowExpr
   | litInt { ELitInt $1 }
   | litStr { ELitStr $1 }
 
-select
-  : expr "." name { Select $1 $3 }
+lexpr
+  : apply           { $1 }
+  | expr "." name   { ESelect $1 $3 }
+  | name            { EName $1 }
 
 op
   : "(" expr ")"            { $2 }

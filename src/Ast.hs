@@ -62,15 +62,14 @@ data Type
   | TZeroPlus Type
   | TOnePlus Type
 
-  -- | TWorld Mut
-
   | TBln Mut
   | TChr Mut
   | TFlt Mut
   | TInt Mut
   | TNat Mut
-  | TNone
   | TStr Mut
+
+  | TNone
 
   deriving(Eq, Show)
 
@@ -80,7 +79,6 @@ data Mut
   -- Constant   -- Not mutable in any scope - planned
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
-
 
 type Block = [Stmt]
 
@@ -106,25 +104,17 @@ data Var
   = Var TypedName Expr
   deriving(Eq, Show)
 
--- Expressions that can appear on the left side of an assignment
-data LExpr
-  = LApply Apply
-  | LSelect Select
-  | LName Name
-  deriving(Eq, Show)
-
 data Expr
-  = EIf Expr {- if -} Expr {- else -} Expr
-  | ELambda Lambda
-  | EApply Apply
-  | ECons Cons
-  | ESelect Select
-  | EName Name
+  = LExpr LExpr
 
-  -- unary operators
+  | EIf Expr {- if -} Expr {- else -} Expr
+  | ELambda Lambda
+  | ECons Typename Purity [Expr]
+
+  -- Unary operators
   | ENegate Expr
 
-  -- binary operators
+  -- Binary operators
   | EAdd Expr Expr
   | ESub Expr Expr
   | EMul Expr Expr
@@ -134,7 +124,7 @@ data Expr
   | EGreaterEq Expr Expr
   | ELesserEq Expr Expr
 
-  -- literals
+  -- Literals
   | ELitBln Bool
   | ELitChr Char
   | ELitFlt Float
@@ -143,16 +133,11 @@ data Expr
 
   deriving(Eq, Show)
 
-data Apply
-  = Apply Expr Purity [Expr]
-  deriving(Eq, Show)
-
-data Cons
-  = Cons Typename Purity [Expr]
-  deriving(Eq, Show)
-
-data Select
-  = Select Expr Name
+-- Expressions that can appear on the left side of an assignment
+data LExpr
+  = EApply Expr Purity [Expr]
+  | ESelect Expr Name
+  | EName Name
   deriving(Eq, Show)
 
 type Typename = String

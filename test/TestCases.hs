@@ -65,7 +65,7 @@ testCases =
         $ Func "negate"
           $ Lambda
             (Sig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable))
-            [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)] ]
+            [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
     }
 
   , TestCase
@@ -83,7 +83,7 @@ testCases =
         $ Func "negate"
           $ Lambda
             (Sig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable)
-            [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)] ]
+            [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
     }
 
   , TestCase
@@ -107,13 +107,13 @@ testCases =
             [ SExpr
               $ EIf
                 (ELitInt 1)
-                (ELesserEq (EName "n") (ELitInt 0))
+                (ELesserEq (LExpr $ EName "n") (ELitInt 0))
                 (EMul
-                    (EName "n")
-                    $ EApply $ Apply
-                      (EName "factorial")
+                    (LExpr $ EName "n")
+                    $ LExpr $ EApply
+                      (LExpr $ EName "factorial")
                       Pure
-                      [ESub (EName "n") (ELitInt 1)]
+                      [ESub (LExpr $ EName "n") (ELitInt 1)]
                 )
             ]
       ]
@@ -129,10 +129,10 @@ testCases =
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
         [ SExpr
-          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
-          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
-          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
-          $ EName "jacket"
+          $ EIf (LExpr $ EName "rainCoat") (LExpr $ ESelect (LExpr $ EName "w") "isRaining")
+          $ EIf (LExpr $ EName "coat") (LExpr $ ESelect (LExpr $ EName "w") "isCold")
+          $ EIf (LExpr $ EName "tShirt") (LExpr $ ESelect (LExpr $ EName "w") "isSunny")
+          $ LExpr $ EName "jacket"
         ]
       ]
     }
@@ -150,10 +150,10 @@ testCases =
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
         [ SExpr
-          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
-          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
-          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
-          $ EName "jacket"
+          $ EIf (LExpr $ EName "rainCoat") (LExpr $ ESelect (LExpr $ EName "w") "isRaining")
+          $ EIf (LExpr $ EName "coat") (LExpr $ ESelect (LExpr $ EName "w") "isCold")
+          $ EIf (LExpr $ EName "tShirt") (LExpr $ ESelect (LExpr $ EName "w") "isSunny")
+          $ LExpr $ EName "jacket"
         ]
       ]
     }
@@ -187,12 +187,12 @@ testCases =
             ( Sig WriteWorld [TypedName (TNat Immutable) "width", TypedName (TNat Immutable) "height"] TNone )
             [ SVar
               $ Var
-                ( TypedName (TInferred Immutable) "w") (ECons $ Cons "Widget" Pure [EName "width", EName "height"])
+                ( TypedName (TInferred Immutable) "w") (ECons "Widget" Pure [LExpr $ EName "width", LExpr $ EName "height"])
             , SIf
               $ Iff
                 $ CondBlock
-                  ( ESelect $ Select (EName "w") "exists" )
-                  [ SExpr $ EApply $ Apply (ESelect $ Select (EName "w") "draw") WriteWorld [] ]
+                  ( LExpr $ ESelect (LExpr $ EName "w") "exists" )
+                  [ SExpr $ LExpr $ EApply (LExpr $ ESelect (LExpr $ EName "w") "draw") WriteWorld [] ]
             ]
       ]
     }
@@ -241,10 +241,10 @@ testCases =
                   )
                   [ SExpr
                     $ EAdd
-                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
+                      ( EMul (LExpr $ EName "a") $ EMul (LExpr $ EName "x") (LExpr $ EName "x") )
                       $ EAdd
-                        ( EMul (EName "b") $ EName "x" )
-                        $ EName "c"
+                        ( EMul (LExpr $ EName "b") $ LExpr $ EName "x" )
+                        $ LExpr $ EName "c"
                   ]
             ]
     ]
@@ -269,16 +269,16 @@ testCases =
           [ SExpr
             $ EDiv
               ( EAdd
-                ( ENegate (EName "b") )
-                $ EApply $ Apply
-                  ( ESelect $ Select (EName "math") "sqrt" )
+                ( ENegate (LExpr $ EName "b") )
+                $ LExpr $ EApply
+                  ( LExpr $ ESelect (LExpr $ EName "math") "sqrt" )
                   Pure
                   [ ESub
-                    (EMul (EName "b") (EName "b"))
-                    (EMul (ELitInt 4) (EMul (EName "a") (EName "c")))
+                    (EMul (LExpr $ EName "b") (LExpr $ EName "b"))
+                    (EMul (ELitInt 4) $ EMul (LExpr $ EName "a") (LExpr $ EName "c"))
                   ]
               )
-              (EMul (ELitInt 2) (EName "a"))
+              (EMul (ELitInt 2) (LExpr $ EName "a"))
           ]
 
       ]
