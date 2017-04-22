@@ -1,8 +1,10 @@
 module TypeErrors where
 
+import Ast
+
 data TypeError
   = UnknownId String
-  | IncompatibleType
+  | TypeConflict Type Type
   deriving(Eq, Show)
 
 type TypeErrors = [TypeError]

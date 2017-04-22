@@ -1,15 +1,32 @@
-module TypeCheck where
+{-# language FlexibleInstances #-}
+{-# language TypeSynonymInstances #-}
 
--- The type resolver. I've considered TypeCheck as a name, but that doesn't really express the importance of this system
--- in resolving type inference as well.
+module TypeCheck(typeCheck) where
 
 import Ast
 import TypeErrors
 
-data Result = Result { ast::Ast, errors::TypeErrors }
+data Result a = Result { typedResult :: a, errors :: TypeErrors } deriving(Eq, Show)
 
-typeCheck :: Ast -> Result
-typeCheck _ = Result [] []
+class Checked a where
+  typeCheck :: a -> Result a
 
+instance Checked Ast where
+  typeCheck ast =
+    let uResults = map typeCheck ast
+    in Result (map typedResult uResults) (concatMap errors uResults)
 
+instance Checked Unit where
+  typeCheck u = case u of
+    UNamespace name us ->
+      let usChecked = map typeCheck us
+      in Result (UNamespace name $ map typedResult usChecked) (concatMap errors usChecked)
+    c@UClass {} -> Result c []
+    f@UFunc {} -> Result f []
+    UVar v ->
+      let vRes = typeCheck v
+      in Result (UVar $ typedResult vRes) (errors vRes)
+
+instance Checked Var where
+  typeCheck Var {} = undefined
 
