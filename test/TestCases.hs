@@ -394,14 +394,15 @@ testCases =
     }
   , TestCase
     { name = "Assignment: a <- true; Bln <- a"
-    , source = "$ = false"
+    , source =
+      "$ a = true; Bln b = a"
     , tokens = Nothing
     , ast = Nothing
     , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
     }
   , TestCase
     { name = "Assignment: a <- 5; Bln <- a"
-    , source = "Bln enable = false"
+    , source = "$ a <- 5; Bln b = a"
     , tokens = Nothing
     , ast = Nothing
     , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
