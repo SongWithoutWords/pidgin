@@ -38,8 +38,8 @@ unitEntryFromAst u = (name u, unitFromAst u)
 unitFromAst :: A.Unit -> Unit
 unitFromAst (A.UNamespace _ units) = UNamespace $ unitsFromAst units
 unitFromAst (A.UClass c) = UClass $ membersFromAstClass c
-unitFromAst (A.UFunc f) = UnitLeaf $ explicitType f
-unitFromAst (A.UVar v) = UnitLeaf $ explicitType v
+unitFromAst (A.UFunc f) = UnitLeaf $ typeDeclared f
+unitFromAst (A.UVar v) = UnitLeaf $ typeDeclared v
 
 membersFromAstClass :: A.Class -> MemberTable
 membersFromAstClass = membersFromAst . members
@@ -52,6 +52,6 @@ memberEntryFromAst m = (name m, memberFromAst m)
 
 memberFromAst :: A.Member -> Member
 memberFromAst (A.MClass a c) = MClass a $ membersFromAstClass c
-memberFromAst (A.MFunc a mut f) = MFunc a mut $ explicitType f
-memberFromAst (A.MVar a v) = MVar a $ explicitType v
+memberFromAst (A.MFunc a mut f) = MFunc a mut $ typeDeclared f
+memberFromAst (A.MVar a v) = MVar a $ typeDeclared v
 

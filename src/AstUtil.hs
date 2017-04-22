@@ -91,20 +91,20 @@ instance HasTypedName Var where
 
 
 ------------------------------------------------------------------------------------------------------------------------
-class HasExplicitType a where
-  explicitType :: a -> Type
+class HasDeclaredType a where
+  typeDeclared :: a -> Type
 
-instance HasSig a => HasExplicitType a where
-  explicitType = explicitType . sig
+instance HasSig a => HasDeclaredType a where
+  typeDeclared = typeDeclared . sig
 
-instance {-#OVERLAPPING#-} HasExplicitType Sig where
-  explicitType a = TFunc (purity a) (paramTypes a) (returnType a)
+instance {-#OVERLAPPING#-} HasDeclaredType Sig where
+  typeDeclared a = TFunc (purity a) (paramTypes a) (returnType a)
 
-instance  {-#OVERLAPPING#-} HasExplicitType Var where
-  explicitType = explicitType . typedName
+instance  {-#OVERLAPPING#-} HasDeclaredType Var where
+  typeDeclared = typeDeclared . typedName
 
-instance  {-#OVERLAPPING#-} HasExplicitType TypedName where
-  explicitType (TypedName t _) = t
+instance  {-#OVERLAPPING#-} HasDeclaredType TypedName where
+  typeDeclared (TypedName t _) = t
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ instance HasSig a => HasParamTypes a where
   paramTypes = paramTypes . sig
 
 instance {-#overlapping#-} HasParamTypes Sig where
-  paramTypes a = map explicitType $ namedParams a
+  paramTypes a = map typeDeclared $ namedParams a
 
 
 ------------------------------------------------------------------------------------------------------------------------
