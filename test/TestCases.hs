@@ -2,10 +2,16 @@ module TestCases(TestCase(..), testCases) where
 
 import Ast
 import qualified Tokens as T
+import TypeErrors
 
 
 data TestCase
-  = TestCase { nme :: String, src :: String, tks :: Maybe T.Tokens, ast :: Maybe Ast}
+  = TestCase
+  { name :: String
+  , source :: String
+  , tokens :: Maybe T.Tokens
+  , ast :: Maybe Ast
+  , typeErrors :: Maybe TypeErrors }
   deriving(Eq, Show)
 
 type TestCases = [TestCase]
@@ -14,49 +20,56 @@ type TestCases = [TestCase]
 testCases :: TestCases
 testCases =
   [ TestCase
-    { nme = "empty str"
-    , src = ""
-    , tks = Just []
+    { name = "empty str"
+    , source = ""
+    , tokens = Just []
     , ast = Just []
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "def pi"
-    , src = "$ pi = 3.14159265"
-    , tks = Just [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
+    { name =
+      "def pi"
+    , source = "$ pi = 3.14159265"
+    , tokens = Just [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
     , ast = Just
       [ UVar
         $ Var
           (TypedName (TInferred Immutable) "pi")
           $ ELitFlt 3.14159265 ]
+
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "if expr"
-    , src = "$ msg = \"it works!\" if true else \"or not :(\""
-    , tks = Just [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
+    { name = "if expr"
+    , source = "$ msg = \"it works!\" if true else \"or not :(\""
+    , tokens = Just [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
     , ast = Just
       [ UVar
         $ Var
           (TypedName (TInferred Immutable) "msg")
           $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(") ]
+
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "op expr"
-    , src = "$ three = 1 + 2"
-    , tks = Just [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
+    { name = "op expr"
+    , source = "$ three = 1 + 2"
+    , tokens = Just [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
     , ast = Just
       [ UVar
         $ Var
           (TypedName (TInferred Immutable) "three")
           $ EAdd (ELitInt 1) (ELitInt 2) ]
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "def negate inline"
-    , src = "negate(Bln b) -> Bln => false if b else true"
-    , tks = Just
+    { name = "def negate inline"
+    , source = "negate(Bln b) -> Bln => false if b else true"
+    , tokens = Just
       [T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
 
@@ -66,13 +79,14 @@ testCases =
           $ Lambda
             (Sig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable))
             [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "def negate block"
-    , src = "negate(Bln b) -> Bln =>\n\
+    { name = "def negate block"
+    , source = "negate(Bln b) -> Bln =>\n\
             \    false if b else true"
-    , tks = Just
+    , tokens = Just
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.Indent
       , T.False, T.If, T.Name "b", T.Else, T.True
@@ -84,15 +98,17 @@ testCases =
           $ Lambda
             (Sig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable)
             [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
+
+     , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "def factorial"
+    { name = "def factorial"
 
-    , src = "factorial(Nat n) -> Nat =>\n\
+    , source = "factorial(Nat n) -> Nat =>\n\
             \    1 if n <= 0 else n * factorial(n-1)"
 
-    , tks = Just
+    , tokens = Just
       [ T.Name "factorial", T.LParen, T.TypeNat, T.Name "n", T.RParen, T.ThinArrow, T.TypeNat, T.FatArrow
       , T.Indent
       , T.LitInt 1, T.If, T.Name "n", T.LesserEq, T.LitInt 0, T.Else
@@ -117,14 +133,16 @@ testCases =
                 )
             ]
       ]
+
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "clothing (cascading if exprs inline)"
-    , src =
+    { name = "clothing (cascading if exprs inline)"
+    , source =
       "clothing(Weather w) -> Clothing =>\n\
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
-    , tks = Nothing
+    , tokens = Nothing
     , ast = Just
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
@@ -135,17 +153,19 @@ testCases =
           $ LExpr $ EName "jacket"
         ]
       ]
+
+    , typeErrors = Nothing
     }
 
   , TestCase
-    { nme = "clothing (cascading if exprs multiline)"
-    , src =
+    { name = "clothing (cascading if exprs multiline)"
+    , source =
       "clothing(Weather w) -> Clothing =>\n\
       \    rainCoat if w.isRaining else\n\
       \    coat if w.isCold else\n\
       \    tShirt if w.isSunny else\n\
       \    jacket"
-    , tks = Nothing
+    , tokens = Nothing
     , ast = Just
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
@@ -156,15 +176,16 @@ testCases =
           $ LExpr $ EName "jacket"
         ]
       ]
+    , typeErrors = Nothing
     }
 
   , TestCase
-    { nme = "draw widget (imperative-style if)"
-    , src = "drawWidget(~@, Nat width, Nat height) -> None =>\n\
+    { name = "draw widget (imperative-style if)"
+    , source = "drawWidget(~@, Nat width, Nat height) -> None =>\n\
             \    $ w = Widget(width, height)\n\
             \    if w.exists\n\
             \        w.draw(~@)\n"
-    , tks = Just
+    , tokens = Just
       [ T.Name "drawWidget"
       , T.LParen, T.Tilde, T.At
       , T.Comma, T.TypeNat, T.Name "width"
@@ -195,15 +216,17 @@ testCases =
                   [ SExpr $ LExpr $ EApply (LExpr $ ESelect (LExpr $ EName "w") "draw") WriteWorld [] ]
             ]
       ]
+
+    , typeErrors = Nothing
     }
 
   , TestCase
-    { nme = "quadratic (explicit return type)"
-    , src = "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
+    { name = "quadratic (explicit return type)"
+    , source = "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
             \    (Flt x) -> Flt =>\n\
             \        a*x*x + b*x + c"
 
-    , tks = Just
+    , tokens = Just
       [ T.Name "quadratic"
         , T.LParen, T.TypeFlt, T.Name "a"
         , T.Comma, T.TypeFlt, T.Name "b"
@@ -247,16 +270,17 @@ testCases =
                         $ LExpr $ EName "c"
                   ]
             ]
-    ]
+      ]
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "quadratic (implicit return type)"
-    , src = "quadratic(Flt a, Flt b, Flt c) =>\n\
+    { name = "quadratic (implicit return type)"
+    , source = "quadratic(Flt a, Flt b, Flt c) =>\n\
             \    (Flt x) =>\n\
             \        a*x*x + b*x + c"
 
-    , tks = Nothing
+    , tokens = Nothing
 
     , ast = Just
       [ UFunc
@@ -285,14 +309,15 @@ testCases =
                         $ LExpr $ EName "c"
                   ]
             ]
-    ]
+      ]
+    , typeErrors = Just []
     }
 
   , TestCase
-    { nme = "quadratic formula (single root)"
-    , src = "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
+    { name = "quadratic formula (single root)"
+    , source = "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
             \    (-b + math.sqrt(b*b - 4*a*c)) / 2*a"
-    , tks = Nothing
+    , tokens = Nothing
     , ast = Just
       [ UFunc
         $ Func "singleRoot"
@@ -320,6 +345,7 @@ testCases =
           ]
 
       ]
+    , typeErrors = Nothing -- It _will_ have type errors, hold tight! :)
     }
 
   -- TODO: quadratic formula that returns a tuple.
@@ -337,4 +363,12 @@ testCases =
   -- concerns with this idea: items(index).name could be written items index.name. What would this mean?
   -- would you require haskell style parenthesis like (items index).name ?
   -- I think I may prefer items(index).name
+
+  , TestCase
+    { name = "Unknown id"
+    , source = "$ a = b"
+    , tokens = Nothing
+    , ast = Nothing
+    , typeErrors = Just [UnknownId "b"]
+    }
   ]

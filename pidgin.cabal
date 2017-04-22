@@ -25,6 +25,8 @@ library
                      , Parser
                      , SymTable
                      , Tokens 
+                     , TypeCheck
+                     , TypeErrors
 
   build-depends:       base
                      , containers
