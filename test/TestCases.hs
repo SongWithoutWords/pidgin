@@ -365,10 +365,45 @@ testCases =
   -- I think I may prefer items(index).name
 
   , TestCase
-    { name = "Unknown id"
+    { name = "Assignment: $ <- unknownId"
     , source = "$ a = b"
     , tokens = Nothing
     , ast = Nothing
     , typeErrors = Just [UnknownId "b"]
+    }
+  , TestCase
+    { name = "Assignment: Bln <- 5"
+    , source = "Bln b = 5"
+    , tokens = Nothing
+    , ast = Nothing
+    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    }
+  , TestCase
+    { name = "Assignment: Bln <- true"
+    , source = "Bln b = true"
+    , tokens = Nothing
+    , ast = Nothing
+    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    }
+  , TestCase
+    { name = "Assignment: Bln <- false"
+    , source = "Bln b = false"
+    , tokens = Nothing
+    , ast = Nothing
+    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    }
+  , TestCase
+    { name = "Assignment: a <- true; Bln <- a"
+    , source = "$ = false"
+    , tokens = Nothing
+    , ast = Nothing
+    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    }
+  , TestCase
+    { name = "Assignment: a <- 5; Bln <- a"
+    , source = "Bln enable = false"
+    , tokens = Nothing
+    , ast = Nothing
+    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
     }
   ]
