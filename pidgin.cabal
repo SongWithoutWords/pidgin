@@ -23,6 +23,7 @@ library
                      , Lexer
                      , ParseError
                      , Parser
+                     , Preface
                      , SymTable
                      , Tokens 
                      , TypeCheck
