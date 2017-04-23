@@ -92,8 +92,8 @@ data Stmt
   | SVar Var
   | SFunc Func
   | SIf IfBranch
-  | SApply Expr Purity [Expr]
-  -- | SExpr Expr
+  | SExpr Expr
+  | SRet Expr
   deriving(Eq, Show)
 
 data IfBranch
@@ -111,11 +111,13 @@ data Var
   deriving(Eq, Show)
 
 data Expr
-  = LExpr LExpr
+  = EApply Apply
+  | ESelect Select
+  | EName Name
 
   | EIf Expr {- if -} Expr {- else -} Expr
   | ELambda Lambda
-  | ECons Typename Purity [Expr]
+  | ECons Typename Params
 
   -- Unary operators
   | ENegate Expr
@@ -141,17 +143,15 @@ data Expr
 
 -- Expressions that can appear on the left side of an assignment
 data LExpr
-  = EApply Apply
-  -- = EApply Expr Purity [Expr]
-  | ESelect Expr Name
-  | EName Name
-  deriving(Eq, Show)
-
-data Apply
-  = Apply Expr Purity [Expr]
+  = LApply Apply
+  | LSelect Select
+  | LName Name
   deriving(Eq, Show)
 
 type Typename = String
 
+type Apply = (Expr, Params)
+type Params = (Purity, [Expr])
+type Select = (Expr, Name)
 type Name = String
 

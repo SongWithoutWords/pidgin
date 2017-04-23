@@ -139,9 +139,12 @@ accessMod
 function
   : name lambda { Func $1 $2 }
 
-lambda
-  : signature "=>" block { Lambda $1 $3 }
- 
+lambda -- a
+  : signature "=>" block             { Lambda $1 $3 }
+  -- | signature "=>" expr              { Lambda $1 [SExpr $3] }
+  -- | signature "=>" expr         { Lambda $1 [SRet $3] }
+  -- | signature "=>" ind expr ded { Lambda $1 [SRet $5] }
+
 signature
   : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
 
@@ -191,12 +194,12 @@ types
   | type "," types  { $1 : $3 }
 
 cons
-  : typename "(" purityAndExprs ")" { ECons $1 (fst $3) (snd $3) }
+  : typename "(" params ")" { ECons $1 $3 }
 
 apply
-  : expr "(" purityAndExprs ")" { EApply $1 (fst $3) (snd $3) }
+  : expr "(" params ")" { $1 & $3 }
 
-purityAndExprs
+params
   : {- none -}        { Pure & [] }
   | exprs             { Pure & $1 }
   | purity            { $1 & [] }
@@ -236,61 +239,51 @@ type
   | None      { TNone }
   | "$"       { TInferred }
 
-
 block
-  : indentedBlock { $1 }
-  | inlineBlock   { $1 }
+  : ind stmts ded { $2 }
+  | shallowStmt   { [$1] }
 
-indentedBlock
-  : ind subBlocks ded { $2 }
+optStmts
+  : {- none -}  { [] }
+  | stmts       { $1 }
 
-subBlocks
-  : subBlock                { $1 }
-  | subBlock eol subBlocks  { $1 ++ $3 }
-
-subBlock
-  : inlineBlock { $1 }
-  | nestedBlock { [$1] }
-
-inlineBlock
-  : stmt                  { [$1] }
-  | stmt ";" inlineBlock  { $1 : $3 }
-
-nestedBlock
-  : function        { SFunc $1 }
-  | ifBranch        { SIf $1 }
+stmts
+  : stmt            { [$1] }
+  | stmt lineSep stmts  { $1 : $3 }
 
 stmt
+  : shallowStmt     { $1 }
+  | function        { SFunc $1 }
+  | ifBranch        { SIf $1 }
+
+shallowStmt
   : lexpr "=" expr  { SAssign $1 $3 }
   | var             { SVar $1 }
-  -- | apply           { SApply $1 }
   | expr            { SExpr $1 }
+  | ret expr        { SRet $2 }
 
 ifBranch
   : if condBlock                    { Iff $2 }
-  | if condBlock else indentedBlock { IfElse $2 $4 }
+  | if condBlock else block { IfElse $2 $4 }
   | if condBlock else ifBranch      { IfElif $2 $4 }
 
 condBlock
-  : expr indentedBlock { CondBlock $1 $2 }
+  : expr then block { CondBlock $1 $3 }
 
 var
   : mTypeName "=" expr { Var $1 $3 }
 
 expr
-  : expr if shallowExpr else optionEol expr { EIf $1 $3 $6 }
-  | lambda      { ELambda $1 }
-  | shallowExpr { $1 }
+  : eIf     { $1 }
+  | lambda  { ELambda $1 }
 
-optionEol
-  : eol         {}
-  | {- none -}  {}
+  | apply   { EApply $1 }
+  | select  { ESelect $1 }
+  | name    { EName $1 }
+  
+  | cons    { $1 }
 
-shallowExpr
-  : lexpr     { LExpr $1 }
-  | cons      { $1 }
-
-  | op        { $1 }
+  | op      { $1 }
 
   | litBln { ELitBln $1 }
   | litChr { ELitChr $1 }
@@ -298,10 +291,20 @@ shallowExpr
   | litInt { ELitInt $1 }
   | litStr { ELitStr $1 }
 
+eIf
+  : expr if expr else optEol expr { EIf $1 $3 $6 }
+
+optEol
+  : eol         {}
+  | {- none -}  {}
+
 lexpr
-  : apply           { $1 }
-  | expr "." name   { ESelect $1 $3 }
-  | name            { EName $1 }
+  : apply   { LApply $1 }
+  | select  { LSelect $1 } 
+  | name    { LName $1 }
+
+select
+  : expr "." name   { ($1, $3) }
 
 op
   : "(" expr ")"            { $2 }
@@ -318,4 +321,8 @@ op
 litBln
   : true  {True}
   | false {False}
+
+lineSep
+  : eol {}
+  | ";" {}
 

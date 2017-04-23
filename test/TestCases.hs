@@ -83,15 +83,16 @@ testCases =
 
     , ast = Just
       [ UFunc $ Func "negate" $ Lambda (Sig Pure [((Imut, TBln),  "b")] TBln)
-            [ SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
+            [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)] ]
 
     , typeErrors = Just []
     }
 
   , TestCase
     { name = "def negate block"
-    , source = "negate(Bln b) -> Bln =>\n\
-            \    false if b else true"
+    , source =
+      "negate(Bln b) -> Bln =>\n\
+      \    false if b else true"
     , tokens = Just
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.Indent
@@ -100,7 +101,7 @@ testCases =
 
     , ast = Just
       [ UFunc $ Func "negate" $ Lambda (Sig Pure [((Imut, TBln), "b")] TBln)
-            [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
+            [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)] ]
 
      , typeErrors = Just []
     }
@@ -108,8 +109,9 @@ testCases =
   , TestCase
     { name = "def factorial"
 
-    , source = "factorial(Nat n) -> Nat =>\n\
-            \    1 if n <= 0 else n * factorial(n-1)"
+    , source =
+      "factorial(Nat n) -> Nat =>\n\
+      \    1 if n <= 0 else n * factorial(n-1)"
 
     , tokens = Just
       [ T.Name "factorial", T.LParen, T.TypeNat, T.Name "n", T.RParen, T.ThinArrow, T.TypeNat, T.FatArrow
@@ -122,17 +124,14 @@ testCases =
       [ UFunc
         $ Func "factorial"
           $ Lambda
-            (Sig Pure [((Imut, TNat), "n")] $ TNat)
+            ( Sig Pure [((Imut, TNat), "n")] TNat)
             [ SExpr
               $ EIf
                 (ELitInt 1)
-                (ELesserEq (LExpr $ EName "n") (ELitInt 0))
+                (ELesserEq (EName "n") (ELitInt 0))
                 (EMul
-                    (LExpr $ EName "n")
-                    $ LExpr $ EApply
-                      (LExpr $ EName "factorial")
-                      Pure
-                      [ESub (LExpr $ EName "n") (ELitInt 1)]
+                    (EName "n")
+                    $ EApply $ EName "factorial" & (Pure & [ESub (EName "n") (ELitInt 1)])
                 )
             ]
       ]
@@ -150,10 +149,10 @@ testCases =
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [((Imut, TUser "Weather"), "w")] $ TUser "Clothing" )
         [ SExpr
-          $ EIf (LExpr $ EName "rainCoat") (LExpr $ ESelect (LExpr $ EName "w") "isRaining")
-          $ EIf (LExpr $ EName "coat") (LExpr $ ESelect (LExpr $ EName "w") "isCold")
-          $ EIf (LExpr $ EName "tShirt") (LExpr $ ESelect (LExpr $ EName "w") "isSunny")
-          $ LExpr $ EName "jacket"
+          $ EIf (EName "rainCoat") (ESelect $ EName "w" & "isRaining")
+          $ EIf (EName "coat") (ESelect $ EName "w" & "isCold")
+          $ EIf (EName "tShirt") (ESelect $ EName "w" & "isSunny")
+          $ EName "jacket"
         ]
       ]
 
@@ -173,21 +172,23 @@ testCases =
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [((Imut, TUser "Weather"),  "w")] $ TUser "Clothing" )
         [ SExpr
-          $ EIf (LExpr $ EName "rainCoat") (LExpr $ ESelect (LExpr $ EName "w") "isRaining")
-          $ EIf (LExpr $ EName "coat") (LExpr $ ESelect (LExpr $ EName "w") "isCold")
-          $ EIf (LExpr $ EName "tShirt") (LExpr $ ESelect (LExpr $ EName "w") "isSunny")
-          $ LExpr $ EName "jacket"
+          $ EIf (EName "rainCoat") (ESelect $ EName "w" & "isRaining")
+          $ EIf (EName "coat") (ESelect $ EName "w" & "isCold")
+          $ EIf (EName "tShirt") (ESelect $ EName "w" & "isSunny")
+          $ EName "jacket"
         ]
       ]
     , typeErrors = Nothing
     }
 
   , TestCase
-    { name = "draw widget (imperative-style if)"
-    , source = "drawWidget(~@, Nat width, Nat height) -> None =>\n\
-            \    $ w = Widget(width, height)\n\
-            \    if w.exists\n\
-            \        w.draw(~@)\n"
+    { name = "draw widget (imperative if)"
+    , source =
+      "drawWidget(~@, Nat width, Nat height) -> None =>\n\
+      \    $ w = Widget(width, height)\n\
+      \    if w.exists then\n\
+      \        w.draw(~@)"
+
     , tokens = Just
       [ T.Name "drawWidget"
       , T.LParen, T.Tilde, T.At
@@ -198,7 +199,7 @@ testCases =
         , T.Dollar, T.Name "w", T.Equal
           , T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
         , T.Eol
-        , T.If, T.Name "w", T.Dot, T.Name "exists"
+        , T.If, T.Name "w", T.Dot, T.Name "exists", T.Then
         , T.Indent
           , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
         , T.Dedent
@@ -211,23 +212,31 @@ testCases =
             ( Sig PWrite [((Imut, TNat), "width"), ((Imut, TNat), "height")] TNone )
             [ SVar
               $ Var
-                (Imut & TInferred, "w") (ECons "Widget" Pure [LExpr $ EName "width", LExpr $ EName "height"])
+                (Imut & TInferred, "w") (ECons "Widget" $ Pure & [EName "width", EName "height"])
             , SIf
               $ Iff
                 $ CondBlock
-                  ( LExpr $ ESelect (LExpr $ EName "w") "exists" )
-                  [ SExpr $ LExpr $ EApply (LExpr $ ESelect (LExpr $ EName "w") "draw") PWrite [] ]
+                  ( ESelect $ EName "w" & "exists" )
+                  [ SExpr $ EApply $ (ESelect $ EName "w" & "draw") & (PWrite, []) ]
             ]
       ]
 
     , typeErrors = Nothing
     }
 
+  -- , TestCase
+  --   { name = "an army approaches (imperative if) - inline"
+  --   , source =
+  --     "anArmyApproaches(~@, ^Army a) => soundTheHorn(~@); if a.isFriendly then openTheGate(~@) else if a.isUnknown"
+
+  --   }
+
   , TestCase
     { name = "quadratic (explicit return types)"
-    , source = "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
-            \    (Flt x) -> Flt =>\n\
-            \        a*x*x + b*x + c"
+    , source =
+      "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
+      \    (Flt x) -> Flt =>\n\
+      \        a*x*x + b*x + c"
 
     , tokens = Just
       [ T.Name "quadratic"
@@ -261,10 +270,10 @@ testCases =
                   )
                   [ SExpr
                     $ EAdd
-                      ( EMul (LExpr $ EName "a") $ EMul (LExpr $ EName "x") (LExpr $ EName "x") )
+                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
                       $ EAdd
-                        ( EMul (LExpr $ EName "b") $ LExpr $ EName "x" )
-                        $ LExpr $ EName "c"
+                        ( EMul ( EName "b") $ EName "x" )
+                        $ EName "c"
                   ]
             ]
       ]
@@ -273,9 +282,10 @@ testCases =
 
   , TestCase
     { name = "quadratic (implicit return types)"
-    , source = "quadratic(Flt a, Flt b, Flt c) =>\n\
-            \    (Flt x) =>\n\
-            \        a*x*x + b*x + c"
+    , source =
+      "quadratic(Flt a, Flt b, Flt c) =>\n\
+      \    (Flt x) =>\n\
+      \        a*x*x + b*x + c"
 
     , tokens = Nothing
 
@@ -290,10 +300,38 @@ testCases =
                   ( Sig Pure [ (Imut & TFlt, "x") ] TInferred )
                   [ SExpr
                     $ EAdd
-                      ( EMul (LExpr $ EName "a") $ EMul (LExpr $ EName "x") (LExpr $ EName "x") )
+                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
                       $ EAdd
-                        ( EMul (LExpr $ EName "b") $ LExpr $ EName "x" )
-                        $ LExpr $ EName "c"
+                        ( EMul (EName "b") $ EName "x" )
+                        $ EName "c"
+                  ]
+            ]
+      ]
+    , typeErrors = Just []
+    }
+
+  , TestCase
+    { name = "quadratic (implicit return types, inline)"
+    , source =
+      "quadratic(Flt a, Flt b, Flt c) => (Flt x) => a*x*x + b*x + c"
+
+    , tokens = Nothing
+
+    , ast = Just
+      [ UFunc
+        $ Func "quadratic"
+          $ Lambda
+            ( Sig Pure [(Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] TInferred )
+            [ SExpr
+              $ ELambda
+                $ Lambda
+                  ( Sig Pure [ (Imut & TFlt, "x") ] TInferred )
+                  [ SExpr
+                    $ EAdd
+                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
+                      $ EAdd
+                        ( EMul (EName "b") $ EName "x" )
+                        $ EName "c"
                   ]
             ]
       ]
@@ -302,8 +340,9 @@ testCases =
 
   , TestCase
     { name = "quadratic formula (single root)"
-    , source = "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
-            \    (-b + math.sqrt(b*b - 4*a*c)) / 2*a"
+    , source =
+      "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
+      \    (-b + math.sqrt(b*b - 4*a*c)) / 2*a"
     , tokens = Nothing
     , ast = Just
       [ UFunc
@@ -313,16 +352,16 @@ testCases =
           [ SExpr
             $ EDiv
               ( EAdd
-                ( ENegate (LExpr $ EName "b") )
-                $ LExpr $ EApply
-                  ( LExpr $ ESelect (LExpr $ EName "math") "sqrt" )
-                  Pure
+                ( ENegate (EName "b") )
+                $ EApply $
+                  (ESelect $ EName "math" & "sqrt" ) &
+                  (Pure,
                   [ ESub
-                    (EMul (LExpr $ EName "b") (LExpr $ EName "b"))
-                    (EMul (ELitInt 4) $ EMul (LExpr $ EName "a") (LExpr $ EName "c"))
-                  ]
+                    (EMul (EName "b") (EName "b"))
+                    (EMul (ELitInt 4) $ EMul (EName "a") (EName "c"))
+                  ])
               )
-              (EMul (ELitInt 2) (LExpr $ EName "a"))
+              (EMul (ELitInt 2) (EName "a"))
           ]
       ]
     , typeErrors = Nothing -- It _will_ have type errors, hold tight! :)
