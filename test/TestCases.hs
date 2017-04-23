@@ -382,7 +382,7 @@ testCases =
     }
   , TestCase
     { name = "Assignment: a <- 5; Bln <- a"
-    , source = "$ a <- 5; Bln b = a"
+    , source = "$ a = 5; Bln b = a"
     , tokens = Nothing
     , ast = Nothing
     , typeErrors = Just [TypeConflict TBln TInt]
