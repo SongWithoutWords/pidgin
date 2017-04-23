@@ -2,63 +2,58 @@
 {-# language TypeSynonymInstances #-}
 {-# language UndecidableInstances #-}
 
-
 module AstUtil where
-
-import Preface
-
 import Ast
-
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasName a where
-  name :: a -> String
+  nameOf :: a -> String
 
 instance HasName Unit where
-  name unit = case unit of
+  nameOf unit = case unit of
     UNamespace n _ -> n
-    UClass c -> name c
-    UFunc f -> name f
-    UVar v -> name v
+    UClass c -> nameOf c
+    UFunc f -> nameOf f
+    UVar v -> nameOf v
 
 instance HasName Class where
-  name (Class n _) = n
+  nameOf (Class n _) = n
 
 instance HasName Func where
-  name (Func n _) = n
+  nameOf (Func n _) = n
 
 instance HasName Member where
-  name member = case member of
-    MClass _ c -> name c
-    MFunc _ _ f -> name f
+  nameOf member = case member of
+    MClass _ c -> nameOf c
+    MFunc _ _ f -> nameOf f
     MCons _ _ -> "This"
-    MVar _ v -> name v
+    MVar _ v -> nameOf v
 
 instance HasName Var where
-  name = name . mTypeName
+  nameOf = nameOf . mTypeNameOf
 
 instance HasName TypedName where
-  name (_, n) = n
+  nameOf (_, n) = n
 
 instance HasName MTypeName where
-  name (_, n) = n
+  nameOf (_, n) = n
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasMembers a where
-  members :: a -> [Member]
+  membersOf :: a -> [Member]
 
 instance HasMembers Class where
-  members (Class _ m) = m
+  membersOf (Class _ m) = m
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasAccess a where
-  accessMod :: a -> Access
+  accessModOf :: a -> Access
 
 instance HasAccess Member where
-  accessMod member = case member of
+  accessModOf member = case member of
     MClass a _ -> a
     MFunc a _ _ -> a
     MCons a _ -> a
@@ -66,42 +61,11 @@ instance HasAccess Member where
 
 
 ------------------------------------------------------------------------------------------------------------------------
--- class HasMut a where
---   mutability :: a -> Mut
-
--- instance HasMut Type where
---   mutability t = case t of
---     TUser m _ -> m
---     TFunc {} -> Immutable
---     TInferred m -> m
---     TTempRef m _ -> m
---     TPersRef m _ -> m
---     TOption m _ -> m
---     TZeroPlus _ -> Immutable
---     TOnePlus _ -> Immutable
---     TBln m -> m
---     TChr m -> m
---     TFlt m -> m
---     TInt m -> m
---     TNat m -> m
---     TStr m -> m
---     TNone -> Immutable
-
-
-
-
-
-
-
-------------------------------------------------------------------------------------------------------------------------
 class HasMTypeName a where
-  mTypeName :: a -> MTypeName
+  mTypeNameOf :: a -> MTypeName
 
 instance HasMTypeName Var where
-  mTypeName (Var t _) = t
-
-instance HasMTypeName MTypeName where
-  mTypeName = identity
+  mTypeNameOf (Var t _) = t
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -109,7 +73,7 @@ class IsMTypeDecl a where
   mTypeOf :: a -> MType
 
 instance HasMTypeName a => IsMTypeDecl a where
-  mTypeOf = mTypeOf . mTypeName
+  mTypeOf = mTypeOf . mTypeNameOf
 
 instance {-#OVERLAPPING#-} IsMTypeDecl MTypeName where
   mTypeOf (t, _) = t
@@ -120,13 +84,13 @@ class IsTypeDecl a where
   typeOf :: a -> Type
 
 -- instance {-#OVERLAPPING#-} IsMTypeDecl a => IsTypeDecl a where
-  -- typeOf = snd -- . mTypeOf
+--   typeOf = snd . mTypeOf
 
 instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
-  typeOf = typeOf . sig
+  typeOf = typeOf . sigOf
 
 instance {-#OVERLAPPING#-} IsTypeDecl Sig where
-  typeOf a = TFunc (purity a) (paramTypes a) (returnType a)
+  typeOf a = TFunc (purityOf a) (paramTypesOf a) (returnTypeOf a)
 
 instance {-#OVERLAPPING#-} IsTypeDecl TypedName where
   typeOf (t, _) = t
@@ -135,77 +99,77 @@ instance {-#OVERLAPPING#-} IsTypeDecl TypedName where
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasLambda a where
-  lambda :: a -> Lambda
+  lambdaOf :: a -> Lambda
 
 instance HasLambda Func where
-  lambda (Func _ l) = l
+  lambdaOf (Func _ l) = l
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasSig a where
-  sig :: a -> Sig
+ sigOf :: a -> Sig
 
 instance HasLambda a => HasSig a where
-  sig = sig . lambda
+ sigOf =sigOf . lambdaOf
 
 instance {-#OVERLAPPING#-} HasSig Lambda where
-  sig (Lambda s _) = s
+ sigOf (Lambda s _) = s
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasPurity a where
-  purity :: a -> Purity
+  purityOf :: a -> Purity
 
 instance HasSig a => HasPurity a where
-  purity = purity . sig
+  purityOf = purityOf .sigOf
 
 instance {-#OVERLAPPING#-} HasPurity Sig where
-  purity (Sig p _ _) = p
+  purityOf (Sig p _ _) = p
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasNamedParams a where
-  namedParams :: a -> [MTypeName]
+  namedParamsOf :: a -> [MTypeName]
 
 instance HasSig a => HasNamedParams a where
-  namedParams = namedParams . sig
+  namedParamsOf = namedParamsOf . sigOf
 
 instance {-#overlapping#-} HasNamedParams Sig where
-  namedParams (Sig _ args _) = args
+  namedParamsOf (Sig _ args _) = args
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasParamTypes a where
-  paramTypes :: a -> [Type]
+  paramTypesOf :: a -> [Type]
 
 instance HasSig a => HasParamTypes a where
-  paramTypes = paramTypes . sig
+  paramTypesOf = paramTypesOf . sigOf
 
 instance {-#overlapping#-} HasParamTypes Sig where
-  paramTypes = paramTypes . namedParams
+  paramTypesOf = paramTypesOf . namedParamsOf
 
 instance {-#overlapping#-} HasParamTypes [MTypeName] where
-  paramTypes = map (snd . mTypeOf)
+  paramTypesOf = map (snd . mTypeOf)
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasReturnType a where
-  returnType :: a -> Type
+  returnTypeOf :: a -> Type
 
 instance HasSig a => HasReturnType a where
-  returnType = returnType . sig
+  returnTypeOf = returnTypeOf . sigOf
 
 instance {-#OVERLAPPING#-} HasReturnType Sig where
-  returnType (Sig _ _ t) = t
+  returnTypeOf (Sig _ _ t) = t
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasBlock a where
-  block :: a -> Block
+  blockOf :: a -> Block
 
-instance HasBlock Func where
-  block (Func _ l) = block l
+instance HasLambda a => HasBlock a where
+  blockOf = blockOf . lambdaOf
 
-instance HasBlock Lambda where
-  block (Lambda _ b) = b
+instance {-#OVERLAPPING#-} HasBlock Lambda where
+  blockOf (Lambda _ b) = b
 

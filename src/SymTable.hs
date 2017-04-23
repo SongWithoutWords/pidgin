@@ -33,7 +33,7 @@ unitsFromAst :: [A.Unit] -> UnitTable
 unitsFromAst = Map.fromList . map unitEntryFromAst
 
 unitEntryFromAst :: A.Unit -> Entry Unit
-unitEntryFromAst u = (name u, unitFromAst u)
+unitEntryFromAst u = (nameOf u, unitFromAst u)
 
 unitFromAst :: A.Unit -> Unit
 unitFromAst (A.UNamespace _ units) = UNamespace $ unitsFromAst units
@@ -42,13 +42,13 @@ unitFromAst (A.UFunc f) = UnitLeaf $ typeOf f
 unitFromAst (A.UVar v) = UnitLeaf $ snd $ mTypeOf v
 
 membersFromAstClass :: A.Class -> MemberTable
-membersFromAstClass = membersFromAst . members
+membersFromAstClass = membersFromAst . membersOf
 
 membersFromAst :: [A.Member] -> MemberTable
 membersFromAst = Map.fromList . map memberEntryFromAst
 
 memberEntryFromAst :: A.Member -> Entry Member
-memberEntryFromAst m = (name m, memberFromAst m)
+memberEntryFromAst m = (nameOf m, memberFromAst m)
 
 memberFromAst :: A.Member -> Member
 memberFromAst (A.MClass a c) = MClass a $ membersFromAstClass c
