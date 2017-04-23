@@ -103,7 +103,7 @@ unitsOrNone
 
 units
   : unit            { [$1] }
-  | unit eol units  { $1 : $3}
+  | unit lineSep units  { $1 : $3}
 
 unit
   : namespace       { $1 }
@@ -139,11 +139,8 @@ accessMod
 function
   : name lambda { Func $1 $2 }
 
-lambda -- a
+lambda
   : signature "=>" block             { Lambda $1 $3 }
-  -- | signature "=>" expr              { Lambda $1 [SExpr $3] }
-  -- | signature "=>" expr         { Lambda $1 [SRet $3] }
-  -- | signature "=>" ind expr ded { Lambda $1 [SRet $5] }
 
 signature
   : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
