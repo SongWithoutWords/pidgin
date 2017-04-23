@@ -25,6 +25,7 @@ data Token
   | Or
   | Not
   | None
+  | Ret
 
   | Namespace
   | Class

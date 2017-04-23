@@ -92,7 +92,8 @@ data Stmt
   | SVar Var
   | SFunc Func
   | SIf IfBranch
-  | SExpr Expr
+  | SApply Expr Purity [Expr]
+  -- | SExpr Expr
   deriving(Eq, Show)
 
 data IfBranch
@@ -140,9 +141,14 @@ data Expr
 
 -- Expressions that can appear on the left side of an assignment
 data LExpr
-  = EApply Expr Purity [Expr]
+  = EApply Apply
+  -- = EApply Expr Purity [Expr]
   | ESelect Expr Name
   | EName Name
+  deriving(Eq, Show)
+
+data Apply
+  = Apply Expr Purity [Expr]
   deriving(Eq, Show)
 
 type Typename = String

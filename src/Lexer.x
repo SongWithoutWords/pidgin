@@ -58,6 +58,7 @@ and                      { appendTokenAction T.And }
 or                       { appendTokenAction T.Or }
 not                      { appendTokenAction T.Not }
 none                     { appendTokenAction T.None }
+ret                      { appendTokenAction T.Ret }
 
 namespace                { appendTokenAction T.Namespace }
 class                    { appendTokenAction T.Class }
