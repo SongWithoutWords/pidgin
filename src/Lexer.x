@@ -51,6 +51,7 @@ Str                      { appendTokenAction T.TypeStr }
 This                     { appendTokenAction T.TypeThis }
 
 if                       { appendTokenAction T.If }
+then                     { appendTokenAction T.Then }
 else                     { appendTokenAction T.Else }
 true                     { appendTokenAction T.True }
 false                    { appendTokenAction T.False }

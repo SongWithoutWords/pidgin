@@ -35,6 +35,8 @@ import qualified Tokens as T
   or            { T.Or }
   not           { T.Not }
   none          { T.None }
+  ret           { T.Ret }
+  then          { T.Then }
 
   tknNamespace  { T.Namespace }
   tknClass      { T.Class }

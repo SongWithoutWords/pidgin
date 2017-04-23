@@ -18,6 +18,7 @@ data Token
   | TypeThis
 
   | If
+  | Then
   | Else
   | True
   | False
