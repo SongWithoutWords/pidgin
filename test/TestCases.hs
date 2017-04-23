@@ -1,5 +1,7 @@
 module TestCases(TestCase(..), testCases) where
 
+import Preface
+
 import Ast
 import qualified Tokens as T
 import TypeErrors
@@ -30,25 +32,29 @@ testCases =
   , TestCase
     { name =
       "def pi"
+
     , source = "$ pi = 3.14159265"
-    , tokens = Just [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
+
+    , tokens = Just
+      [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
+
     , ast = Just
-      [ UVar
-        $ Var
-          (TypedName (TInferred Immutable) "pi")
-          $ ELitFlt 3.14159265 ]
+      [ UVar $ Var ((Imut, TInferred), "pi") $ ELitFlt 3.14159265 ]
 
     , typeErrors = Just []
     }
 
   , TestCase
     { name = "if expr"
+
     , source = "$ msg = \"it works!\" if true else \"or not :(\""
-    , tokens = Just [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
+
+    , tokens = Just
+      [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
+
     , ast = Just
       [ UVar
-        $ Var
-          (TypedName (TInferred Immutable) "msg")
+        $ Var ((Imut, TInferred), "msg")
           $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(") ]
 
     , typeErrors = Just []
@@ -57,28 +63,28 @@ testCases =
   , TestCase
     { name = "op expr"
     , source = "$ three = 1 + 2"
-    , tokens = Just [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
+
+    , tokens = Just
+      [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
+
     , ast = Just
-      [ UVar
-        $ Var
-          (TypedName (TInferred Immutable) "three")
-          $ EAdd (ELitInt 1) (ELitInt 2) ]
+      [ UVar $ Var (Imut & TInferred, "three") $ EAdd (ELitInt 1) (ELitInt 2) ]
+
     , typeErrors = Just []
     }
 
   , TestCase
     { name = "def negate inline"
     , source = "negate(Bln b) -> Bln => false if b else true"
+
     , tokens = Just
-      [T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
+      [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
 
     , ast = Just
-      [ UFunc
-        $ Func "negate"
-          $ Lambda
-            (Sig Pure [TypedName (TBln Immutable) "b"] (TBln Immutable))
-            [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [((Imut, TBln),  "b")] TBln)
+            [ SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
+
     , typeErrors = Just []
     }
 
@@ -93,10 +99,7 @@ testCases =
       , T.Dedent]
 
     , ast = Just
-      [ UFunc
-        $ Func "negate"
-          $ Lambda
-            (Sig Pure [TypedName (TBln Immutable) "b"] $ TBln Immutable)
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [((Imut, TBln), "b")] TBln)
             [SExpr $ EIf (ELitBln False) (LExpr $ EName "b") (ELitBln True)] ]
 
      , typeErrors = Just []
@@ -119,7 +122,7 @@ testCases =
       [ UFunc
         $ Func "factorial"
           $ Lambda
-            (Sig Pure [TypedName (TNat Immutable) "n"] $ TNat Immutable)
+            (Sig Pure [((Imut, TNat), "n")] $ TNat)
             [ SExpr
               $ EIf
                 (ELitInt 1)
@@ -145,7 +148,7 @@ testCases =
     , tokens = Nothing
     , ast = Just
       [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
+        ( Sig Pure [((Imut, TUser "Weather"), "w")] $ TUser "Clothing" )
         [ SExpr
           $ EIf (LExpr $ EName "rainCoat") (LExpr $ ESelect (LExpr $ EName "w") "isRaining")
           $ EIf (LExpr $ EName "coat") (LExpr $ ESelect (LExpr $ EName "w") "isCold")
@@ -168,7 +171,7 @@ testCases =
     , tokens = Nothing
     , ast = Just
       [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [TypedName (TUser Immutable "Weather") "w"] $ TUser Immutable "Clothing" )
+        ( Sig Pure [((Imut, TUser "Weather"),  "w")] $ TUser "Clothing" )
         [ SExpr
           $ EIf (LExpr $ EName "rainCoat") (LExpr $ ESelect (LExpr $ EName "w") "isRaining")
           $ EIf (LExpr $ EName "coat") (LExpr $ ESelect (LExpr $ EName "w") "isCold")
@@ -205,15 +208,15 @@ testCases =
       [ UFunc
         $ Func "drawWidget"
           $ Lambda
-            ( Sig WriteWorld [TypedName (TNat Immutable) "width", TypedName (TNat Immutable) "height"] TNone )
+            ( Sig PWrite [((Imut, TNat), "width"), ((Imut, TNat), "height")] TNone )
             [ SVar
               $ Var
-                ( TypedName (TInferred Immutable) "w") (ECons "Widget" Pure [LExpr $ EName "width", LExpr $ EName "height"])
+                (Imut & TInferred, "w") (ECons "Widget" Pure [LExpr $ EName "width", LExpr $ EName "height"])
             , SIf
               $ Iff
                 $ CondBlock
                   ( LExpr $ ESelect (LExpr $ EName "w") "exists" )
-                  [ SExpr $ LExpr $ EApply (LExpr $ ESelect (LExpr $ EName "w") "draw") WriteWorld [] ]
+                  [ SExpr $ LExpr $ EApply (LExpr $ ESelect (LExpr $ EName "w") "draw") PWrite [] ]
             ]
       ]
 
@@ -221,7 +224,7 @@ testCases =
     }
 
   , TestCase
-    { name = "quadratic (explicit return type)"
+    { name = "quadratic (explicit return types)"
     , source = "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
             \    (Flt x) -> Flt =>\n\
             \        a*x*x + b*x + c"
@@ -247,20 +250,14 @@ testCases =
       [ UFunc
         $ Func "quadratic"
           $ Lambda
-            ( Sig
-              Pure
-              [ TypedName (TFlt Immutable) "a"
-              , TypedName (TFlt Immutable) "b"
-              , TypedName (TFlt Immutable) "c"]
-              $ TFunc Pure [TFlt Immutable] $ TFlt Immutable
-            )
+            ( Sig Pure [ (Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] $ TFunc Pure [TFlt] TFlt )
             [ SExpr
               $ ELambda
                 $ Lambda
                   ( Sig
                     Pure
-                    [TypedName (TFlt Immutable) "x"]
-                    (TFlt Immutable)
+                    [(Imut & TFlt, "x")]
+                    TFlt
                   )
                   [ SExpr
                     $ EAdd
@@ -275,7 +272,7 @@ testCases =
     }
 
   , TestCase
-    { name = "quadratic (implicit return type)"
+    { name = "quadratic (implicit return types)"
     , source = "quadratic(Flt a, Flt b, Flt c) =>\n\
             \    (Flt x) =>\n\
             \        a*x*x + b*x + c"
@@ -286,21 +283,11 @@ testCases =
       [ UFunc
         $ Func "quadratic"
           $ Lambda
-            ( Sig
-              Pure
-              [ TypedName (TFlt Immutable) "a"
-              , TypedName (TFlt Immutable) "b"
-              , TypedName (TFlt Immutable) "c" ]
-              $ TInferred Immutable
-            )
+            ( Sig Pure [(Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] TInferred )
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( Sig
-                    Pure
-                    [ TypedName (TFlt Immutable) "x" ]
-                    $ TInferred Immutable
-                  )
+                  ( Sig Pure [ (Imut & TFlt, "x") ] TInferred )
                   [ SExpr
                     $ EAdd
                       ( EMul (LExpr $ EName "a") $ EMul (LExpr $ EName "x") (LExpr $ EName "x") )
@@ -322,13 +309,7 @@ testCases =
       [ UFunc
         $ Func "singleRoot"
           $ Lambda
-          ( Sig
-            Pure
-            [ TypedName (TFlt Immutable) "a"
-            , TypedName (TFlt Immutable) "b"
-            , TypedName (TFlt Immutable) "c" ]
-            $ TFlt Immutable
-          )
+          ( Sig Pure [(Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] TFlt )
           [ SExpr
             $ EDiv
               ( EAdd
@@ -343,7 +324,6 @@ testCases =
               )
               (EMul (ELitInt 2) (LExpr $ EName "a"))
           ]
-
       ]
     , typeErrors = Nothing -- It _will_ have type errors, hold tight! :)
     }
@@ -376,21 +356,21 @@ testCases =
     , source = "Bln b = 5"
     , tokens = Nothing
     , ast = Nothing
-    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    , typeErrors = Just [TypeConflict TBln TInt]
     }
   , TestCase
     { name = "Assignment: Bln <- true"
     , source = "Bln b = true"
     , tokens = Nothing
     , ast = Nothing
-    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    , typeErrors = Just []
     }
   , TestCase
     { name = "Assignment: Bln <- false"
     , source = "Bln b = false"
     , tokens = Nothing
     , ast = Nothing
-    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    , typeErrors = Just []
     }
   , TestCase
     { name = "Assignment: a <- true; Bln <- a"
@@ -398,13 +378,13 @@ testCases =
       "$ a = true; Bln b = a"
     , tokens = Nothing
     , ast = Nothing
-    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    , typeErrors = Just []
     }
   , TestCase
     { name = "Assignment: a <- 5; Bln <- a"
     , source = "$ a <- 5; Bln b = a"
     , tokens = Nothing
     , ast = Nothing
-    , typeErrors = Just [TypeConflict (TBln Immutable) (TInt Immutable)]
+    , typeErrors = Just [TypeConflict TBln TInt]
     }
   ]

@@ -5,7 +5,10 @@
 
 module AstUtil where
 
+import Preface
+
 import Ast
+
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -33,10 +36,13 @@ instance HasName Member where
     MVar _ v -> name v
 
 instance HasName Var where
-  name = name . typedName
+  name = name . mTypeName
 
 instance HasName TypedName where
-  name (TypedName _ n) = n
+  name (_, n) = n
+
+instance HasName MTypeName where
+  name (_, n) = n
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -60,51 +66,71 @@ instance HasAccess Member where
 
 
 ------------------------------------------------------------------------------------------------------------------------
-class HasMut a where
-  mutability :: a -> Mut
+-- class HasMut a where
+--   mutability :: a -> Mut
 
-instance HasMut Type where
-  mutability t = case t of
-    TUser m _ -> m
-    TFunc {} -> Immutable
-    TInferred m -> m
-    TTempRef m _ -> m
-    TPersRef m _ -> m
-    TOption m _ -> m
-    TZeroPlus _ -> Immutable
-    TOnePlus _ -> Immutable
-    TBln m -> m
-    TChr m -> m
-    TFlt m -> m
-    TInt m -> m
-    TNat m -> m
-    TStr m -> m
-    TNone -> Immutable
+-- instance HasMut Type where
+--   mutability t = case t of
+--     TUser m _ -> m
+--     TFunc {} -> Immutable
+--     TInferred m -> m
+--     TTempRef m _ -> m
+--     TPersRef m _ -> m
+--     TOption m _ -> m
+--     TZeroPlus _ -> Immutable
+--     TOnePlus _ -> Immutable
+--     TBln m -> m
+--     TChr m -> m
+--     TFlt m -> m
+--     TInt m -> m
+--     TNat m -> m
+--     TStr m -> m
+--     TNone -> Immutable
 
 
-------------------------------------------------------------------------------------------------------------------------
-class HasTypedName a where
-  typedName :: a -> TypedName
 
-instance HasTypedName Var where
-  typedName (Var t _) = t
+
+
 
 
 ------------------------------------------------------------------------------------------------------------------------
-class HasDeclaredType a where
-  typeDeclared :: a -> Type
+class HasMTypeName a where
+  mTypeName :: a -> MTypeName
 
-instance HasSig a => HasDeclaredType a where
-  typeDeclared = typeDeclared . sig
+instance HasMTypeName Var where
+  mTypeName (Var t _) = t
 
-instance {-#OVERLAPPING#-} HasDeclaredType Sig where
-  typeDeclared a = TFunc (purity a) (paramTypes a) (returnType a)
+instance HasMTypeName MTypeName where
+  mTypeName = identity
 
-instance  {-#OVERLAPPING#-} HasDeclaredType Var where
-  typeDeclared = typeDeclared . typedName
 
-instance  {-#OVERLAPPING#-} HasDeclaredType TypedName where
-  typeDeclared (TypedName t _) = t
+------------------------------------------------------------------------------------------------------------------------
+class IsMTypeDecl a where
+  mTypeOf :: a -> MType
+
+instance HasMTypeName a => IsMTypeDecl a where
+  mTypeOf = mTypeOf . mTypeName
+
+instance {-#OVERLAPPING#-} IsMTypeDecl MTypeName where
+  mTypeOf (t, _) = t
+
+
+------------------------------------------------------------------------------------------------------------------------
+class IsTypeDecl a where
+  typeOf :: a -> Type
+
+-- instance {-#OVERLAPPING#-} IsMTypeDecl a => IsTypeDecl a where
+  -- typeOf = snd -- . mTypeOf
+
+instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
+  typeOf = typeOf . sig
+
+instance {-#OVERLAPPING#-} IsTypeDecl Sig where
+  typeOf a = TFunc (purity a) (paramTypes a) (returnType a)
+
+instance {-#OVERLAPPING#-} IsTypeDecl TypedName where
+  typeOf (t, _) = t
+
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -134,12 +160,12 @@ instance HasSig a => HasPurity a where
   purity = purity . sig
 
 instance {-#OVERLAPPING#-} HasPurity Sig where
-  purity (Sig p _ _) = p -- FuncType (purity a) (paramTypes a) (returnType a)
+  purity (Sig p _ _) = p
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasNamedParams a where
-  namedParams :: a -> [TypedName]
+  namedParams :: a -> [MTypeName]
 
 instance HasSig a => HasNamedParams a where
   namedParams = namedParams . sig
@@ -156,7 +182,10 @@ instance HasSig a => HasParamTypes a where
   paramTypes = paramTypes . sig
 
 instance {-#overlapping#-} HasParamTypes Sig where
-  paramTypes a = map typeDeclared $ namedParams a
+  paramTypes = paramTypes . namedParams
+
+instance {-#overlapping#-} HasParamTypes [MTypeName] where
+  paramTypes = map (snd . mTypeOf)
 
 
 ------------------------------------------------------------------------------------------------------------------------

@@ -3,6 +3,8 @@
 
 module TypeCheck(typeCheck, Result(..)) where
 
+import Preface
+
 import Ast
 import TypeErrors
 
@@ -30,22 +32,22 @@ instance Checked Unit where
       in Result (UVar $ typedResult vRes) (errors vRes)
 
 instance Checked Var where
-  typeCheck v@(Var (TypedName typeLhs name) rhs) =
-    let typeRhs = typeOf rhs
+  typeCheck v@(Var ((mutLhs, typeLhs), name) rhs) =
+    let typeRhs = findTypeOf rhs
     in case typeLhs of
-      TInferred _ -> Result (Var (TypedName typeRhs name) rhs) []
+      TInferred -> Result (Var (mutLhs & typeRhs, name) rhs) []
       _ -> Result v $ if typeLhs `assignableFrom` typeRhs then [] else [TypeConflict typeLhs typeRhs]
 
 assignableFrom :: Type -> Type -> Bool
 assignableFrom a b = a == b
 
-typeOf :: Expr -> Type
-typeOf e = case e of
-  ELitBln _ -> TBln Mutable
-  ELitChr _ -> TChr Mutable
-  ELitFlt _ -> TFlt Mutable
-  ELitInt _ -> TInt Mutable
-  ELitStr _ -> TStr Mutable
+findTypeOf :: Expr -> Type
+findTypeOf e = case e of
+  ELitBln _ -> TBln
+  ELitChr _ -> TChr
+  ELitFlt _ -> TFlt
+  ELitInt _ -> TInt
+  ELitStr _ -> TStr
 
 
 

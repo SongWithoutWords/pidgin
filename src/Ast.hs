@@ -39,45 +39,50 @@ data Lambda
   deriving(Eq, Show)
 
 data Sig
-  = Sig Purity [TypedName] Type
+  -- Callee cares about left-most mutability of param types but not return
+  = Sig Purity [MTypeName] Type
   deriving(Eq, Show)
 
 data Purity
   = Pure
-  | ReadWorld
-  | WriteWorld
+  | PRead
+  | PWrite
   deriving(Eq, Show)
 
-data TypedName
-  = TypedName Type Name
+type MTypeName = (MType, Name)
+type TypedName = (Type, Name)
+
+type MType = (Mut, Type)
+
+data Mut
+  = Mut         -- Mutable in present scope
+  | Imut        -- Immutable in present scope
+  -- Constant   -- Not mutable in any scope - planned
+  -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
 data Type
-  = TUser Mut Typename
-  | TFunc Purity [Type] Type
-  | TInferred Mut
-  | TTempRef Mut Type
-  | TPersRef Mut Type
-  | TOption Mut Type
-  | TZeroPlus Type
-  | TOnePlus Type
+  = TUser Typename
 
-  | TBln Mut
-  | TChr Mut
-  | TFlt Mut
-  | TInt Mut
-  | TNat Mut
-  | TStr Mut
+  -- Neither caller nor callee need care about the left-most mutability of parameter and return types
+  | TFunc Purity [Type] Type
+
+  | TTempRef MType
+  | TPersRef MType
+  | TOption MType
+  | TZeroPlus MType
+  | TOnePlus MType
+
+  | TBln
+  | TChr
+  | TFlt
+  | TInt
+  | TNat
+  | TStr
 
   | TNone
+  | TInferred
 
-  deriving(Eq, Show)
-
-data Mut
-  = Mutable     -- Mutable in present scope
-  | Immutable   -- Not mutable in present scope
-  -- Constant   -- Not mutable in any scope - planned
-  -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
 type Block = [Stmt]
@@ -101,7 +106,7 @@ data CondBlock
   deriving(Eq, Show)
 
 data Var
-  = Var TypedName Expr
+  = Var MTypeName Expr
   deriving(Eq, Show)
 
 data Expr

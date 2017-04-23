@@ -1,5 +1,8 @@
 {
 module Parser where
+
+import Preface
+
 import Ast
 import ParseError
 import qualified Tokens as T
@@ -104,7 +107,7 @@ unit
   : namespace       { $1 }
   | class           { UClass $1 }
   | function        { UFunc $1 }
-  | variable        { UVar $1 }
+  | var             { UVar $1 }
 
 namespace
   : tknNamespace name indentedUnits { UNamespace $2 $3 }
@@ -121,10 +124,10 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod class                             { MClass $1 $2 }
-  | accessMod mut function                      { MFunc $1 $2 $3 }
-  | accessMod This lambda                       { MCons $1 $3 }
-  | accessMod variable                          { MVar $1 $2}
+  : accessMod class         { MClass $1 $2 }
+  | accessMod mut function  { MFunc $1 $2 $3 }
+  | accessMod This lambda   { MCons $1 $3 }
+  | accessMod var           { MVar $1 $2}
 
 accessMod
   : pub   { Pub }  
@@ -138,23 +141,30 @@ lambda
   : signature "=>" block { Lambda $1 $3 }
  
 signature
-  : purityAndTypedNames optionRetType { Sig (fst $1) (snd $1) $2}
+  : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
 
-purityAndTypedNames
-  : "(" ")"                       { (Pure, []) }
-  | "(" typedNames ")"            { (Pure, $2) }
-  | "(" purity ")"                { ($2, []) }
-  | "(" purity "," typedNames ")" { ($2, $4) }
+purityAndParams
+  : "(" ")"                       { Pure & [] }
+  | "(" mTypeNames ")"            { Pure & $2 }
+  | "(" purity ")"                { $2 & [] }
+  | "(" purity "," mTypeNames ")" { $2 & $4 }
+
+mTypeNames
+  : mTypeName                 { [$1] }
+  | mTypeName "," mTypeNames  { $1 : $3 }
+
+mTypeName
+  : mType name { $1 & $2 }
 
 typedNames
   : typedName                 { [$1] }
   | typedName "," typedNames  { $1 : $3 }
 
 typedName
-  : type name { TypedName $1 $2 }
+  : type name { $1 & $2 }
 
 paramTypeList
-  : type      { (Pure, [$1]) }
+  : type      { Pure & [$1] }
 
 funcType
   : type                   retType  { TFunc Pure [$1] $2 }
@@ -162,13 +172,13 @@ funcType
   | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
 
 purityAndTypes
-  : {- none -}        { (Pure, []) }
-  | types             { (Pure, $1) }
-  | purity            { ($1, []) }
-  | purity "," types  { ($1, $3) }
+  : {- none -}        { Pure & [] }
+  | types             { Pure & $1 }
+  | purity            { $1 & [] }
+  | purity "," types  { $1 & $3 }
 
 optionRetType
-  : {- none -}  { TInferred Immutable}
+  : {- none -}  { TInferred }
   | retType     { $1 }
 
 retType
@@ -185,41 +195,45 @@ apply
   : expr "(" purityAndExprs ")" { EApply $1 (fst $3) (snd $3) }
 
 purityAndExprs
-  : {- none -}        { (Pure, []) }
-  | exprs             { (Pure, $1) }
-  | purity            { ($1, []) }
-  | purity "," exprs  { ($1, $3) }
+  : {- none -}        { Pure & [] }
+  | exprs             { Pure & $1 }
+  | purity            { $1 & [] }
+  | purity "," exprs  { $1 & $3 }
 
 exprs
   : expr            { [$1]}
   | expr "," exprs  { $1 : $3 }
 
 purity
-  : "@"     { ReadWorld }
-  | "~""@"  { WriteWorld }
+  : "@"     { PRead }
+  | "~""@"  { PWrite }
 
-type
-  : mut typename  { TUser $1 $2 }
-  | funcType      { $1 }
-  | mut "$"       { TInferred $1 }
-  | mut "^" type  { TTempRef $1 $3 }
-  | mut "&" type  { TPersRef $1 $3 }
-  | mut "?" type  { TOption $1 $3 }
-  | "*" type      { TZeroPlus $2 }
-  | "+" type      { TOnePlus $2 }
-
-  | mut Bln       { TBln $1 }
-  | mut Chr       { TChr $1 }
-  | mut Flt       { TFlt $1 }
-  | mut Int       { TInt $1 }
-  | mut Nat       { TNat $1 }
-  | mut Str       { TStr $1 }
-
-  | None          { TNone }
+mType
+  : mut type { $1 & $2 }
 
 mut
-  : {- none -} { Immutable }
-  | "~"        { Mutable }
+  : {- none -} { Imut }
+  | "~"        { Mut }
+
+type
+  : typename  { TUser $1 }
+  | funcType  { $1 }
+  | "^" mType { TTempRef $2 }
+  | "&" mType { TPersRef $2 }
+  | "?" mType { TOption $2 }
+  | "*" mType { TZeroPlus $2 }
+  | "+" mType { TOnePlus $2 }
+
+  | Bln       { TBln }
+  | Chr       { TChr }
+  | Flt       { TFlt }
+  | Int       { TInt }
+  | Nat       { TNat }
+  | Str       { TStr }
+
+  | None      { TNone }
+  | "$"       { TInferred }
+
 
 block
   : indentedBlock { $1 }
@@ -246,7 +260,7 @@ nestedBlock
 
 stmt
   : lexpr "=" expr  { SAssign $1 $3 }
-  | variable        { SVar $1 }
+  | var             { SVar $1 }
   -- | apply           { SApply $1 }
   | expr            { SExpr $1 }
 
@@ -258,8 +272,8 @@ ifBranch
 condBlock
   : expr indentedBlock { CondBlock $1 $2 }
 
-variable
-  : typedName "=" expr { Var $1 $3 }
+var
+  : mTypeName "=" expr { Var $1 $3 }
 
 expr
   : expr if shallowExpr else optionEol expr { EIf $1 $3 $6 }
