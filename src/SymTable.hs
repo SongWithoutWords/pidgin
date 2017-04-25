@@ -1,4 +1,7 @@
-module SymTable(SymTable, symTableFromAst) where
+module SymTable( symTableFromAst
+               , SymTable
+               , Unit(..)
+               , Member(..)) where
 
 import qualified Ast as A
 import AstUtil
