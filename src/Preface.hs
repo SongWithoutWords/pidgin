@@ -1,4 +1,9 @@
+{-# language TypeOperators #-}
+
 module Preface where
+
+-- Might like to change this operator to ×
+type a & b = (a, b)
 
 (&) :: a -> b -> (a, b)
 (&) x y = (x, y)
