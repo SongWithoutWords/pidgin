@@ -287,7 +287,7 @@ testCases =
     <> typeErrors [TypeConflict TInt TBln]
 
   , source "$ a = b"
-    <> typeErrors [UnknownId "a"]
+    <> typeErrors [UnknownId "b"]
 
   , source "$ a = true; Bln b = a"
     <> typeErrors []
