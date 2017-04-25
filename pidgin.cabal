@@ -56,7 +56,9 @@ test-suite pidgin-test
 
   main-is:             Test.hs
 
-  other-modules:       TestCases
+  other-modules:       TestCase
+                     , TestCases
+                     , TestComposer
 
   build-depends:       base
                      , pidgin

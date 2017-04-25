@@ -2,150 +2,98 @@ module TestCases(TestCase(..), testCases) where
 
 import Preface
 
+import TestCase
+import TestComposer
+
 import Ast
 import qualified Tokens as T
 import TypeErrors
 
 
-data TestCase
-  = TestCase
-  { name :: String
-  , source :: String
-  , tokens :: Maybe T.Tokens
-  , ast :: Maybe Ast
-  , typeErrors :: Maybe TypeErrors }
-  deriving(Eq, Show)
-
-type TestCases = [TestCase]
-
-
 testCases :: TestCases
 testCases =
-  [ TestCase
-    { name = "empty str"
-    , source = ""
-    , tokens = Just []
-    , ast = Just []
-    , typeErrors = Just []
-    }
+  [ name "empty str"
+    <> source ""
+    <> tokens []
+    <> ast []
+    <> typedAst []
+    <> typeErrors []
 
-  , TestCase
-    { name =
-      "def pi"
+  , name "def pi"
+    <> source "$ pi = 3.14159265"
+    <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
+    <> ast [ UVar $ Var ((Imut, TInferred), "pi") $ ELitFlt 3.14159265 ]
+    <> typeErrors []
 
-    , source = "$ pi = 3.14159265"
+  , name "op expr"
+    <> source "$ three = 1 + 2"
+    <> tokens [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
+    <> ast [ UVar $ Var (Imut & TInferred, "three") $ EAdd (ELitInt 1) (ELitInt 2) ]
+    <> typeErrors []
 
-    , tokens = Just
-      [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
-
-    , ast = Just
-      [ UVar $ Var ((Imut, TInferred), "pi") $ ELitFlt 3.14159265 ]
-
-    , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "if expr"
-
-    , source = "$ msg = \"it works!\" if true else \"or not :(\""
-
-    , tokens = Just
-      [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
-
-    , ast = Just
+  , name "if expr"
+    <> source "$ msg = \"it works!\" if true else \"or not :(\""
+    <> tokens [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
+    <> ast
       [ UVar
         $ Var ((Imut, TInferred), "msg")
           $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(") ]
+    <> typeErrors []
 
-    , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "op expr"
-    , source = "$ three = 1 + 2"
-
-    , tokens = Just
-      [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
-
-    , ast = Just
-      [ UVar $ Var (Imut & TInferred, "three") $ EAdd (ELitInt 1) (ELitInt 2) ]
-
-    , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "def negate inline"
-    , source = "negate(Bln b) -> Bln => false if b else true"
-
-    , tokens = Just
+  , name "negate inline"
+    <> source "negate(Bln b) -> Bln => false if b else true"
+    <> tokens
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
+    <> ast
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [(Imut, TBln) & "b"] TBln)
+        [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
+      ]
 
-    , ast = Just
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [((Imut, TBln),  "b")] TBln)
-            [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)] ]
-
-    , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "def negate block"
-    , source =
+  , name "negate block"
+    <> source
       "negate(Bln b) -> Bln =>\n\
       \    false if b else true"
-    , tokens = Just
+    <> tokens
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.Indent
       , T.False, T.If, T.Name "b", T.Else, T.True
       , T.Dedent]
+    <> ast
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [(Imut, TBln) & "b"] TBln)
+        [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
+      ]
 
-    , ast = Just
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [((Imut, TBln), "b")] TBln)
-            [SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True)] ]
-
-     , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "def factorial"
-
-    , source =
+  , name "factorial"
+    <> source
       "factorial(Nat n) -> Nat =>\n\
       \    1 if n <= 0 else n * factorial(n-1)"
-
-    , tokens = Just
+    <> tokens
       [ T.Name "factorial", T.LParen, T.TypeNat, T.Name "n", T.RParen, T.ThinArrow, T.TypeNat, T.FatArrow
       , T.Indent
       , T.LitInt 1, T.If, T.Name "n", T.LesserEq, T.LitInt 0, T.Else
       , T.Name "n", T.Star, T.Name "factorial", T.LParen, T.Name "n", T.Minus, T.LitInt 1, T.RParen
       , T.Dedent]
-
-    , ast = Just
-      [ UFunc
-        $ Func "factorial"
-          $ Lambda
-            ( Sig Pure [((Imut, TNat), "n")] TNat)
-            [ SExpr
-              $ EIf
-                (ELitInt 1)
-                (ELesserEq (EName "n") (ELitInt 0))
-                (EMul
-                    (EName "n")
-                    $ EApply $ EName "factorial" & (Pure & [ESub (EName "n") (ELitInt 1)])
-                )
-            ]
+    <> ast
+      [ UFunc $ Func "factorial" $ Lambda
+          ( Sig Pure [(Imut, TNat) & "n"] TNat)
+          [ SExpr
+            $ EIf
+              (ELitInt 1)
+              (ELesserEq (EName "n") (ELitInt 0))
+              (EMul
+                  (EName "n")
+                  $ EApply $ EName "factorial" & (Pure & [ESub (EName "n") (ELitInt 1)])
+              )
+          ]
       ]
+    <> typeErrors []
 
-    , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "clothing (cascading if exprs inline)"
-    , source =
+  , name "clothing (cascading if exprs inline)"
+    <> source
       "clothing(Weather w) -> Clothing =>\n\
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
-    , tokens = Nothing
-    , ast = Just
+    <> ast
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [((Imut, TUser "Weather"), "w")] $ TUser "Clothing" )
         [ SExpr
@@ -156,19 +104,14 @@ testCases =
         ]
       ]
 
-    , typeErrors = Nothing
-    }
-
-  , TestCase
-    { name = "clothing (cascading if exprs multiline)"
-    , source =
+  , name "clothing (cascading if exprs multiline)"
+    <> source
       "clothing(Weather w) -> Clothing =>\n\
       \    rainCoat if w.isRaining else\n\
       \    coat if w.isCold else\n\
       \    tShirt if w.isSunny else\n\
       \    jacket"
-    , tokens = Nothing
-    , ast = Just
+    <> ast
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [((Imut, TUser "Weather"),  "w")] $ TUser "Clothing" )
         [ SExpr
@@ -178,67 +121,53 @@ testCases =
           $ EName "jacket"
         ]
       ]
-    , typeErrors = Nothing
-    }
 
-  , TestCase
-    { name = "draw widget (imperative if)"
-    , source =
+    , name "draw widget (imperative if)"
+      <> source
       "drawWidget(~@, Nat width, Nat height) -> None =>\n\
       \    $ w = Widget(width, height)\n\
       \    if w.exists then\n\
       \        w.draw(~@)"
 
-    , tokens = Just
-      [ T.Name "drawWidget"
-      , T.LParen, T.Tilde, T.At
-      , T.Comma, T.TypeNat, T.Name "width"
-      , T.Comma, T.TypeNat, T.Name "height"
-      , T.RParen, T.ThinArrow, T.TypeNone, T.FatArrow
-      , T.Indent
-        , T.Dollar, T.Name "w", T.Equal
-          , T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
-        , T.Eol
-        , T.If, T.Name "w", T.Dot, T.Name "exists", T.Then
+      <> tokens
+        [ T.Name "drawWidget"
+        , T.LParen, T.Tilde, T.At
+        , T.Comma, T.TypeNat, T.Name "width"
+        , T.Comma, T.TypeNat, T.Name "height"
+        , T.RParen, T.ThinArrow, T.TypeNone, T.FatArrow
         , T.Indent
-          , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
-        , T.Dedent
-      , T.Dedent ]
+          , T.Dollar, T.Name "w", T.Equal
+            , T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
+          , T.Eol
+          , T.If, T.Name "w", T.Dot, T.Name "exists", T.Then
+          , T.Indent
+            , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
+          , T.Dedent
+        , T.Dedent ]
 
-    , ast = Just
-      [ UFunc
-        $ Func "drawWidget"
-          $ Lambda
-            ( Sig PWrite [((Imut, TNat), "width"), ((Imut, TNat), "height")] TNone )
-            [ SVar
-              $ Var
-                (Imut & TInferred, "w") (ECons "Widget" $ Pure & [EName "width", EName "height"])
-            , SIf
-              $ Iff
-                $ CondBlock
-                  ( ESelect $ EName "w" & "exists" )
-                  [ SExpr $ EApply $ (ESelect $ EName "w" & "draw") & (PWrite, []) ]
-            ]
-      ]
+      <> ast
+        [ UFunc
+          $ Func "drawWidget"
+            $ Lambda
+              ( Sig PWrite [(Imut, TNat) & "width", (Imut, TNat) & "height"] TNone )
+              [ SVar
+                $ Var
+                  (Imut & TInferred, "w") (ECons "Widget" $ Pure & [EName "width", EName "height"])
+              , SIf
+                $ Iff
+                  $ CondBlock
+                    ( ESelect $ EName "w" & "exists" )
+                    [ SExpr $ EApply $ (ESelect $ EName "w" & "draw") & (PWrite, []) ]
+              ]
+        ]
 
-    , typeErrors = Nothing
-    }
-
-  -- , TestCase
-  --   { name = "an army approaches (imperative if) - inline"
-  --   , source =
-  --     "anArmyApproaches(~@, ^Army a) => soundTheHorn(~@); if a.isFriendly then openTheGate(~@) else if a.isUnknown"
-
-  --   }
-
-  , TestCase
-    { name = "quadratic (explicit return types)"
-    , source =
+  , name "quadratic (explicit return types)"
+    <> source
       "quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>\n\
       \    (Flt x) -> Flt =>\n\
       \        a*x*x + b*x + c"
 
-    , tokens = Just
+    <> tokens
       [ T.Name "quadratic"
         , T.LParen, T.TypeFlt, T.Name "a"
         , T.Comma, T.TypeFlt, T.Name "b"
@@ -255,7 +184,7 @@ testCases =
           , T.Dedent
         , T.Dedent ]
 
-    , ast = Just
+    <> ast
       [ UFunc
         $ Func "quadratic"
           $ Lambda
@@ -277,19 +206,13 @@ testCases =
                   ]
             ]
       ]
-    , typeErrors = Just []
-    }
 
-  , TestCase
-    { name = "quadratic (implicit return types)"
-    , source =
+  , name "quadratic (implicit return types)"
+    <> source
       "quadratic(Flt a, Flt b, Flt c) =>\n\
       \    (Flt x) =>\n\
       \        a*x*x + b*x + c"
-
-    , tokens = Nothing
-
-    , ast = Just
+    <> ast
       [ UFunc
         $ Func "quadratic"
           $ Lambda
@@ -307,44 +230,12 @@ testCases =
                   ]
             ]
       ]
-    , typeErrors = Just []
-    }
 
-  , TestCase
-    { name = "quadratic (implicit return types, inline)"
-    , source =
-      "quadratic(Flt a, Flt b, Flt c) => (Flt x) => a*x*x + b*x + c"
-
-    , tokens = Nothing
-
-    , ast = Just
-      [ UFunc
-        $ Func "quadratic"
-          $ Lambda
-            ( Sig Pure [(Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] TInferred )
-            [ SExpr
-              $ ELambda
-                $ Lambda
-                  ( Sig Pure [ (Imut & TFlt, "x") ] TInferred )
-                  [ SExpr
-                    $ EAdd
-                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
-                      $ EAdd
-                        ( EMul (EName "b") $ EName "x" )
-                        $ EName "c"
-                  ]
-            ]
-      ]
-    , typeErrors = Just []
-    }
-
-  , TestCase
-    { name = "quadratic formula (single root)"
-    , source =
+  , name "quadratic formula (single root)"
+    <> source
       "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
       \    (-b + math.sqrt(b*b - 4*a*c)) / 2*a"
-    , tokens = Nothing
-    , ast = Just
+    <> ast
       [ UFunc
         $ Func "singleRoot"
           $ Lambda
@@ -364,66 +255,56 @@ testCases =
               (EMul (ELitInt 2) (EName "a"))
           ]
       ]
-    , typeErrors = Nothing -- It _will_ have type errors, hold tight! :)
-    }
 
-  -- TODO: quadratic formula that returns a tuple.
-  -- If/when tuples are a thing, I think it may be possible
-  -- to generalize:
-  --   tuple variables,
-  --   tuple construction,
-  --   function application
-  --   multiple returns
-  --
-  -- what implications would this have for single-argument function application?
-  --
-  -- interesting idea in any case, may help to add features and simplify parser.
-  --
-  -- concerns with this idea: items(index).name could be written items index.name. What would this mean?
-  -- would you require haskell style parenthesis like (items index).name ?
-  -- I think I may prefer items(index).name
+  -- -- TODO: quadratic formula that returns a tuple.
+  -- -- If/when tuples are a thing, I think it may be possible
+  -- -- to generalize:
+  -- --   tuple variables,
+  -- --   tuple construction,
+  -- --   function application
+  -- --   multiple returns
+  -- --
+  -- -- what implications would this have for single-argument function application?
+  -- --
+  -- -- interesting idea in any case, may help to add features and simplify parser.
+  -- --
+  -- -- concerns with this idea: items(index).name could be written items index.name. What would this mean?
+  -- -- would you require haskell style parenthesis like (items index).name ?
+  -- -- I think I may prefer items(index).name
 
-  , TestCase
-    { name = "Assignment: $ <- unknownId"
-    , source = "$ a = b"
-    , tokens = Nothing
-    , ast = Nothing
-    , typeErrors = Just [UnknownId "b"]
-    }
-  , TestCase
-    { name = "Assignment: Bln <- 5"
-    , source = "Bln b = 5"
-    , tokens = Nothing
-    , ast = Nothing
-    , typeErrors = Just [TypeConflict TBln TInt]
-    }
-  , TestCase
-    { name = "Assignment: Bln <- true"
-    , source = "Bln b = true"
-    , tokens = Nothing
-    , ast = Nothing
-    , typeErrors = Just []
-    }
-  , TestCase
-    { name = "Assignment: Bln <- false"
-    , source = "Bln b = false"
-    , tokens = Nothing
-    , ast = Nothing
-    , typeErrors = Just []
-    }
-  , TestCase
-    { name = "Assignment: a <- true; Bln <- a"
-    , source =
-      "$ a = true; Bln b = a"
-    , tokens = Nothing
-    , ast = Nothing
-    , typeErrors = Just []
-    }
-  , TestCase
-    { name = "Assignment: a <- 5; Bln <- a"
-    , source = "$ a = 5; Bln b = a"
-    , tokens = Nothing
-    , ast = Nothing
-    , typeErrors = Just [TypeConflict TBln TInt]
-    }
-  ]
+  -- These belong at bottom
+  ----------------------------------------------------------------------------------------------------------------------
+  , source "Bln a = true"
+    <> typeErrors []
+
+  , source "Bln a = false"
+    <> typeErrors []
+
+  , source "Bln a = 5"
+    <> typeErrors [TypeConflict TBln TInt]
+
+  , source "Int a = true"
+    <> typeErrors [TypeConflict TInt TBln]
+
+  , source "$ a = b"
+    <> typeErrors [UnknownId "a"]
+
+  , source "$ a = true; Bln b = a"
+    <> typeErrors []
+
+  , source "Bln a = b; $ b = true"
+    <> typeErrors []
+
+  , source "$ a = 5; Bln b = a"
+    <> typeErrors [TypeConflict TBln TInt]
+
+  , source "$ a = 5; $ b = a; $ c = b"
+    <> typeErrors []
+
+  , source "$ a = 5; $ b = a; Bln c = b"
+    <> typeErrors [TypeConflict TBln TInt]
+
+  , source "Bln c = b; $ b = a; $ a = 5"
+    <> typeErrors [TypeConflict TBln TInt]
+ ]
+
