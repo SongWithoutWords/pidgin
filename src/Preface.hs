@@ -6,3 +6,7 @@ module Preface where
 identity :: a -> a
 identity x = x
 
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse x@Just{} _ = x
+orElse Nothing y = y
+
