@@ -2,9 +2,10 @@ module TypeErrors where
 
 import Ast
 
-data TypeError
+data Error
   = UnknownId String
-  | TypeConflict Type Type
+  | TypeConflict { typeExpected :: Type,  typeReceived:: Type }
   deriving(Eq, Show)
 
-type TypeErrors = [TypeError]
+type Errors = [Error]
+

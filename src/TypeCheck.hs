@@ -1,54 +1,90 @@
 {-# language FlexibleInstances #-}
 {-# language TypeSynonymInstances #-}
 
-module TypeCheck(typeCheck, Result(..)) where
+module TypeCheck(typeCheckAst, Result(..)) where
 
 import Preface
 
 import Ast
+import AstUtil
 import TypeErrors
 
--- TODO: I think this pattern may lend itself to a monad
+import Data.List
 
-data Result a = Result { typedResult :: a, errors :: TypeErrors } deriving(Eq, Show)
+-- TODO: I think these pattern may lend themselves to monads
+
+data Result a = Result { output :: a, errors :: Errors } deriving(Eq, Show)
+
+typeCheckAst :: Ast -> Result Ast
+
+-- Knot tying implementation
+-- typeCheckAst ast = let
+  -- result = typeCheck typedAst ast
+  -- typedAst = output result
+  -- in result
+
+-- Successive traversal implementation
+typeCheckAst ast =
+  let result = typeCheck ast ast
+      nextAst = output result
+  in if ast == nextAst then result else typeCheckAst nextAst
+
 
 class Checked a where
-  typeCheck :: a -> Result a
+  typeCheck :: Ast -> a -> Result a
 
-instance Checked Ast where
-  typeCheck ast =
-    let uResults = map typeCheck ast
-    in Result (map typedResult uResults) (concatMap errors uResults)
+instance Checked [Unit] where
+  typeCheck ast units =
+    let uResults = map (typeCheck ast) units
+    in Result (map output uResults) (concatMap errors uResults)
 
 instance Checked Unit where
-  typeCheck unit = case unit of
+  typeCheck st unit = case unit of
     UNamespace name units ->
-      let unitsChkd = map typeCheck units
-      in Result (UNamespace name $ map typedResult unitsChkd) (concatMap errors unitsChkd)
+      let unitsChkd = map (typeCheck st) units
+      in Result (UNamespace name $ map output unitsChkd) (concatMap errors unitsChkd)
     c@UClass {} -> Result c [] -- TODO
     f@UFunc {} -> Result f [] -- TODO
     UVar v ->
-      let vRes = typeCheck v
-      in Result (UVar $ typedResult vRes) (errors vRes)
+      let vRes = typeCheck st v
+      in Result (UVar $ output vRes) (errors vRes)
 
 instance Checked Var where
-  typeCheck v@(Var ((mutLhs, typeLhs), name) rhs) =
-    let typeRhs = findTypeOf rhs
-    in case typeLhs of
+  typeCheck ast v@(Var ((mutLhs, typeLhs), name) rhs) = case findType ast rhs of
+    (Nothing, es) -> Result v es
+    (Just typeRhs, es) -> case typeLhs of
       TInferred -> Result (Var (mutLhs & typeRhs, name) rhs) []
-      _ -> Result v $ if typeLhs `assignableFrom` typeRhs then [] else [TypeConflict typeLhs typeRhs]
+      _ -> Result v $ (typeLhs `assignFrom` typeRhs) ?: es
 
-assignableFrom :: Type -> Type -> Bool
-assignableFrom a b = a == b
-
-findTypeOf :: Expr -> Type
-findTypeOf e = case e of
-  ELitBln _ -> TBln
-  ELitChr _ -> TChr
-  ELitFlt _ -> TFlt
-  ELitInt _ -> TInt
-  ELitStr _ -> TStr
+assignFrom :: Type -> Type -> Maybe Error
+assignFrom a b = if a == b then Nothing else Just $ TypeConflict a b
 
 
+-- take a look at the maybe monad, this appears similar
 
+findType :: Ast -> Expr -> (Maybe Type, Errors)
+findType ast e = case e of
+
+  ELitBln _ -> found TBln
+  ELitChr _ -> found TChr
+  ELitFlt _ -> found TFlt
+  ELitInt _ -> found TInt
+  ELitStr _ -> found TStr
+
+  EName n -> case find (\u -> n == nameOf u) ast of
+    Nothing -> typeError $ UnknownId n
+    Just u -> case u of
+      UVar v -> found $ snd $ mTypeOf v
+
+  EIf e1 cond e2 ->
+    let
+      t1 = findType ast e1
+      t2 = findType ast e2
+      tc = findType ast cond
+    in ((fst t1), [])
+
+  where
+    found t = (Just t, [])
+    foundWithErrors t es = (Just t, es)
+    typeError e = (Nothing, [e])
 
