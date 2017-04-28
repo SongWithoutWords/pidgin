@@ -289,6 +289,9 @@ testCases =
   , source "$ a = b"
     <> typeErrors [UnknownId "b"]
 
+  , source "$ a = a"
+    <> typeErrors [UnknownId "b"]
+
   , source "$ a = true; Bln b = a"
     <> typeErrors []
 
