@@ -9,6 +9,7 @@ import Ast1
 import TypeErrors
 
 import qualified Data.Map.Lazy as Map
+import Data.Maybe
 
 import Control.Monad.Writer
 import Control.Monad.Trans.Reader
@@ -86,12 +87,12 @@ findType expr = do
       Just u -> case u of
         UVar (Var (m, t) e) -> found $ t
 
-    A.EIf e1 cond e2 -> undefined
-      -- do
-      -- t1 <- findType e1
-      -- t2 <- findType e2
-      -- tc <- findType cond
-      -- return $ fst t1
+    A.EIf e1 cond e2 -> do
+      t1 <- findType e1
+      t2 <- findType e2
+      tc <- findType cond
+      A.TBln `checkAssignmentFrom` fromJust tc
+      found $ fromJust t1
 
   where
     found = return . Just
