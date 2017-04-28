@@ -88,13 +88,23 @@ findType expr = do
         UVar (Var (m, t) e) -> found $ t
 
     A.EIf e1 cond e2 -> do
+      t1 <- justFind e1
+      t2 <- justFind e2
+      tc <- justFind cond
+      A.TBln `checkAssignmentFrom` tc
+      found t1
+
+    A.EAdd e1 e2 -> do
       t1 <- findType e1
-      t2 <- findType e2
-      tc <- findType cond
-      A.TBln `checkAssignmentFrom` fromJust tc
-      found $ fromJust t1
+      t2 <- justFind e2
+      return t1
+      -- return t1
 
   where
     found = return . Just
     typeError e = [e]
+
+    -- Yes, this fromJust is horrible. Ultimately I should remove TInferred from type,
+    -- and replace optional types with Maybe Type.
+    justFind x = do {typ <- findType x; return $ fromJust typ }
 
