@@ -14,7 +14,6 @@ import Control.Monad.Writer
 import Control.Monad.Trans.Reader
 
 type ReadWrite r w a = ReaderT r (Writer w) a
-
 type TypeCheck a = ReadWrite Ast Errors a
 
 runTypeCheck :: Ast -> TypeCheck a -> (a, Errors)
@@ -35,7 +34,25 @@ instance Checked Ast where
 
 instance Checked Unit where
   typeCheck unit = case unit of
-    UVar v -> do { vCheck <- typeCheck v; return $ UVar vCheck }
+    UNamespace n -> retChecked UNamespace n
+    UFunc l -> retChecked UFunc l
+    UVar v -> retChecked UVar v
+
+retChecked :: Checked a => (a -> b) -> a -> TypeCheck b
+retChecked cons x = do { chk <- typeCheck x; return $ cons chk}
+
+instance Checked A.Lambda where
+  typeCheck l@(A.Lambda (A.Sig p params rt) b) =
+    case rt of
+      A.TInferred -> undefined
+      _ -> return l
+
+    -- what must we do here?
+       -- if l has an explicit return type, verify against its return statements
+       -- if l has an implicit return type, infer return type of l
+       -- enforce consistency between returns of l in any case
+       -- proceed to typecheck its block (enforcing purity and so forth)
+
 
 instance Checked Var where
   typeCheck v@(Var (lMut, lType) rhs) = do
@@ -45,11 +62,11 @@ instance Checked Var where
       Just rType -> case lType of
         A.TInferred -> return (Var (lMut, rType) rhs)
         _ -> do
-          lType `assignFrom` rType
+          lType `checkAssignmentFrom` rType
           return v
 
-assignFrom :: A.Type -> A.Type -> TypeCheck ()
-assignFrom a b = when (a /= b) $ tell [TypeConflict a b]
+checkAssignmentFrom :: A.Type -> A.Type -> TypeCheck ()
+checkAssignmentFrom a b = when (a /= b) $ tell [TypeConflict a b]
 
 findType :: A.Expr -> TypeCheck (Maybe A.Type)
 findType expr = do
