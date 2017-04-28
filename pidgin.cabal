@@ -33,13 +33,15 @@ library
   build-depends:       base
                      , containers
                      , array
+                     , mtl
+                     , transformers
 
   ghc-options:
 
   default-language:    Haskell2010
 
 
-executable pidgin-exe
+executable pidgin
   hs-source-dirs:      app
 
   main-is:             Main.hs

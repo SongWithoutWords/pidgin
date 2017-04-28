@@ -53,7 +53,7 @@ typeCheckTest :: TestCase -> Maybe TestTree
 typeCheckTest t = tryTestEq
   (displayName t)
   (testTypeErrors t)
-  (errors . typeCheckAst <$> astInput t)
+  (snd . typeCheckAst <$> astInput t)
 
 -- TODO: replace tryTestEq :: String -> Maybe a -> Maybe a -> Maybe TestTree
 --          with tryTestEq :: TestCase -> (TestCase -> Maybe a) -> (TestCase -> Maybe a) -> Maybe TestTree
