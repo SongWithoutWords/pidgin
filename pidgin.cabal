@@ -25,7 +25,6 @@ library
                      , ParseError
                      , Parser
                      , Preface
-                     , SymTable
                      , Tokens 
                      , TypeCheck
                      , TypeErrors
