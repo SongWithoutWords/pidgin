@@ -63,6 +63,7 @@ test-suite pidgin-test
                      , TestComposer
 
   build-depends:       base
+                     , containers
                      , pidgin
                      , tasty
                      , tasty-hunit

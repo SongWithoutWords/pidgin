@@ -25,6 +25,7 @@ tests :: TestTree
 tests = localOption (mkTimeout 125000) $ testGroup "tests"
   [ lexerTests
   , parserTests
+  , typeInferenceTests
   , typeCheckTests
   ]
 
@@ -46,6 +47,15 @@ parserTest t = tryTestEq
   (testAst t)
   (parse <$> tokenInput t)
 
+typeInferenceTests :: TestTree
+typeInferenceTests = testGroup "type inference" $ mapMaybe typeInferenceTest testCases
+
+typeInferenceTest :: TestCase -> Maybe TestTree
+typeInferenceTest t = tryTestEq
+  (displayName t)
+  (testTypedAst t)
+  (fst . typeCheckAst <$> astInput t)
+
 typeCheckTests :: TestTree
 typeCheckTests = testGroup "type checker" $ mapMaybe typeCheckTest testCases
 
@@ -63,10 +73,10 @@ displayName :: TestCase -> String
 displayName t = fromMaybe "" $ testName t `orElse` testSource t
 
 tokenInput :: TestCase -> Maybe Tokens
-tokenInput t = testTokens t `orElse` fmap scanTokens (testSource t)
+tokenInput t = testTokens t `orElse` (scanTokens <$> testSource t)
 
 astInput :: TestCase -> Maybe Ast
-astInput t = testAst t `orElse` fmap parse (tokenInput t)
+astInput t = testAst t `orElse` (parse <$> tokenInput t)
 
 testEq :: (Eq a, Show a) => String -> a -> a -> TestTree
 testEq name actual expected = testCase name $ actual @=? expected

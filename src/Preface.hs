@@ -5,6 +5,7 @@ module Preface where
 -- Might like to change this operator to ×
 type a & b = (a, b)
 
+infixr 0 &
 (&) :: a -> b -> (a, b)
 (&) x y = (x, y)
 

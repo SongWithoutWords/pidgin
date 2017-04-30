@@ -1,8 +1,11 @@
 module TestComposer where
 
+import qualified Data.Map.Lazy as Map
+
 import TestCase
 
 import Ast
+import qualified Ast1 as A1
 import Tokens
 import TypeErrors
 
@@ -20,8 +23,8 @@ tokens t = mempty {testTokens = Just t}
 ast :: Ast -> TestCase
 ast a = mempty {testAst = Just a}
 
-typedAst :: Ast -> TestCase
-typedAst a = mempty {testTypedAst = Just a}
+typedAst :: [(String, A1.Unit)] -> TestCase
+typedAst pairs = mempty {testTypedAst = Just $ Map.fromList pairs}
 
 typeErrors :: Errors -> TestCase
 typeErrors e = mempty {testTypeErrors = Just e}
