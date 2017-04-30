@@ -31,13 +31,10 @@ instance HasName Member where
     MVar _ v -> nameOf v
 
 instance HasName Var where
-  nameOf = nameOf . mTypeNameOf
+  nameOf (Var _ _ n _) = n
 
-instance HasName TypedName where
-  nameOf (_, n) = n
-
-instance HasName MTypeName where
-  nameOf (_, n) = n
+instance HasName NamedParam where
+  nameOf (NamedParam _ _ n) = n
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -61,30 +58,8 @@ instance HasAccess Member where
 
 
 ------------------------------------------------------------------------------------------------------------------------
-class HasMTypeName a where
-  mTypeNameOf :: a -> MTypeName
-
-instance HasMTypeName Var where
-  mTypeNameOf (Var t _) = t
-
-
-------------------------------------------------------------------------------------------------------------------------
-class IsMTypeDecl a where
-  mTypeOf :: a -> MType
-
-instance HasMTypeName a => IsMTypeDecl a where
-  mTypeOf = mTypeOf . mTypeNameOf
-
-instance {-#OVERLAPPING#-} IsMTypeDecl MTypeName where
-  mTypeOf (t, _) = t
-
-
-------------------------------------------------------------------------------------------------------------------------
 class IsTypeDecl a where
   typeOf :: a -> Type
-
--- instance {-#OVERLAPPING#-} IsMTypeDecl a => IsTypeDecl a where
---   typeOf = snd . mTypeOf
 
 instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
   typeOf = typeOf . sigOf
@@ -92,13 +67,13 @@ instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
 instance {-#OVERLAPPING#-} IsTypeDecl Sig where
   typeOf a = TFunc (purityOf a) (paramTypesOf a) (returnTypeOf a)
 
-instance {-#OVERLAPPING#-} IsTypeDecl TypedName where
-  typeOf (t, _) = t
+instance {-#OVERLAPPING#-} IsTypeDecl NamedParam where
+  typeOf (NamedParam _ t _) = t
 
 
 ------------------------------------------------------------------------------------------------------------------------
 setType :: Type -> Var -> Var
-setType t (Var ((m, _), n) e) = Var ((m, t), n) e
+setType t (Var m _ n e) = Var m (Just t) n e
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -133,7 +108,7 @@ instance {-#OVERLAPPING#-} HasPurity Sig where
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasNamedParams a where
-  namedParamsOf :: a -> [MTypeName]
+  namedParamsOf :: a -> [NamedParam]
 
 instance HasSig a => HasNamedParams a where
   namedParamsOf = namedParamsOf . sigOf
@@ -152,13 +127,13 @@ instance HasSig a => HasParamTypes a where
 instance {-#overlapping#-} HasParamTypes Sig where
   paramTypesOf = paramTypesOf . namedParamsOf
 
-instance {-#overlapping#-} HasParamTypes [MTypeName] where
-  paramTypesOf = map (snd . mTypeOf)
+instance {-#overlapping#-} HasParamTypes [NamedParam] where
+  paramTypesOf = map typeOf
 
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasReturnType a where
-  returnTypeOf :: a -> Type
+  returnTypeOf :: a -> Maybe Type
 
 instance HasSig a => HasReturnType a where
   returnTypeOf = returnTypeOf . sigOf

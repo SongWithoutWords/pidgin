@@ -31,7 +31,7 @@ data Member
   deriving(Eq, Show)
 
 data Var
-  = Var A.MType A.Expr
+  = Var A.Mut (Maybe A.Type) A.Expr
   deriving(Eq, Show)
 
 
@@ -48,7 +48,7 @@ mapUnit' :: A.Unit -> Unit
 mapUnit' (A.UNamespace _ units) = UNamespace $ mapUnits units
 mapUnit' (A.UClass c) = UClass $ mapMembers $ membersOf c
 mapUnit' (A.UFunc f) = UFunc $ lambdaOf f
-mapUnit' (A.UVar (A.Var (mt, _) e)) = UVar $ Var mt e
+mapUnit' (A.UVar (A.Var m t _ e)) = UVar $ Var m t e
 
 mapMembers :: [A.Member] -> MemberTable
 mapMembers = Map.fromList . map memberEntryFromAst
@@ -62,7 +62,7 @@ mapMember' (A.MFunc a mut f) = MFunc a mut $ lambdaOf f
 mapMember' (A.MVar a v) = MVar a $ mapVar v
 
 mapVar :: A.Var -> Var
-mapVar (A.Var (mt, _) e) = Var mt e
+mapVar (A.Var m t _ e) = Var m t e
 
 
 

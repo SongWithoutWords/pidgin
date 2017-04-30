@@ -1,7 +1,10 @@
+{-# language MultiParamTypeClasses #-}
 {-# language FlexibleInstances #-}
 {-# language TypeSynonymInstances #-}
 
 module TypeCheck(typeCheckAst) where
+
+import Preface
 
 import qualified Ast as A
 import Ast1
@@ -19,6 +22,24 @@ type TypeCheck a = ReadWrite Ast Errors a
 
 runTypeCheck :: Ast -> TypeCheck a -> (a, Errors)
 runTypeCheck a tc = runWriter $ runReaderT tc a
+
+raise :: Error -> TypeCheck ()
+raise e = tell [e]
+
+-- Is type b assignable to type a?
+class TypeCompare a b where
+  (<~) :: a -> b -> TypeCheck ()
+
+instance TypeCompare A.Type A.Type where
+  a <~ b =  when (a /= b) $ raise TypeConflict { expected = a, received = b }
+
+instance TypeCompare A.Type (Maybe A.Type) where
+  _ <~ Nothing = return ()
+  a <~ (Just b) = a <~ b
+
+instance TypeCompare (Maybe A.Type) (Maybe A.Type) where
+  Nothing <~ _ = return ()
+  (Just a) <~ b = a <~ b
 
 class Checked a where
   typeCheck :: a -> TypeCheck a
@@ -45,7 +66,7 @@ retChecked cons x = do { chk <- typeCheck x; return $ cons chk}
 instance Checked A.Lambda where
   typeCheck l@(A.Lambda (A.Sig p params rt) b) =
     case rt of
-      A.TInferred -> undefined
+      Nothing -> undefined
       _ -> return l
 
     -- what must we do here?
@@ -56,18 +77,10 @@ instance Checked A.Lambda where
 
 
 instance Checked Var where
-  typeCheck v@(Var (lMut, lType) rhs) = do
+  typeCheck (Var lMut maybeLType rhs) = do
     maybeRType <- findType rhs
-    case maybeRType of
-      Nothing -> return v
-      Just rType -> case lType of
-        A.TInferred -> return (Var (lMut, rType) rhs)
-        _ -> do
-          lType `checkAssignmentFrom` rType
-          return v
-
-checkAssignmentFrom :: A.Type -> A.Type -> TypeCheck ()
-checkAssignmentFrom a b = when (a /= b) $ tell [TypeConflict a b]
+    maybeLType <~ maybeRType
+    return $ Var lMut (maybeLType ?? maybeRType) rhs
 
 findType :: A.Expr -> TypeCheck (Maybe A.Type)
 findType expr = do
@@ -82,29 +95,24 @@ findType expr = do
 
     A.EName n -> case Map.lookup n env of
       Nothing -> do
-        tell $ typeError $ UnknownId n
+        raise $ UnknownId n
         return Nothing
       Just u -> case u of
-        UVar (Var (m, t) e) -> found $ t
+        UVar (Var m t e) -> return t
 
     A.EIf e1 cond e2 -> do
-      t1 <- justFind e1
-      t2 <- justFind e2
-      tc <- justFind cond
-      A.TBln `checkAssignmentFrom` tc
-      found t1
+      t1 <- findType e1
+      t2 <- findType e2
+      tc <- findType cond
+      A.TBln <~ tc
+      return t1
 
     A.EAdd e1 e2 -> do
       t1 <- findType e1
-      t2 <- justFind e2
+      t2 <- findType e2
       return t1
-      -- return t1
 
   where
     found = return . Just
-    typeError e = [e]
 
-    -- Yes, this fromJust is horrible. Ultimately I should remove TInferred from type,
-    -- and replace optional types with Maybe Type.
-    justFind x = do {typ <- findType x; return $ fromJust typ }
 

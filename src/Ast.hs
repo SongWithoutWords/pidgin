@@ -1,7 +1,5 @@
 module Ast where
 
-import Tokens()
-
 -- Finite number of steps friend!
 
 type Ast = [Unit]
@@ -40,7 +38,11 @@ data Lambda
 
 data Sig
   -- Callee cares about left-most mutability of param types but not return
-  = Sig Purity [MTypeName] Type
+  = Sig Purity [NamedParam] (Maybe Type)
+  deriving(Eq, Show)
+
+data NamedParam
+  = NamedParam Mut Type Name
   deriving(Eq, Show)
 
 data Purity
@@ -49,29 +51,17 @@ data Purity
   | PWrite
   deriving(Eq, Show)
 
-type MTypeName = (MType, Name)
-type TypedName = (Type, Name)
-
-type MType = (Mut, Type)
-
-data Mut
-  = Mut         -- Mutable in present scope
-  | Imut        -- Immutable in present scope
-  -- Constant   -- Not mutable in any scope - planned
-  -- CtConstant -- Known at compile time - planned
-  deriving(Eq, Show)
-
 data Type
   = TUser Typename
 
   -- Neither caller nor callee need care about the left-most mutability of parameter and return types
-  | TFunc Purity [Type] Type
+  | TFunc Purity [Type] (Maybe Type)
 
-  | TTempRef MType
-  | TPersRef MType
-  | TOption MType
-  | TZeroPlus MType
-  | TOnePlus MType
+  | TTempRef Mut Type
+  | TPersRef Mut Type
+  | TOption Mut Type
+  | TZeroPlus Mut Type
+  | TOnePlus Mut Type
 
   | TBln
   | TChr
@@ -81,8 +71,14 @@ data Type
   | TStr
 
   | TNone
-  | TInferred
 
+  deriving(Eq, Show)
+
+data Mut
+  = Mut         -- Mutable in present scope
+  | Imut        -- Immutable in present scope
+  -- Constant   -- Not mutable in any scope - planned
+  -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
 type Block = [Stmt]
@@ -107,7 +103,7 @@ data CondBlock
   deriving(Eq, Show)
 
 data Var
-  = Var MTypeName Expr
+  = Var Mut (Maybe Type) Name Expr
   deriving(Eq, Show)
 
 data Expr

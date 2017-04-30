@@ -22,13 +22,13 @@ testCases =
   , name "def pi"
     <> source "$ pi = 3.14159265"
     <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
-    <> ast [ UVar $ Var ((Imut, TInferred), "pi") $ ELitFlt 3.14159265 ]
+    <> ast [ UVar $ Var Imut Nothing "pi" $ ELitFlt 3.14159265 ]
     <> typeErrors []
 
   , name "op expr"
     <> source "$ three = 1 + 2"
     <> tokens [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
-    <> ast [ UVar $ Var (Imut & TInferred, "three") $ EAdd (ELitInt 1) (ELitInt 2) ]
+    <> ast [ UVar $ Var Imut Nothing "three" $ EAdd (ELitInt 1) (ELitInt 2) ]
     <> typeErrors []
 
   , name "if expr"
@@ -36,7 +36,7 @@ testCases =
     <> tokens [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
     <> ast
       [ UVar
-        $ Var ((Imut, TInferred), "msg")
+        $ Var Imut Nothing "msg"
           $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(") ]
     <> typeErrors []
 
@@ -46,7 +46,7 @@ testCases =
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
     <> ast
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [(Imut, TBln) & "b"] TBln)
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [NamedParam Imut TBln "b"] $ Just TBln)
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -60,7 +60,7 @@ testCases =
       , T.False, T.If, T.Name "b", T.Else, T.True
       , T.Dedent]
     <> ast
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [(Imut, TBln) & "b"] TBln)
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [NamedParam Imut TBln "b"] $ Just TBln)
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -76,7 +76,7 @@ testCases =
       , T.Dedent]
     <> ast
       [ UFunc $ Func "factorial" $ Lambda
-          ( Sig Pure [(Imut, TNat) & "n"] TNat)
+          ( Sig Pure [NamedParam Imut TNat "n"] $ Just TNat)
           [ SExpr
             $ EIf
               (ELitInt 1)
@@ -95,7 +95,7 @@ testCases =
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
     <> ast
       [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [((Imut, TUser "Weather"), "w")] $ TUser "Clothing" )
+        ( Sig Pure [NamedParam Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ EName "w" & "isRaining")
           $ EIf (EName "coat") (ESelect $ EName "w" & "isCold")
@@ -113,7 +113,7 @@ testCases =
       \    jacket"
     <> ast
       [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [((Imut, TUser "Weather"),  "w")] $ TUser "Clothing" )
+        ( Sig Pure [NamedParam Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ EName "w" & "isRaining")
           $ EIf (EName "coat") (ESelect $ EName "w" & "isCold")
@@ -149,10 +149,9 @@ testCases =
         [ UFunc
           $ Func "drawWidget"
             $ Lambda
-              ( Sig PWrite [(Imut, TNat) & "width", (Imut, TNat) & "height"] TNone )
+              ( Sig PWrite [NamedParam Imut TNat "width", NamedParam Imut TNat "height"] $ Just TNone )
               [ SVar
-                $ Var
-                  (Imut & TInferred, "w") (ECons "Widget" $ Pure & [EName "width", EName "height"])
+                $ Var Imut Nothing "w" (ECons "Widget" $ Pure & [EName "width", EName "height"])
               , SIf
                 $ Iff
                   $ CondBlock
@@ -188,14 +187,16 @@ testCases =
       [ UFunc
         $ Func "quadratic"
           $ Lambda
-            ( Sig Pure [ (Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] $ TFunc Pure [TFlt] TFlt )
+            ( Sig Pure [NamedParam Imut TFlt "a", NamedParam Imut TFlt "b", NamedParam Imut TFlt "c"]
+              $ Just $ TFunc Pure [TFlt] $ Just TFlt
+            )
             [ SExpr
               $ ELambda
                 $ Lambda
                   ( Sig
                     Pure
-                    [(Imut & TFlt, "x")]
-                    TFlt
+                    [NamedParam Imut TFlt "x"]
+                    $ Just TFlt
                   )
                   [ SExpr
                     $ EAdd
@@ -216,11 +217,11 @@ testCases =
       [ UFunc
         $ Func "quadratic"
           $ Lambda
-            ( Sig Pure [(Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] TInferred )
+            ( Sig Pure [NamedParam Imut TFlt "a", NamedParam Imut TFlt "b", NamedParam Imut TFlt "c"] Nothing)
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( Sig Pure [ (Imut & TFlt, "x") ] TInferred )
+                  ( Sig Pure [NamedParam Imut TFlt "x"] Nothing)
                   [ SExpr
                     $ EAdd
                       ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
@@ -239,7 +240,7 @@ testCases =
       [ UFunc
         $ Func "singleRoot"
           $ Lambda
-          ( Sig Pure [(Imut & TFlt, "a"), (Imut & TFlt, "b"), (Imut & TFlt, "c")] TFlt )
+          ( Sig Pure [NamedParam Imut TFlt "a", NamedParam Imut TFlt "b", NamedParam Imut TFlt "c"] $ Just TFlt )
           [ SExpr
             $ EDiv
               ( EAdd
@@ -281,16 +282,19 @@ testCases =
     <> typeErrors []
 
   , source "Bln a = 5"
-    <> typeErrors [TypeConflict TBln TInt]
+    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
 
   , source "Int a = true"
-    <> typeErrors [TypeConflict TInt TBln]
+    <> typeErrors [TypeConflict {expected=TInt, received=TBln}]
 
   , source "$ a = b"
     <> typeErrors [UnknownId "b"]
 
   , source "$ a = a"
-    <> typeErrors [UnknownId "b"]
+    <> typeErrors []
+
+  , source "$ a = b; $ b = a"
+    <> typeErrors []
 
   , source "$ a = true; Bln b = a"
     <> typeErrors []
@@ -299,15 +303,15 @@ testCases =
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
-    <> typeErrors [TypeConflict TBln TInt]
+    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
 
   , source "$ a = 5; $ b = a; $ c = b"
     <> typeErrors []
 
   , source "$ a = 5; $ b = a; Bln c = b"
-    <> typeErrors [TypeConflict TBln TInt]
+    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
 
   , source "Bln c = b; $ b = a; $ a = 5"
-    <> typeErrors [TypeConflict TBln TInt]
+    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
  ]
 

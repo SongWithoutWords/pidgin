@@ -143,20 +143,20 @@ lambda
   : signature "=>" block             { Lambda $1 $3 }
 
 signature
-  : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
+  : purityAndNamedParams optionRetType { Sig (fst $1) (snd $1) $2}
 
-purityAndParams
+purityAndNamedParams
   : "(" ")"                       { Pure & [] }
-  | "(" mTypeNames ")"            { Pure & $2 }
+  | "(" namedParams ")"            { Pure & $2 }
   | "(" purity ")"                { $2 & [] }
-  | "(" purity "," mTypeNames ")" { $2 & $4 }
+  | "(" purity "," namedParams ")" { $2 & $4 }
 
-mTypeNames
-  : mTypeName                 { [$1] }
-  | mTypeName "," mTypeNames  { $1 : $3 }
+namedParams
+  : namedParam                 { [$1] }
+  | namedParam "," namedParams { $1 : $3 }
 
-mTypeName
-  : mType name { $1 & $2 }
+namedParam
+  : mut type name { NamedParam $1 $2 $3 }
 
 typedNames
   : typedName                 { [$1] }
@@ -169,9 +169,9 @@ paramTypeList
   : type      { Pure & [$1] }
 
 funcType
-  : type                   retType  { TFunc Pure [$1] $2 }
-  | purity                 retType  { TFunc $1 [] $2 }
-  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
+  : type                   retType  { TFunc Pure [$1] $ Just $2 }
+  | purity                 retType  { TFunc $1 [] $ Just $2 }
+  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $ Just $4 }
 
 purityAndTypes
   : {- none -}        { Pure & [] }
@@ -180,8 +180,8 @@ purityAndTypes
   | purity "," types  { $1 & $3 }
 
 optionRetType
-  : {- none -}  { TInferred }
-  | retType     { $1 }
+  : {- none -}  { Nothing }
+  | retType     { Just $1 }
 
 retType
   : "->" type   { $2 }
@@ -210,21 +210,21 @@ purity
   : "@"     { PRead }
   | "~""@"  { PWrite }
 
-mType
-  : mut type { $1 & $2 }
+-- mType
+  -- : mut type { $1 & $2 }
 
-mut
-  : {- none -} { Imut }
-  | "~"        { Mut }
+maybeType
+  : "$"   { Nothing }
+  | type  { Just $1 }
 
 type
   : typename  { TUser $1 }
   | funcType  { $1 }
-  | "^" mType { TTempRef $2 }
-  | "&" mType { TPersRef $2 }
-  | "?" mType { TOption $2 }
-  | "*" mType { TZeroPlus $2 }
-  | "+" mType { TOnePlus $2 }
+  | "^" mut type { TTempRef $2 $3 }
+  | "&" mut type { TPersRef $2 $3 }
+  | "?" mut type { TOption $2 $3 }
+  | "*" mut type { TZeroPlus $2 $3 }
+  | "+" mut type { TOnePlus $2 $3 }
 
   | Bln       { TBln }
   | Chr       { TChr }
@@ -234,7 +234,10 @@ type
   | Str       { TStr }
 
   | None      { TNone }
-  | "$"       { TInferred }
+
+mut
+  : {- none -} { Imut }
+  | "~"        { Mut }
 
 block
   : ind stmts ded { $2 }
@@ -268,7 +271,7 @@ condBlock
   : expr then block { CondBlock $1 $3 }
 
 var
-  : mTypeName "=" expr { Var $1 $3 }
+  : mut maybeType name "=" expr { Var $1 $2 $3 $5 }
 
 expr
   : eIf     { $1 }
