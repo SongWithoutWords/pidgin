@@ -6,6 +6,7 @@ import TestCase
 import TestComposer
 
 import Ast
+import qualified Ast1 as A1
 import qualified Tokens as T
 import TypeErrors
 
@@ -282,36 +283,55 @@ testCases =
     <> typeErrors []
 
   , source "Bln a = 5"
-    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
+    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
   , source "Int a = true"
-    <> typeErrors [TypeConflict {expected=TInt, received=TBln}]
+    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitBln True)]
+    <> typeErrors [TypeConflict {expected = TInt, received = TBln}]
 
   , source "$ a = b"
+    <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")]
     <> typeErrors [UnknownId "b"]
 
   , source "$ a = a"
+    <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
     <> typeErrors []
 
   , source "$ a = b; $ b = a"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")
+                , ("b", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
     <> typeErrors []
 
-  , source "$ a = true; Bln b = a"
+  , source "$ a = true; $ b = a"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ ELitBln True)
+                , ("b", A1.UVar $ A1.Var Imut (Just TBln) $ EName "a")]
     <> typeErrors []
 
-  , source "Bln a = b; $ b = true"
+  , source "$ a = b; $ b = true"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ EName "b")
+                , ("b", A1.UVar $ A1.Var Imut (Just TBln) $ ELitBln True)]
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
-    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
+    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
   , source "$ a = 5; $ b = a; $ c = b"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)
+                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "a")
+                , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ EName "b")]
     <> typeErrors []
 
   , source "$ a = 5; $ b = a; Bln c = b"
-    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)
+                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "a")
+                , ("c", A1.UVar $ A1.Var Imut (Just TBln) $ EName "b")]
+    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
-  , source "Bln c = b; $ b = a; $ a = 5"
-    <> typeErrors [TypeConflict {expected=TBln, received=TInt}]
+  , source "Bln a = b; $ b = c; $ c = 5"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ EName "b")
+                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "c")
+                , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)]
+    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
+
  ]
 
