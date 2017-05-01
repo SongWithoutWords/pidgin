@@ -37,7 +37,8 @@ $(build): $(lexer-gen) $(parser-gen) src
 
 $(type-check-test): $(type-check-src) $(type-errors-src) $(test-cases) $(test-main)
 	@touch $(type-check-test)
-	@stack test --test-arguments '-p "type checker"'
+	@stack test --test-arguments '-p "type inference"'
+	@stack test --test-arguments '-p "type errors"'
 
 $(parse-test): $(parser-gen) $(ast-src) $(test-cases) $(test-main)
 	@touch $(parse-test)
