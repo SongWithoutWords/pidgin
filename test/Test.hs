@@ -22,7 +22,7 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = localOption (mkTimeout 125000) $ testGroup "tests"
+tests = localOption (mkTimeout 50000) $ testGroup "tests"
   [ lexerTests
   , parserTests
   , typeInferenceTests
