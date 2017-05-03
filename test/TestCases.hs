@@ -333,5 +333,14 @@ testCases =
                 , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)]
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
+  , source "$ a = 3 + 7"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EAdd (ELitInt 3) (ELitInt 7))]
+    <> typeErrors []
+
+  , source "$ a = b + c; $ b = 3; $ c = 7"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EAdd (EName "b") (EName "c"))
+                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 3)
+                , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 7)]
+    <> typeErrors []
  ]
 
