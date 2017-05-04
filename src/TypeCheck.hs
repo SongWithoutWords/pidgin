@@ -104,7 +104,14 @@ findType expr = do
       t1 <- findType e1
       t2 <- findType e2
       tc <- findType cond
+
+      -- ensure that the types of the if and else expression are compatible
+      -- TODO: determine common root type, e.g. typeof(a if a.exists else none) == ?A
+      t1 <~ t2
+
+      -- ensure that the conditional expression is boolean
       A.TBln <~ tc
+
       return t1
 
     A.EAdd e1 e2 -> do
