@@ -258,23 +258,24 @@ testCases =
           ]
       ]
 
-  -- -- TODO: quadratic formula that returns a tuple.
-  -- -- If/when tuples are a thing, I think it may be possible
-  -- -- to generalize:
-  -- --   tuple variables,
-  -- --   tuple construction,
-  -- --   function application
-  -- --   multiple returns
-  -- --
-  -- -- what implications would this have for single-argument function application?
-  -- --
-  -- -- interesting idea in any case, may help to add features and simplify parser.
-  -- --
-  -- -- concerns with this idea: items(index).name could be written items index.name. What would this mean?
-  -- -- would you require haskell style parenthesis like (items index).name ?
-  -- -- I think I may prefer items(index).name
+  -- TODO: quadratic formula that returns a tuple.
+  -- If/when tuples are a thing, I think it may be possible
+  -- to generalize:
+  --   tuple variables,
+  --   tuple construction,
+  --   function application
+  --   multiple returns
+  --
+  -- what implications would this have for single-argument function application?
+  --
+  -- interesting idea in any case, may help to add features and simplify parser.
+  --
+  -- concerns with this idea: items(index).name could be written items index.name. What would this mean?
+  -- would you require haskell style parenthesis like (items index).name ?
+  -- I think I may prefer items(index).name
 
-  -- These belong at bottom
+
+  -- TypeCheck tests
   ----------------------------------------------------------------------------------------------------------------------
   , source "Bln a = true"
     <> typeErrors []
@@ -293,6 +294,7 @@ testCases =
     <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")]
     <> typeErrors [UnknownId "b"]
 
+  -- TODO: a proper error type and error handling for recursive definitions
   , source "$ a = a"
     <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
     <> typeErrors []
@@ -332,6 +334,18 @@ testCases =
                 , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "c")
                 , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)]
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
+
+  , source "$ a = 1 if true else 0"
+    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitInt 0))]
+    <> typeErrors []
+
+  , source "$ a = 1 if \"true\" else 0"
+    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitStr "true") (ELitInt 0))]
+    <> typeErrors [TypeConflict {expected = TBln, received = TStr}]
+
+  , source "$ a = 1 if true else \"zero\""
+    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitStr "zero"))]
+    <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
 
  ]
 
