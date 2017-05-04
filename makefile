@@ -37,16 +37,16 @@ $(build): $(lexer-gen) $(parser-gen) src
 
 $(type-check-test): $(type-check-src) $(type-errors-src) $(test-cases) $(test-main)
 	@touch $(type-check-test)
-	@stack test --test-arguments '-p "type inference"'
-	@stack test --test-arguments '-p "type checker"'
+	@stack test --test-arguments '-p "type inference"'; true
+	@stack test --test-arguments '-p "type checker"'; true
 
 $(parse-test): $(parser-gen) $(ast-src) $(test-cases) $(test-main)
 	@touch $(parse-test)
-	@stack test --test-arguments '-p parser'
+	@stack test --test-arguments '-p parser'; true
 
 $(lex-test): $(lexer-gen) $(tkn-src) $(test-cases) $(test-main)
 	@touch $(lex-test)
-	@stack test --test-arguments '-p lexer'
+	@stack test --test-arguments '-p lexer'; true
 
 $(parser-gen): $(dirs) $(parser-src)
 	@echo "Generating parser"
