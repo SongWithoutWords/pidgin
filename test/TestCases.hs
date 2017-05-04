@@ -335,6 +335,8 @@ testCases =
                 , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)]
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
+
+  -- TypeCheck operator tests
   , source "$ a = 3 + 7"
     <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EAdd (ELitInt 3) (ELitInt 7))]
     <> typeErrors []
@@ -356,6 +358,90 @@ testCases =
   , source "$ a = 1 if true else \"zero\""
     <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitStr "zero"))]
     <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
+
+
+  -- TypeCheck function tests
+  , name "inc explicit"
+    <> source
+      "inc(Int x) -> Int => x + 1\n\
+      \$ a = inc(3)"
+    <> tokens
+      [ T.Name "inc", T.LParen, T.TypeInt, T.Name "x", T.RParen, T.ThinArrow, T.TypeInt, T.FatArrow
+      , T.Name "x", T.Plus, T.LitInt 1
+      , T.Eol, T.Dollar, T.Name "a", T.Equal, T.LitInt 3
+      ]
+    <> typedAst
+      [ ( "inc", A1.UFunc $
+        Lambda
+          ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
+          [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
+        )
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitInt 3])) )
+      ]
+    <> typeErrors []
+
+  , name "inc explicit nested"
+    <> source
+      "inc(Int x) -> Int => x + 1\n\
+      \$ a = inc(inc(3))"
+    <> typedAst
+      [ ( "inc", A1.UFunc $
+        Lambda
+          ( Sig Pure [NamedParam Imut TInt "x"] (Just TInt) )
+          [ SExpr $ EAdd (EName "x") $ ELitInt 1]
+        )
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $
+          EApply (EName "inc", (Pure, [EApply (EName "inc", (Pure, [ELitInt 3]))]))
+        )
+      ]
+    <> typeErrors []
+
+  , name "inc implicit"
+    <> source
+      "inc(Int x) => x + 1\n\
+      \$ a = inc(3)"
+    <> typedAst
+      [ ("inc", A1.UFunc $
+        Lambda
+          ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
+          [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
+        )
+      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitInt 3])))
+      ]
+    <> typeErrors []
+
+  , name "inc implicit loc var"
+    <> source
+      "inc(Int x) =>\n\
+      \    $ one = 1\n\
+      \    x + one\n\
+      \\n\
+      \$ a = inc(1)"
+    <> typedAst
+      [ ( "inc", A1.UFunc $
+        Lambda
+          ( Sig Pure [NamedParam Imut TInt "x"] (Just TInt) )
+          [ SVar $ Var Imut (Just TInt) "one" (ELitInt 1)
+          , SExpr $ EAdd (EName "x") (EName "one")
+          ]
+        )
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitInt 3])) )
+      ]
+    <> typeErrors []
+
+  , name "inc implicit wrong param type"
+    <> source
+      "inc(Int x) => x + 1\n\
+      \$ a = inc(\"three\")"
+    <> typedAst
+      [ ("inc", A1.UFunc $
+        Lambda
+          ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
+          [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
+        )
+      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitStr "three"])))
+      ]
+    <> typeErrors []
 
  ]
 
