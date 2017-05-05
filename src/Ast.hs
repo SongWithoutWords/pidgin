@@ -107,7 +107,7 @@ data Var
   deriving(Eq, Show)
 
 data Expr
-  = EApply Apply
+  = EApp App
   | ESelect Select
   | EName Name
 
@@ -139,15 +139,16 @@ data Expr
 
 -- Expressions that can appear on the left side of an assignment
 data LExpr
-  = LApply Apply
+  = LApp App
   | LSelect Select
   | LName Name
   deriving(Eq, Show)
 
-type Typename = String
 
-type Apply = (Expr, Params)
-type Params = (Purity, [Expr])
-type Select = (Expr, Name)
+data App = App Expr Params deriving(Eq, Show)
+data Params = Params Purity [Expr] deriving(Eq, Show)
+data Select = Select Expr Name deriving(Eq, Show)
+
+type Typename = String
 type Name = String
 

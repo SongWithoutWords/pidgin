@@ -146,10 +146,10 @@ signature
   : purityAndNamedParams optionRetType { Sig (fst $1) (snd $1) $2}
 
 purityAndNamedParams
-  : "(" ")"                       { Pure & [] }
-  | "(" namedParams ")"            { Pure & $2 }
-  | "(" purity ")"                { $2 & [] }
-  | "(" purity "," namedParams ")" { $2 & $4 }
+  : "(" ")"                         { Pure & [] }
+  | "(" namedParams ")"             { Pure & $2 }
+  | "(" purity ")"                  { $2 & [] }
+  | "(" purity "," namedParams ")"  { $2 & $4 }
 
 namedParams
   : namedParam                 { [$1] }
@@ -157,16 +157,6 @@ namedParams
 
 namedParam
   : mut type name { NamedParam $1 $2 $3 }
-
-typedNames
-  : typedName                 { [$1] }
-  | typedName "," typedNames  { $1 : $3 }
-
-typedName
-  : type name { $1 & $2 }
-
-paramTypeList
-  : type      { Pure & [$1] }
 
 funcType
   : type                   retType  { TFunc Pure [$1] $ Just $2 }
@@ -194,13 +184,13 @@ cons
   : typename "(" params ")" { ECons $1 $3 }
 
 apply
-  : expr "(" params ")" { $1 & $3 }
+  : expr "(" params ")" { App $1 $3 }
 
 params
-  : {- none -}        { Pure & [] }
-  | exprs             { Pure & $1 }
-  | purity            { $1 & [] }
-  | purity "," exprs  { $1 & $3 }
+  : {- none -}        { Params Pure [] }
+  | exprs             { Params Pure $1 }
+  | purity            { Params $1 [] }
+  | purity "," exprs  { Params $1 $3 }
 
 exprs
   : expr            { [$1]}
@@ -277,7 +267,7 @@ expr
   : eIf     { $1 }
   | lambda  { ELambda $1 }
 
-  | apply   { EApply $1 }
+  | apply   { EApp $1 }
   | select  { ESelect $1 }
   | name    { EName $1 }
   
@@ -299,12 +289,12 @@ optEol
   | {- none -}  {}
 
 lexpr
-  : apply   { LApply $1 }
+  : apply   { LApp $1 }
   | select  { LSelect $1 } 
   | name    { LName $1 }
 
 select
-  : expr "." name   { ($1, $3) }
+  : expr "." name   { Select $1 $3 }
 
 op
   : "(" expr ")"            { $2 }

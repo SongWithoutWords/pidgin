@@ -1,7 +1,5 @@
 module TestCases(TestCase(..), testCases) where
 
-import Preface
-
 import TestCase
 import TestComposer
 
@@ -92,7 +90,7 @@ testCases =
               (ELesserEq (EName "n") (ELitInt 0))
               (EMul
                   (EName "n")
-                  $ EApply $ EName "factorial" & (Pure & [ESub (EName "n") (ELitInt 1)])
+                  $ EApp $ App (EName "factorial") $ Params Pure [ESub (EName "n") (ELitInt 1)]
               )
           ]
       ]
@@ -106,9 +104,9 @@ testCases =
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [NamedParam Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
-          $ EIf (EName "rainCoat") (ESelect $ EName "w" & "isRaining")
-          $ EIf (EName "coat") (ESelect $ EName "w" & "isCold")
-          $ EIf (EName "tShirt") (ESelect $ EName "w" & "isSunny")
+          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
+          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
+          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
           $ EName "jacket"
         ]
       ]
@@ -124,9 +122,9 @@ testCases =
       [ UFunc $ Func "clothing" $ Lambda
         ( Sig Pure [NamedParam Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
-          $ EIf (EName "rainCoat") (ESelect $ EName "w" & "isRaining")
-          $ EIf (EName "coat") (ESelect $ EName "w" & "isCold")
-          $ EIf (EName "tShirt") (ESelect $ EName "w" & "isSunny")
+          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
+          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
+          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
           $ EName "jacket"
         ]
       ]
@@ -160,12 +158,12 @@ testCases =
             $ Lambda
               ( Sig PWrite [NamedParam Imut TNat "width", NamedParam Imut TNat "height"] $ Just TNone )
               [ SVar
-                $ Var Imut Nothing "w" (ECons "Widget" $ Pure & [EName "width", EName "height"])
+                $ Var Imut Nothing "w" (ECons "Widget" $ Params Pure [EName "width", EName "height"])
               , SIf
                 $ Iff
                   $ CondBlock
-                    ( ESelect $ EName "w" & "exists" )
-                    [ SExpr $ EApply $ (ESelect $ EName "w" & "draw") & (PWrite, []) ]
+                    ( ESelect $ Select (EName "w") "exists" )
+                    [ SExpr $ EApp $ App (ESelect $ Select (EName "w") "draw") $ Params PWrite [] ]
               ]
         ]
 
@@ -254,13 +252,14 @@ testCases =
             $ EDiv
               ( EAdd
                 ( ENegate (EName "b") )
-                $ EApply $
-                  (ESelect $ EName "math" & "sqrt" ) &
-                  (Pure,
-                  [ ESub
-                    (EMul (EName "b") (EName "b"))
-                    (EMul (ELitInt 4) $ EMul (EName "a") (EName "c"))
-                  ])
+                $ EApp $ App
+                  (ESelect $ Select (EName "math") "sqrt" )
+                  $ Params
+                    Pure
+                    [ ESub
+                      (EMul (EName "b") (EName "b"))
+                      (EMul (ELitInt 4) $ EMul (EName "a") (EName "c"))
+                    ]
               )
               (EMul (ELitInt 2) (EName "a"))
           ]
@@ -372,7 +371,7 @@ testCases =
   , name "inc explicit"
     <> source
       "inc(Int x) -> Int => x + 1\n\
-      \ $ a = inc(3)"
+      \$ a = inc(3)"
     <> tokens
       [ T.Name "inc", T.LParen, T.TypeInt, T.Name "x", T.RParen, T.ThinArrow, T.TypeInt, T.FatArrow
       , T.Name "x", T.Plus, T.LitInt 1
@@ -384,13 +383,13 @@ testCases =
           ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitInt 3])) )
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitInt 3] )
       ]
     <> typeErrors []
 
   , name "inc explicit nested"
     <> source
-      "inc(Int x-) -> Int => x + 1\n\
+      "inc(Int x) -> Int => x + 1\n\
       \$ a = inc(inc(3))"
     <> typedAst
       [ ( "inc", A1.UFunc $
@@ -399,7 +398,7 @@ testCases =
           [ SExpr $ EAdd (EName "x") $ ELitInt 1]
         )
       , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $
-          EApply (EName "inc", (Pure, [EApply (EName "inc", (Pure, [ELitInt 3]))]))
+          EApp $ App (EName "inc") $ Params Pure [EApp $ App (EName "inc") $ Params Pure [ELitInt 3]]
         )
       ]
     <> typeErrors []
@@ -414,7 +413,7 @@ testCases =
           ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitInt 3])))
+      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitInt 3])
       ]
     <> typeErrors []
 
@@ -433,7 +432,7 @@ testCases =
           , SExpr $ EAdd (EName "x") (EName "one")
           ]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitInt 3])) )
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitInt 3])
       ]
     <> typeErrors []
 
@@ -447,9 +446,8 @@ testCases =
           ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitStr "three"])))
+      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitStr "three"])
       ]
     <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
-
  ]
 
