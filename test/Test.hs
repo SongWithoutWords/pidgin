@@ -79,7 +79,7 @@ astInput :: TestCase -> Maybe Ast
 astInput t = testAst t `orElse` (parse <$> tokenInput t)
 
 testEq :: (Eq a, Show a) => String -> a -> a -> TestTree
-testEq name actual expected = testCase name $ actual @=? expected
+testEq name actual expected = testCase name $ actual @?= expected
 
 tryTestEq :: (Eq a, Show a) => String -> Maybe a -> Maybe a -> Maybe TestTree
 tryTestEq name optActual optExpected = do
