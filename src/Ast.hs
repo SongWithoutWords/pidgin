@@ -144,10 +144,17 @@ data LExpr
   | LName Name
   deriving(Eq, Show)
 
+data App
+  = App Expr Params
+  deriving(Eq, Show)
 
-data App = App Expr Params deriving(Eq, Show)
-data Params = Params Purity [Expr] deriving(Eq, Show)
-data Select = Select Expr Name deriving(Eq, Show)
+data Params
+  = Params Purity [Expr]
+  deriving(Eq, Show)
+
+data Select
+  = Select Expr Name
+  deriving(Eq, Show)
 
 type Typename = String
 type Name = String
