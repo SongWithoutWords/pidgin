@@ -26,6 +26,14 @@ testCases =
     <> ast [ UVar $ Var Imut Nothing "pi" $ ELitFlt 3.14159265 ]
     <> typeErrors []
 
+  , name "def pi, def e"
+    <> source
+      "$ pi = 3.14159265\n\
+      \$ e = 2.718281828"
+    <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265, T.Eol
+              , T.Dollar, T.Name "e", T.Equal, T.LitFlt 2.718281828
+              ]
+
   , name "op expr"
     <> source "$ three = 1 + 2"
     <> tokens [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
@@ -364,11 +372,11 @@ testCases =
   , name "inc explicit"
     <> source
       "inc(Int x) -> Int => x + 1\n\
-      \$ a = inc(3)"
+      \ $ a = inc(3)"
     <> tokens
       [ T.Name "inc", T.LParen, T.TypeInt, T.Name "x", T.RParen, T.ThinArrow, T.TypeInt, T.FatArrow
       , T.Name "x", T.Plus, T.LitInt 1
-      , T.Eol, T.Dollar, T.Name "a", T.Equal, T.LitInt 3
+      , T.Eol, T.Dollar, T.Name "a", T.Equal, T.Name "inc", T.LParen, T.LitInt 3, T.RParen
       ]
     <> typedAst
       [ ( "inc", A1.UFunc $
@@ -382,7 +390,7 @@ testCases =
 
   , name "inc explicit nested"
     <> source
-      "inc(Int x) -> Int => x + 1\n\
+      "inc(Int x-) -> Int => x + 1\n\
       \$ a = inc(inc(3))"
     <> typedAst
       [ ( "inc", A1.UFunc $
@@ -441,7 +449,7 @@ testCases =
         )
       , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApply (EName "inc", (Pure, [ELitStr "three"])))
       ]
-    <> typeErrors []
+    <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
 
  ]
 

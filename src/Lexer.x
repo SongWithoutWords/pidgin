@@ -37,7 +37,7 @@ tokens                   :-
 
 "--".*                   ; -- Comments
 
-^ $spaceOrTab* /$display { checkIndentAction }
+\n+ $spaceOrTab* /$display { checkIndentAction }
 
 $white                   ;
 
@@ -178,14 +178,19 @@ lexTokenAction = updateInputAction . lexToken
 spacesPerTab = 4 -- TODO: Make adjustable by user
 
 parseIndentation :: UserInput -> Int
-parseIndentation (UserInput str pos)
+parseIndentation (UserInput strWithNewlines pos) = parseIndentation' (dropWhile (=='\n') strWithNewlines) pos
+
+parseIndentation' :: String -> AlexPosn -> Int
+parseIndentation' str pos
   | str == [] = 0
   | not $ alleq str = error $ lexError pos "mixed spaces and tabs indent"
-  | head str == ' ' = if (length str `mod` spacesPerTab == 0)
-    then length str `div` spacesPerTab
-    else error $ lexError pos "indentation must occur in multiples of "++show spacesPerTab++" spaces"
-  | head str == '\t' = length str
+  | head str == ' ' = if (strLength `mod` spacesPerTab == 0)
+    then strLength `div` spacesPerTab
+    else error $ lexError pos
+      "indentation must occur in multiples of "++show spacesPerTab++" spaces, found " ++ show strLength
+  | head str == '\t' = strLength
   | otherwise = error $ lexError pos "invalid indentation string \""++str++"\""
+    where strLength = length str
 
 checkIndent' :: Int -> Update
 checkIndent' indent state
@@ -215,6 +220,8 @@ lineNumber :: AlexPosn -> Int
 lineNumber (AlexPn charOffset line column) = line
 
 showLineNumber pos = show $ lineNumber pos
+
+-- TODO: Display column in addition to row in error message
 
 lexError :: AlexPosn -> String -> String
 lexError pos msg = "Lexical error, line " ++ showLineNumber pos ++ ": " ++ msg
