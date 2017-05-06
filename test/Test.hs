@@ -33,10 +33,10 @@ lexerTests :: TestTree
 lexerTests = testGroup "lexer" $ mapMaybe lexTest testCases
 
 lexTest :: TestCase -> Maybe TestTree
-lexTest t = do
-  expected <- testTokens t
-  actual <- scanTokens <$> testSource t
-  return $ testEq (displayName t) actual expected
+lexTest t = tryTestEq
+  (displayName t)
+  (testTokens t)
+  (scanTokens <$> testSource t)
 
 parserTests :: TestTree
 parserTests = testGroup "parser" $ mapMaybe parserTest testCases
@@ -79,7 +79,7 @@ astInput :: TestCase -> Maybe Ast
 astInput t = testAst t `orElse` (parse <$> tokenInput t)
 
 testEq :: (Eq a, Show a) => String -> a -> a -> TestTree
-testEq name actual expected = testCase name $ actual @?= expected
+testEq name actual expected = testCase name $ actual @=? expected
 
 tryTestEq :: (Eq a, Show a) => String -> Maybe a -> Maybe a -> Maybe TestTree
 tryTestEq name optActual optExpected = do
