@@ -18,6 +18,84 @@ testCases =
     <> typedAst []
     <> typeErrors []
 
+  , name "indentation lex test (a)"
+    <> source
+      ".\n\
+      \.\n\
+      \    .\n\
+      \        .\n\
+      \    .\n\
+      \            .\n\
+      \        .\n\
+      \            .\n\
+      \                .\n\
+      \        .\n\
+      \"
+    <> tokens
+      [ T.Dot
+      , T.Eol
+      , T.Dot
+      , T.Indent
+          , T.Dot
+          , T.Indent
+              , T.Dot
+          , T.Dedent
+          , T.Dot, T.Dot
+          , T.Indent
+              , T.Dot
+              , T.Indent
+                  , T.Dot
+                  , T.Indent
+                      , T.Dot
+                  , T.Dedent
+              , T.Dedent
+              , T.Dot
+          , T.Dedent
+      , T.Dedent
+      ]
+
+  , name "indentation lex test (b)"
+    <> source
+      ".\n\
+      \.\n\
+      \\n\
+      \    .\n\
+      \        .\n\
+      \\n\
+      \    .\n\
+      \            .\n\
+      \        .\n\
+      \\n\
+      \\n\
+      \            .\n\
+      \                .\n\
+      \\n\
+      \        .\n\
+      \\n\
+      \"
+    <> tokens
+      [ T.Dot
+      , T.Eol
+      , T.Dot
+      , T.Indent
+          , T.Dot
+          , T.Indent
+              , T.Dot
+          , T.Dedent
+          , T.Dot, T.Dot
+          , T.Indent
+              , T.Dot
+              , T.Indent
+                  , T.Dot
+                  , T.Indent
+                      , T.Dot
+                  , T.Dedent
+              , T.Dedent
+              , T.Dot
+          , T.Dedent
+      , T.Dedent
+      ]
+
   , name "def pi"
     <> source "$ pi = 3.14159265"
     <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
