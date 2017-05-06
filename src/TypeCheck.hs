@@ -6,8 +6,9 @@ module TypeCheck(typeCheckAst) where
 
 import Preface
 
-import qualified Ast as A
-import Ast1
+import Ast
+import AstUtil
+import qualified Ast1 as A1
 
 import TypeErrors
 
@@ -18,108 +19,139 @@ import Control.Monad.Writer
 import Control.Monad.Trans.Reader
 
 type ReadWrite r w a = ReaderT r (Writer w) a
-type TypeCheck a = ReadWrite Ast Errors a
+type TypeCheck a = ReadWrite A1.Ast Errors a
 
-runTypeCheck :: Ast -> TypeCheck a -> (a, Errors)
+runTypeCheck :: A1.Ast -> TypeCheck a -> (a, Errors)
 runTypeCheck a tc = runWriter $ runReaderT tc a
 
 raise :: Error -> TypeCheck ()
 raise e = tell [e]
 
+found :: Monad m => a -> m (Maybe a)
+found = return . Just
+
+
 -- Is type b assignable to type a?
 class TypeCompare a b where
   (<~) :: a -> b -> TypeCheck ()
 
-instance TypeCompare A.Type A.Type where
+-- I think I can probably generalize the rhs to a functor. I think.
+instance TypeCompare Type Type where
   a <~ b =  when (a /= b) $ raise TypeConflict { expected = a, received = b }
 
-instance TypeCompare A.Type (Maybe A.Type) where
+instance TypeCompare Type (Maybe Type) where
   _ <~ Nothing = return ()
   a <~ (Just b) = a <~ b
 
-instance TypeCompare (Maybe A.Type) (Maybe A.Type) where
+instance TypeCompare (Maybe Type) (Maybe Type) where
   Nothing <~ _ = return ()
   (Just a) <~ b = a <~ b
+
+instance TypeCompare Type [Type] where
+  typ <~ typs = mapM_ (typ<~) typs
+
+unify :: [Type] -> Type
+unify [] = TNone
+unify (x:_) = x -- TODO: Do this right
+
+-- Knot tying implementation - it's awesome!
+typeCheckAst :: Ast -> (A1.Ast, Errors)
+typeCheckAst ast = let
+  untypedAst = A1.mapAst ast
+  result@(typedAst, _) = runTypeCheck typedAst $ typeCheck untypedAst
+  in result
 
 class Checked a where
   typeCheck :: a -> TypeCheck a
 
--- Knot tying implementation - it's amazing!
-typeCheckAst :: A.Ast -> (Ast, Errors)
-typeCheckAst ast = let
-  untypedAst = mapAst ast
-  result@(typedAst, _) = runTypeCheck typedAst $ typeCheck untypedAst
-  in result
-
-instance Checked Ast where
+instance Checked A1.Ast where
   typeCheck = mapM typeCheck
 
-instance Checked Unit where
+instance Checked A1.Unit where
   typeCheck unit = case unit of
-    UNamespace n -> retChecked UNamespace n
-    UFunc l -> retChecked UFunc l
-    UVar v -> retChecked UVar v
+    A1.UNamespace n -> A1.UNamespace <$> typeCheck n
+    A1.UFunc l -> A1.UFunc <$> typeCheck l
+    A1.UVar v -> A1.UVar <$> typeCheck v
 
-retChecked :: Checked a => (a -> b) -> a -> TypeCheck b
-retChecked cons x = do { chk <- typeCheck x; return $ cons chk}
-
-instance Checked A.Lambda where
-  typeCheck l@(A.Lambda (A.Sig p params rt) b) =
-    case rt of
-      Nothing -> undefined
-      _ -> return l
-
-    -- what must we do here?
-       -- if l has an explicit return type, verify against its return statements
-       -- if l has an implicit return type, infer return type of l
-       -- enforce consistency between returns of l in any case
-       -- proceed to typecheck its block (enforcing purity and so forth)
+instance Checked Lambda where
+  -- typeCheck = undefined
+  typeCheck (Lambda (Sig p params mrt) b) = do
+    (b', typesReturned) <- typeCheckBlock b
+    case mrt of
+      Nothing -> return $ Lambda (Sig p params (Just $ unify typesReturned)) b'
+      Just rt -> do
+        rt <~ typesReturned
+        return $ Lambda (Sig p params (Just rt)) b'
 
 
-instance Checked Var where
-  typeCheck (Var lMut maybeLType rhs) = do
+-- Yields a type checked block and a list of returned types
+typeCheckBlock :: Block -> TypeCheck (Block, [Type])
+typeCheckBlock [] = return ([], [])
+typeCheckBlock b@[SExpr a] = do { tRet <- findType a; return (b, maybeToList tRet)}
+
+-- TODO: Maintain a context within the block.
+
+
+instance Checked A1.Var where
+  typeCheck (A1.Var lMut maybeLType rhs) = do
     maybeRType <- findType rhs
     maybeLType <~ maybeRType
-    return $ Var lMut (maybeLType ?? maybeRType) rhs
+    return $ A1.Var lMut (maybeLType ?? maybeRType) rhs
 
-findType :: A.Expr -> TypeCheck (Maybe A.Type)
+findType :: Expr -> TypeCheck (Maybe Type)
 findType expr = do
-  env <- ask
   case expr of
+    EApp app -> findTypeApp app
+    EName n -> findTypeName n
+    EIf e1 cond e2 -> findTypeIf e1 cond e2
+    EAdd e1 e2 -> findTypeBinOp e1 e2
+    ELitBln _ -> found TBln
+    ELitChr _ -> found TChr
+    ELitFlt _ -> found TFlt
+    ELitInt _ -> found TInt
+    ELitStr _ -> found TStr
 
-    A.ELitBln _ -> found A.TBln
-    A.ELitChr _ -> found A.TChr
-    A.ELitFlt _ -> found A.TFlt
-    A.ELitInt _ -> found A.TInt
-    A.ELitStr _ -> found A.TStr
 
-    A.EName n -> case Map.lookup n env of
-      Nothing -> do
-        raise $ UnknownId n
-        return Nothing
-      Just u -> case u of
-        UVar (Var m t e) -> return t
+findTypeApp :: App -> TypeCheck (Maybe Type)
+findTypeApp (App e params) = do
+  maybeEType <- findType e
+  case maybeEType of
+    Nothing -> return Nothing
+    Just eType -> case eType of
+      TFunc purity paramTypes ret -> findTypeApp' purity paramTypes ret
+      _ -> do raise $ NonApplicable eType; return Nothing
 
-    A.EIf e1 cond e2 -> do
-      t1 <- findType e1
-      t2 <- findType e2
-      tc <- findType cond
+findTypeApp' :: Purity -> [Type] -> Maybe Type -> TypeCheck (Maybe Type)
+findTypeApp' _ _ = return
 
-      -- ensure that the types of the if and else expression are compatible
-      -- TODO: determine common root type, e.g. typeof(a if a.exists else none) == ?A
-      t1 <~ t2
+findTypeName :: Name -> TypeCheck (Maybe Type)
+findTypeName n = do
+  env <- ask
+  case Map.lookup n env of
+    Nothing -> do
+      raise $ UnknownId n
+      return Nothing
+    Just u -> case u of
+      A1.UVar (A1.Var _ t _) -> return t
+      A1.UFunc (Lambda s _) -> found $ typeOf s
 
-      -- ensure that the conditional expression is boolean
-      A.TBln <~ tc
+findTypeIf :: Expr -> Expr -> Expr -> TypeCheck (Maybe Type)
+findTypeIf a cond b = do
+  ta <- findType a
+  tcond <- findType cond
+  tb <- findType b
+  -- TODO: determine common root type, e.g. typeof(a if a.exists else none) == ?A
+  ta <~ tb   -- ensure that the types of the expressions are compatible
+  TBln <~ tcond -- ensure the conditional expression is boolean
+  return ta
 
-      return t1
-
-    A.EAdd e1 e2 -> do
-      t1 <- findType e1
-      t2 <- findType e2
-      return t1
-
-  where
-    found = return . Just
+-- TODO: I absolutely must generalize operatorts (hardcoding every possibility is not happening)
+findTypeBinOp :: Expr -> Expr -> TypeCheck (Maybe Type)
+findTypeBinOp a b = do
+  ta <- findType a
+  tb <- findType b
+  -- TODO: determine common root type, e.g. typeof(3 + 4.7) == TFlt
+  ta <~ tb -- this is not right, but is better than nothing
+  return ta
 
 
