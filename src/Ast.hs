@@ -38,8 +38,10 @@ data Lambda
 
 data Sig
   -- Callee cares about left-most mutability of param types but not return
-  = Sig Purity [NamedParam] (Maybe Type)
+  = Sig Purity NamedParams (Maybe Type)
   deriving(Eq, Show)
+
+type NamedParams = [NamedParam]
 
 data NamedParam
   = NamedParam Mut Type Name
