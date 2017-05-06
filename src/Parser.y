@@ -143,9 +143,9 @@ lambda
   : signature "=>" block             { Lambda $1 $3 }
 
 signature
-  : purityAndNamedParams optionRetType { Sig (fst $1) (snd $1) $2}
+  : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
 
-purityAndNamedParams
+purityAndParams
   : "(" ")"                         { Pure & [] }
   | "(" namedParams ")"             { Pure & $2 }
   | "(" purity ")"                  { $2 & [] }
@@ -156,7 +156,7 @@ namedParams
   | namedParam "," namedParams { $1 : $3 }
 
 namedParam
-  : mut type name { NamedParam $1 $2 $3 }
+  : mut type name { Param $1 $2 $3 }
 
 funcType
   : type                   retType  { TFunc Pure [$1] $ Just $2 }
@@ -181,16 +181,16 @@ types
   | type "," types  { $1 : $3 }
 
 cons
-  : typename "(" params ")" { ECons $1 $3 }
+  : typename "(" args ")" { ECons $1 $3 }
 
 apply
-  : expr "(" params ")" { App $1 $3 }
+  : expr "(" args ")" { App $1 $3 }
 
-params
-  : {- none -}        { Params Pure [] }
-  | exprs             { Params Pure $1 }
-  | purity            { Params $1 [] }
-  | purity "," exprs  { Params $1 $3 }
+args
+  : {- none -}        { Args Pure [] }
+  | exprs             { Args Pure $1 }
+  | purity            { Args $1 [] }
+  | purity "," exprs  { Args $1 $3 }
 
 exprs
   : expr            { [$1]}

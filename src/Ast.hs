@@ -38,13 +38,13 @@ data Lambda
 
 data Sig
   -- Callee cares about left-most mutability of param types but not return
-  = Sig Purity NamedParams (Maybe Type)
+  = Sig Purity Params (Maybe Type)
   deriving(Eq, Show)
 
-type NamedParams = [NamedParam]
+type Params = [Param]
 
-data NamedParam
-  = NamedParam Mut Type Name
+data Param
+  = Param Mut Type Name
   deriving(Eq, Show)
 
 data Purity
@@ -115,7 +115,7 @@ data Expr
 
   | EIf Expr {- if -} Expr {- else -} Expr
   | ELambda Lambda
-  | ECons Typename Params
+  | ECons Typename Args
 
   -- Unary operators
   | ENegate Expr
@@ -147,11 +147,11 @@ data LExpr
   deriving(Eq, Show)
 
 data App
-  = App Expr Params
+  = App Expr Args
   deriving(Eq, Show)
 
-data Params
-  = Params Purity [Expr]
+data Args
+  = Args Purity [Expr]
   deriving(Eq, Show)
 
 data Select

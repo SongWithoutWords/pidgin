@@ -131,7 +131,7 @@ testCases =
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
     <> ast
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [NamedParam Imut TBln "b"] $ Just TBln)
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [Param Imut TBln "b"] $ Just TBln)
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -145,7 +145,7 @@ testCases =
       , T.False, T.If, T.Name "b", T.Else, T.True
       , T.Dedent]
     <> ast
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [NamedParam Imut TBln "b"] $ Just TBln)
+      [ UFunc $ Func "negate" $ Lambda (Sig Pure [Param Imut TBln "b"] $ Just TBln)
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -161,14 +161,14 @@ testCases =
       , T.Dedent]
     <> ast
       [ UFunc $ Func "factorial" $ Lambda
-          ( Sig Pure [NamedParam Imut TNat "n"] $ Just TNat)
+          ( Sig Pure [Param Imut TNat "n"] $ Just TNat)
           [ SExpr
             $ EIf
               (ELitInt 1)
               (ELesserEq (EName "n") (ELitInt 0))
               (EMul
                   (EName "n")
-                  $ EApp $ App (EName "factorial") $ Params Pure [ESub (EName "n") (ELitInt 1)]
+                  $ EApp $ App (EName "factorial") $ Args Pure [ESub (EName "n") (ELitInt 1)]
               )
           ]
       ]
@@ -180,7 +180,7 @@ testCases =
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
     <> ast
       [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [NamedParam Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
+        ( Sig Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
           $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
@@ -198,7 +198,7 @@ testCases =
       \    jacket"
     <> ast
       [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [NamedParam Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
+        ( Sig Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
           $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
@@ -234,14 +234,14 @@ testCases =
         [ UFunc
           $ Func "drawWidget"
             $ Lambda
-              ( Sig PWrite [NamedParam Imut TNat "width", NamedParam Imut TNat "height"] $ Just TNone )
+              ( Sig PWrite [Param Imut TNat "width", Param Imut TNat "height"] $ Just TNone )
               [ SVar
-                $ Var Imut Nothing "w" (ECons "Widget" $ Params Pure [EName "width", EName "height"])
+                $ Var Imut Nothing "w" (ECons "Widget" $ Args Pure [EName "width", EName "height"])
               , SIf
                 $ Iff
                   $ CondBlock
                     ( ESelect $ Select (EName "w") "exists" )
-                    [ SExpr $ EApp $ App (ESelect $ Select (EName "w") "draw") $ Params PWrite [] ]
+                    [ SExpr $ EApp $ App (ESelect $ Select (EName "w") "draw") $ Args PWrite [] ]
               ]
         ]
 
@@ -272,7 +272,7 @@ testCases =
       [ UFunc
         $ Func "quadratic"
           $ Lambda
-            ( Sig Pure [NamedParam Imut TFlt "a", NamedParam Imut TFlt "b", NamedParam Imut TFlt "c"]
+            ( Sig Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"]
               $ Just $ TFunc Pure [TFlt] $ Just TFlt
             )
             [ SExpr
@@ -280,7 +280,7 @@ testCases =
                 $ Lambda
                   ( Sig
                     Pure
-                    [NamedParam Imut TFlt "x"]
+                    [Param Imut TFlt "x"]
                     $ Just TFlt
                   )
                   [ SExpr
@@ -302,11 +302,11 @@ testCases =
       [ UFunc
         $ Func "quadratic"
           $ Lambda
-            ( Sig Pure [NamedParam Imut TFlt "a", NamedParam Imut TFlt "b", NamedParam Imut TFlt "c"] Nothing)
+            ( Sig Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] Nothing)
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( Sig Pure [NamedParam Imut TFlt "x"] Nothing)
+                  ( Sig Pure [Param Imut TFlt "x"] Nothing)
                   [ SExpr
                     $ EAdd
                       ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
@@ -325,14 +325,14 @@ testCases =
       [ UFunc
         $ Func "singleRoot"
           $ Lambda
-          ( Sig Pure [NamedParam Imut TFlt "a", NamedParam Imut TFlt "b", NamedParam Imut TFlt "c"] $ Just TFlt )
+          ( Sig Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] $ Just TFlt )
           [ SExpr
             $ EDiv
               ( EAdd
                 ( ENegate (EName "b") )
                 $ EApp $ App
                   (ESelect $ Select (EName "math") "sqrt" )
-                  $ Params
+                  $ Args
                     Pure
                     [ ESub
                       (EMul (EName "b") (EName "b"))
@@ -459,7 +459,7 @@ testCases =
           ( Sig Pure [] $ Just TInt)
           [ SExpr $ ELitInt 1]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "one") $ Params Pure [])
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "one") $ Args Pure [])
       ]
     <> typeErrors []
 
@@ -481,10 +481,10 @@ testCases =
     <> typedAst
       [ ( "inc", A1.UFunc $
         Lambda
-          ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
+          ( Sig Pure [Param Imut TInt "x"] $ Just TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitInt 1] )
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1] )
       ]
     <> typeErrors []
 
@@ -495,11 +495,11 @@ testCases =
     <> typedAst
       [ ( "inc", A1.UFunc $
         Lambda
-          ( Sig Pure [NamedParam Imut TInt "x"] (Just TInt) )
+          ( Sig Pure [Param Imut TInt "x"] (Just TInt) )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1]
         )
       , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $
-          EApp $ App (EName "inc") $ Params Pure [EApp $ App (EName "inc") $ Params Pure [ELitInt 1]]
+          EApp $ App (EName "inc") $ Args Pure [EApp $ App (EName "inc") $ Args Pure [ELitInt 1]]
         )
       ]
     <> typeErrors []
@@ -528,10 +528,10 @@ testCases =
     <> typedAst
       [ ("inc", A1.UFunc $
         Lambda
-          ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
+          ( Sig Pure [Param Imut TInt "x"] $ Just TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitInt 1])
+      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
       ]
     <> typeErrors []
 
@@ -542,10 +542,10 @@ testCases =
     <> typedAst
       [ ("inc", A1.UFunc $
         Lambda
-          ( Sig Pure [NamedParam Imut TInt "x"] $ Just TInt )
+          ( Sig Pure [Param Imut TInt "x"] $ Just TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitStr "one"])
+      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitStr "one"])
       ]
     <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
 
@@ -559,12 +559,12 @@ testCases =
     <> typedAst
       [ ( "inc", A1.UFunc $
         Lambda
-          ( Sig Pure [NamedParam Imut TInt "x"] (Just TInt) )
+          ( Sig Pure [Param Imut TInt "x"] (Just TInt) )
           [ SVar $ Var Imut (Just TInt) "one" (ELitInt 1)
           , SExpr $ EAdd (EName "x") (EName "one")
           ]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Params Pure [ELitInt 1])
+      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
       ]
     <> typeErrors []
  ]

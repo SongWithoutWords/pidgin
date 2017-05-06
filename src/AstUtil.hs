@@ -33,8 +33,8 @@ instance HasName Member where
 instance HasName Var where
   nameOf (Var _ _ n _) = n
 
-instance HasName NamedParam where
-  nameOf (NamedParam _ _ n) = n
+instance HasName Param where
+  nameOf (Param _ _ n) = n
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -67,8 +67,8 @@ instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
 instance {-#OVERLAPPING#-} IsTypeDecl Sig where
   typeOf a = TFunc (purityOf a) (paramTypesOf a) (returnTypeOf a)
 
-instance {-#OVERLAPPING#-} IsTypeDecl NamedParam where
-  typeOf (NamedParam _ t _) = t
+instance {-#OVERLAPPING#-} IsTypeDecl Param where
+  typeOf (Param _ t _) = t
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -107,13 +107,13 @@ instance {-#OVERLAPPING#-} HasPurity Sig where
 
 
 ------------------------------------------------------------------------------------------------------------------------
-class HasNamedParams a where
-  namedParamsOf :: a -> [NamedParam]
+class HasParams a where
+  namedParamsOf :: a -> Params
 
-instance HasSig a => HasNamedParams a where
+instance HasSig a => HasParams a where
   namedParamsOf = namedParamsOf . sigOf
 
-instance {-#overlapping#-} HasNamedParams Sig where
+instance {-#overlapping#-} HasParams Sig where
   namedParamsOf (Sig _ args _) = args
 
 
@@ -127,7 +127,7 @@ instance HasSig a => HasParamTypes a where
 instance {-#overlapping#-} HasParamTypes Sig where
   paramTypesOf = paramTypesOf . namedParamsOf
 
-instance {-#overlapping#-} HasParamTypes [NamedParam] where
+instance {-#overlapping#-} HasParamTypes Params where
   paramTypesOf = map typeOf
 
 
