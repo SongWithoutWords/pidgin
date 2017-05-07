@@ -1,4 +1,9 @@
-module Ast where
+module Ast
+  ( module Ast,
+    module Types
+  ) where
+
+import Types
 
 -- Finite number of steps friend!
 
@@ -45,42 +50,6 @@ type Params = [Param]
 
 data Param
   = Param Mut Type Name
-  deriving(Eq, Show)
-
-data Purity
-  = Pure
-  | PRead
-  | PWrite
-  deriving(Eq, Show)
-
-data Type
-  = TUser Typename
-
-  -- Neither caller nor callee need care about the left-most mutability of parameter and return types
-  | TFunc Purity [Type] (Maybe Type)
-
-  | TTempRef Mut Type
-  | TPersRef Mut Type
-  | TOption Mut Type
-  | TZeroPlus Mut Type
-  | TOnePlus Mut Type
-
-  | TBln
-  | TChr
-  | TFlt
-  | TInt
-  | TNat
-  | TStr
-
-  | TNone
-
-  deriving(Eq, Show)
-
-data Mut
-  = Mut         -- Mutable in present scope
-  | Imut        -- Immutable in present scope
-  -- Constant   -- Not mutable in any scope - planned
-  -- CtConstant -- Known at compile time - planned
   deriving(Eq, Show)
 
 type Block = [Stmt]
@@ -158,6 +127,5 @@ data Select
   = Select Expr Name
   deriving(Eq, Show)
 
-type Typename = String
 type Name = String
 

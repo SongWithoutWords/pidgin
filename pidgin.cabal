@@ -28,6 +28,7 @@ library
                      , Tokens 
                      , TypeCheck
                      , TypeErrors
+                     , Types
 
   build-depends:       base
                      , containers
