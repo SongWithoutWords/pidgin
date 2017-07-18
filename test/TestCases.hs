@@ -382,12 +382,18 @@ testCases =
   -- TODO: a proper error type and error handling for recursive definitions
   , source "$ a = a"
     <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
-    <> typeErrors []
+    <> typeErrors [RecursiveDefinition]
 
   , source "$ a = b; $ b = a"
     <> typedAst [ ("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")
                 , ("b", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
-    <> typeErrors []
+    <> typeErrors [RecursiveDefinition]
+
+  , source "$ a = true; $ a = false; $ b = a"
+    <> typeErrors [CompetingDefinitions]
+
+  , source "$ a = true; a() => true; $ b = a"
+    <> typeErrors [CompetingDefinitions]
 
   , source "$ a = true; $ b = a"
     <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ ELitBln True)
