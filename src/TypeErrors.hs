@@ -10,6 +10,8 @@ data Error
   | FailedToUnify (Set.Set Type)
   | NonApplicable Type
   | ArgCount { acExpected :: Int, acReceived :: Int }
+  | CompetingDefinitions
+  | RecursiveDefinition
   deriving(Eq, Show)
 
 type Errors = [Error]
