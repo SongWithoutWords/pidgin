@@ -1,8 +1,8 @@
 {-# language TypeSynonymInstances #-}
 {-# language InstanceSigs #-}
 
-module MultiMapInstances
-  ( module MultiMapInstances
+module MultiMap
+  ( module MultiMap
   , module Data.MultiMap
   ) where
 
