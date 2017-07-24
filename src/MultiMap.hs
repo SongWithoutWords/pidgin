@@ -1,35 +1,22 @@
-{-# language TypeSynonymInstances #-}
-{-# language InstanceSigs #-}
 
 module MultiMap
   ( module MultiMap
-  , module Data.MultiMap
   ) where
 
-import Data.MultiMap
+import Data.Map
 
-instance (Eq k, Eq a) => Eq (MultiMap k a) where
-  (==) x y = toMap x == toMap y
+type MultiMap k a = Map k [a]
 
-instance (Show k, Show a) => Show (MultiMap k a) where
-  show = show . toMap
+multiLookup :: Ord k => k -> Map k [a] -> [a]
+multiLookup k m = case Data.Map.lookup k m of
+  Nothing -> []
+  Just values -> values
 
-union :: MultiMap k a -> MultiMap k a -> MultiMap k a
-union = undefined
+multiInsert :: Ord k => k -> a -> Map k [a] -> Map k [a]
+multiInsert k v = insertWith (++) k [v]
 
-instance Monoid (MultiMap k a) where
-  mempty = empty
-  mappend = union
+multiFromList :: Ord k => [(k, a)] -> Map k [a]
+multiFromList pairs = Prelude.foldl (\m (k, v) -> multiInsert k v m) (Data.Map.empty) pairs
 
-instance Functor (MultiMap k) where
-  fmap :: (a -> b) -> MultiMap k a -> MultiMap k b
-  fmap = undefined
-
-instance Foldable (MultiMap k) where
-  foldr :: (a -> b -> b) -> b -> (MultiMap k a) -> b
-  foldr = undefined
-
-instance Traversable (MultiMap k) where
-  traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
-  traverse = undefined
+-- TODO: see Checked [A1.Ast] and checked [A1.Unit] for multiMapM motivation
 
