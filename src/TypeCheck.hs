@@ -1,18 +1,17 @@
 {-# language MultiParamTypeClasses #-}
 {-# language FlexibleInstances #-}
-{-# language TypeSynonymInstances #-}
+--{-# language TypeSynonymInstances #-}
 
 module TypeCheck(typeCheckAst) where
 
 import Preface
 
 import Ast
-import AstUtil
 import qualified Ast1 as A1
 
+import TypeContext
 import TypeErrors
 
-import qualified Data.Map.Lazy as Map
 import Data.Maybe
 
 import Control.Monad.Writer
@@ -74,9 +73,17 @@ instance Checked A1.Unit where
     A1.UVar v -> A1.UVar <$> typeCheck v
 
 instance Checked Lambda where
-  -- typeCheck = undefined
   typeCheck (Lambda (Sig p params mrt) b) = do
-    (b', typesReturned) <- typeCheckBlock b
+
+    -- TODO: I have a problem right now at the boundary between global and local scope.
+    -- A polymorphic context class which can be either global or local may fix this
+    (TypeContext history bindings) <- ask
+
+
+    let blockContext = TypeContext history $ initBlockBindings bindings params
+
+    (b', typesReturned) <- local (\ _ -> blockContext) $ typeCheckBlock b
+
     case mrt of
       Nothing -> return $ Lambda (Sig p params (Just $ unify typesReturned)) b'
       Just rt -> do
@@ -105,6 +112,7 @@ findType expr = do
     EName n -> findTypeName n
     EIf e1 cond e2 -> findTypeIf e1 cond e2
     EAdd e1 e2 -> findTypeBinOp e1 e2
+    EMul e1 e2 -> findTypeBinOp e1 e2
     ELitBln _ -> found TBln
     ELitChr _ -> found TChr
     ELitFlt _ -> found TFlt
@@ -126,14 +134,35 @@ findTypeApp' _ _ = return
 
 findTypeName :: Name -> TypeCheckM (Maybe Type)
 findTypeName n = do
-  env <- ask
-  case Map.lookup n env of
-    Nothing -> do
-      raise $ UnknownId n
-      return Nothing
-    Just u -> case u of
-      A1.UVar (A1.Var _ t _) -> return t
-      A1.UFunc (Lambda s _) -> found $ typeOf s
+
+-- In order to carry these names with me, can I put them in the Monad, or am I out of luck?
+-- Will this work, can this work?
+
+  TypeContext searchHistory bindings <- ask
+
+  if elem n searchHistory then do
+     raise RecursiveDefinition; return Nothing
+  else do
+    local (pushSearchName n) $ findTypeName' $ lookupKinds bindings n
+
+    where
+      findTypeName' :: [Kind] -> TypeCheckM (Maybe Type)
+      findTypeName' ks = case ks of
+        [] -> do
+          raise $ UnknownId n
+          return Nothing
+        [k] -> case k of
+          KExpr t -> return t
+          KType -> do
+            raise NeedExprFoundType
+            return Nothing
+          KNamespace -> do
+            raise NeedExprFoundNamespace
+            return Nothing
+        _ -> do
+          raise $ CompetingDefinitions
+          return Nothing
+
 
 findTypeIf :: Expr -> Expr -> Expr -> TypeCheckM (Maybe Type)
 findTypeIf a cond b = do

@@ -27,6 +27,7 @@ library
                      , Preface
                      , Tokens 
                      , TypeCheck
+                     , TypeContext
                      , TypeErrors
                      , Types
 
