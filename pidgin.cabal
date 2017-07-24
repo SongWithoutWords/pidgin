@@ -22,6 +22,7 @@ library
                      , AstUtil
                      , FormatAst
                      , Lexer
+                     , MultiMapInstances
                      , ParseError
                      , Parser
                      , Preface
