@@ -1,5 +1,10 @@
 module Types where
 
+data Kind
+  = KNamespace
+  | KType
+  | KExpr (Maybe Type)
+
 data Type
   = TUser Typename
 
