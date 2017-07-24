@@ -389,6 +389,17 @@ testCases =
                 , ("b", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
     <> typeErrors [RecursiveDefinition]
 
+  , source "$ a = b; $ b = c; $ c = a"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")
+                , ("b", A1.UVar $ A1.Var Imut Nothing $ EName "c")
+                , ("c", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
+    <> typeErrors [RecursiveDefinition]
+
+  , source "$ a = 1; $ b = b + a"
+    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 1)
+                , ("b", A1.UVar $ A1.Var Imut Nothing $ EAdd (EName "b") (EName "a"))]
+    <> typeErrors [RecursiveDefinition]
+
   , source "$ a = true; $ a = false; $ b = a"
     <> typeErrors [CompetingDefinitions]
 
