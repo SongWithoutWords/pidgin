@@ -18,13 +18,13 @@ import Data.Maybe
 import Control.Monad.Writer
 import Control.Monad.Trans.Reader
 
-type ReadWrite r w a = ReaderT r (Writer w) a
-type TypeCheck a = ReadWrite A1.Ast Errors a
+type ReadWriteM r w a = ReaderT r (Writer w) a
+type TypeCheckM a = ReadWriteM TypeContext Errors a
 
-runTypeCheck :: A1.Ast -> TypeCheck a -> (a, Errors)
-runTypeCheck a tc = runWriter $ runReaderT tc a
+runTypeCheck :: TypeContext -> TypeCheckM a -> (a, Errors)
+runTypeCheck context typeCheckM = runWriter $ runReaderT typeCheckM context
 
-raise :: Error -> TypeCheck ()
+raise :: Error -> TypeCheckM ()
 raise e = tell [e]
 
 found :: Monad m => a -> m (Maybe a)
@@ -34,6 +34,7 @@ found = return . Just
 -- Is type b assignable to type a?
 class TypeCompare a b where
   (<~) :: a -> b -> TypeCheck ()
+  (<~) :: a -> b -> TypeCheckM ()
 
 -- I think I can probably generalize the rhs to a functor. I think.
 instance TypeCompare Type Type where
@@ -58,11 +59,11 @@ unify (x:_) = x -- TODO: Do this right
 typeCheckAst :: Ast -> (A1.Ast, Errors)
 typeCheckAst ast = let
   untypedAst = A1.mapAst ast
-  result@(typedAst, _) = runTypeCheck typedAst $ typeCheck untypedAst
+  result@(typedAst, _) = runTypeCheck (TypeContext [] $ GlobalBindings typedAst) $ typeCheck untypedAst
   in result
 
 class Checked a where
-  typeCheck :: a -> TypeCheck a
+  typeCheck :: a -> TypeCheckM a
 
 instance Checked A1.Ast where
   typeCheck = mapM typeCheck
@@ -85,7 +86,7 @@ instance Checked Lambda where
 
 
 -- Yields a type checked block and a list of returned types
-typeCheckBlock :: Block -> TypeCheck (Block, [Type])
+typeCheckBlock :: Block -> TypeCheckM (Block, [Type])
 typeCheckBlock [] = return ([], [])
 typeCheckBlock b@[SExpr a] = do { tRet <- findType a; return (b, maybeToList tRet)}
 
@@ -98,7 +99,7 @@ instance Checked A1.Var where
     maybeLType <~ maybeRType
     return $ A1.Var lMut (maybeLType ?? maybeRType) rhs
 
-findType :: Expr -> TypeCheck (Maybe Type)
+findType :: Expr -> TypeCheckM (Maybe Type)
 findType expr = do
   case expr of
     EApp app -> findTypeApp app
@@ -112,7 +113,7 @@ findType expr = do
     ELitStr _ -> found TStr
 
 
-findTypeApp :: App -> TypeCheck (Maybe Type)
+findTypeApp :: App -> TypeCheckM (Maybe Type)
 findTypeApp (App e params) = do
   maybeEType <- findType e
   case maybeEType of
@@ -121,10 +122,10 @@ findTypeApp (App e params) = do
       TFunc purity paramTypes ret -> findTypeApp' purity paramTypes ret
       _ -> do raise $ NonApplicable eType; return Nothing
 
-findTypeApp' :: Purity -> [Type] -> Maybe Type -> TypeCheck (Maybe Type)
+findTypeApp' :: Purity -> [Type] -> Maybe Type -> TypeCheckM (Maybe Type)
 findTypeApp' _ _ = return
 
-findTypeName :: Name -> TypeCheck (Maybe Type)
+findTypeName :: Name -> TypeCheckM (Maybe Type)
 findTypeName n = do
   env <- ask
   case Map.lookup n env of
@@ -135,7 +136,7 @@ findTypeName n = do
       A1.UVar (A1.Var _ t _) -> return t
       A1.UFunc (Lambda s _) -> found $ typeOf s
 
-findTypeIf :: Expr -> Expr -> Expr -> TypeCheck (Maybe Type)
+findTypeIf :: Expr -> Expr -> Expr -> TypeCheckM (Maybe Type)
 findTypeIf a cond b = do
   ta <- findType a
   tcond <- findType cond
@@ -146,7 +147,7 @@ findTypeIf a cond b = do
   return ta
 
 -- TODO: I absolutely must generalize operatorts (hardcoding every possibility is not happening)
-findTypeBinOp :: Expr -> Expr -> TypeCheck (Maybe Type)
+findTypeBinOp :: Expr -> Expr -> TypeCheckM (Maybe Type)
 findTypeBinOp a b = do
   ta <- findType a
   tb <- findType b
