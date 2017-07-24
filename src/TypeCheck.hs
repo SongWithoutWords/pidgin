@@ -33,7 +33,6 @@ found = return . Just
 
 -- Is type b assignable to type a?
 class TypeCompare a b where
-  (<~) :: a -> b -> TypeCheck ()
   (<~) :: a -> b -> TypeCheckM ()
 
 -- I think I can probably generalize the rhs to a functor. I think.
