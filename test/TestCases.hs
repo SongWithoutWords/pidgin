@@ -465,7 +465,7 @@ testCases =
   -- TypeCheck function tests
   , source "$ a = 5(1)"
     <> typeErrors [NonApplicable TInt]
-  
+
   , name "one explicit"
     <> source
       "one() -> Int => 1\n\
