@@ -48,6 +48,9 @@ class Checked a where
 instance Checked A1.Ast where
   typeCheck = mapM typeCheck
 
+instance Checked [A1.Unit] where
+  typeCheck = mapM typeCheck
+
 instance Checked A1.Unit where
   typeCheck unit = case unit of
     A1.UNamespace n -> A1.UNamespace <$> typeCheck n

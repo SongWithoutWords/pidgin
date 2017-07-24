@@ -1,12 +1,10 @@
--- {-# language FlexibleInstances #-}
-
 module TypeContext where
-
-import qualified Data.Map.Lazy as Map
 
 import Ast
 import AstUtil
 import qualified Ast1 as A1
+
+import MultiMap
 
 data TypeContext = TypeContext
   { tcSearchHistory::[Name]
@@ -31,19 +29,20 @@ lookupKinds context name = case context of
   BlockBindings local global -> lookupInAst local name ++ lookupKinds global name
   where
     lookupInAst :: A1.Ast -> Name -> [Kind]
-    lookupInAst ast n  = case Map.lookup n ast of
-      Nothing -> []
-      Just u -> case u of
-        A1.UNamespace _ -> [KNamespace]
-        A1.UClass _ -> [KType]
-        A1.UFunc (Lambda s _) -> [KExpr $ Just $ typeOf s]
-        A1.UVar (A1.Var _ t _) -> [KExpr t]
+    lookupInAst ast n  = map kindOfUnit (multiLookup n ast)--case multiLookup n ast of
+
+    kindOfUnit :: A1.Unit -> Kind
+    kindOfUnit u = case u of
+      A1.UNamespace _ -> KNamespace
+      A1.UClass _ -> KType
+      A1.UFunc (Lambda s _) -> KExpr $ Just $ typeOf s
+      A1.UVar (A1.Var _ t _) -> KExpr t
 
 initBlockBindings :: Bindings -> Params -> Bindings
 initBlockBindings outerContext params = BlockBindings (initLocalContextFromParams params) outerContext
   where
     initLocalContextFromParams :: Params -> A1.Ast
-    initLocalContextFromParams = Map.fromList . map paramToUnit
+    initLocalContextFromParams = multiFromList . map paramToUnit
 
     paramToUnit :: Param -> (String, A1.Unit)
     paramToUnit (Param m t n) = (n, A1.UVar $ A1.Var m (Just t) $ EName n)

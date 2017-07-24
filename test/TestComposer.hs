@@ -1,6 +1,6 @@
 module TestComposer where
 
-import qualified Data.Map.Lazy as Map
+import MultiMap
 
 import TestCase
 
@@ -24,7 +24,7 @@ ast :: Ast -> TestCase
 ast a = mempty {testAst = Just a}
 
 typedAst :: [(String, A1.Unit)] -> TestCase
-typedAst pairs = mempty {testTypedAst = Just $ Map.fromList pairs}
+typedAst pairs = mempty {testTypedAst = Just $ multiFromList pairs}
 
 typeErrors :: Errors -> TestCase
 typeErrors e = mempty {testTypeErrors = Just e}

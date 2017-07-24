@@ -2,12 +2,12 @@ module Ast1 where
 
 -- To avoid code duplication, I think I could parameterize Ast on the type of collection it used
 
-import qualified Data.Map.Lazy as Map
+import MultiMap
 
 import qualified Ast as A
 import AstUtil
 
-type Table a = Map.Map String a
+type Table a = MultiMap String a
 type Entry a = (String, a)
 
 type Ast = Table Unit
@@ -38,7 +38,7 @@ mapAst :: A.Ast -> Ast
 mapAst = mapUnits
 
 mapUnits :: [A.Unit] -> UnitTable
-mapUnits = Map.fromList . map mapUnit
+mapUnits = multiFromList . map mapUnit
 
 mapUnit :: A.Unit -> Entry Unit
 mapUnit u = (nameOf u, mapUnit' u)
@@ -50,7 +50,7 @@ mapUnit' (A.UFunc f) = UFunc $ lambdaOf f
 mapUnit' (A.UVar v) = UVar $ mapVar v
 
 mapMembers :: [A.Member] -> MemberTable
-mapMembers = Map.fromList . map memberEntryFromAst
+mapMembers = multiFromList . map memberEntryFromAst
 
 memberEntryFromAst :: A.Member -> Entry Member
 memberEntryFromAst m = (nameOf m, mapMember' m)
