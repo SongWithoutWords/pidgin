@@ -2,16 +2,15 @@ module Ast1 where
 
 -- To avoid code duplication, I think I could parameterize Ast on the type of collection it used
 
+import qualified Data.Map.Lazy as Map
+
 import qualified Ast as A
 import AstUtil
-
-import qualified Data.Map.Lazy as Map
 
 type Table a = Map.Map String a
 type Entry a = (String, a)
 
 type Ast = Table Unit
-
 
 type UnitTable = Table Unit
 type MemberTable = Table Member
@@ -26,7 +25,7 @@ data Unit
 data Member
   = MClass A.Access MemberTable
   | MFunc A.Access A.Mut A.Lambda
-  | MCons A.Access
+  | MCons A.Access A.Lambda
   | MVar A.Access Var
   deriving(Eq, Show)
 
@@ -48,7 +47,7 @@ mapUnit' :: A.Unit -> Unit
 mapUnit' (A.UNamespace _ units) = UNamespace $ mapUnits units
 mapUnit' (A.UClass c) = UClass $ mapMembers $ membersOf c
 mapUnit' (A.UFunc f) = UFunc $ lambdaOf f
-mapUnit' (A.UVar (A.Var m t _ e)) = UVar $ Var m t e
+mapUnit' (A.UVar v) = UVar $ mapVar v
 
 mapMembers :: [A.Member] -> MemberTable
 mapMembers = Map.fromList . map memberEntryFromAst
@@ -58,11 +57,11 @@ memberEntryFromAst m = (nameOf m, mapMember' m)
 
 mapMember' :: A.Member -> Member
 mapMember' (A.MClass a c) = MClass a $ mapMembers $ membersOf c
+mapMember' (A.MCons a l) = MCons a l
 mapMember' (A.MFunc a mut f) = MFunc a mut $ lambdaOf f
 mapMember' (A.MVar a v) = MVar a $ mapVar v
 
 mapVar :: A.Var -> Var
 mapVar (A.Var m t _ e) = Var m t e
-
 
 
