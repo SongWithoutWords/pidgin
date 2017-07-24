@@ -1,33 +1,15 @@
 {-# language MultiParamTypeClasses #-}
 {-# language FlexibleInstances #-}
---{-# language TypeSynonymInstances #-}
 
 module TypeCheck(typeCheckAst) where
+
+import Data.Maybe
 
 import Preface
 
 import Ast
 import qualified Ast1 as A1
-
-import TypeContext
-import TypeErrors
-
-import Data.Maybe
-
-import Control.Monad.Writer
-import Control.Monad.Trans.Reader
-
-type ReadWriteM r w a = ReaderT r (Writer w) a
-type TypeCheckM a = ReadWriteM TypeContext Errors a
-
-runTypeCheck :: TypeContext -> TypeCheckM a -> (a, Errors)
-runTypeCheck context typeCheckM = runWriter $ runReaderT typeCheckM context
-
-raise :: Error -> TypeCheckM ()
-raise e = tell [e]
-
-found :: Monad m => a -> m (Maybe a)
-found = return . Just
+import TypeCheckM
 
 
 -- Is type b assignable to type a?
