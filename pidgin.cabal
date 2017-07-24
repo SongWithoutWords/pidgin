@@ -37,7 +37,6 @@ library
                      , containers
                      , array
                      , mtl
-                     , multimap
                      , transformers
 
   ghc-options:
