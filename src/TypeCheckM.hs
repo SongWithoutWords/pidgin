@@ -5,7 +5,7 @@ module TypeCheckM
   , module TypeContext
   , module TypeErrors
   ) where
-d
+
 import Control.Monad.State
 import Control.Monad.Writer as Writer
 import Control.Monad.Trans.Reader as Reader
