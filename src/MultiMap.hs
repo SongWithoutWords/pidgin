@@ -1,6 +1,7 @@
 
 module MultiMap
   ( module MultiMap
+  , Map
   ) where
 
 import Data.Map

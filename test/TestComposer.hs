@@ -5,7 +5,7 @@ import MultiMap
 import TestCase
 
 import Ast
-import qualified Ast1 as A1
+-- import qualified Ast1 as A1
 import Tokens
 import TypeErrors
 
@@ -20,10 +20,10 @@ source s = mempty {testSource = Just s}
 tokens :: Tokens -> TestCase
 tokens t = mempty {testTokens = Just t}
 
-ast :: Ast -> TestCase
+ast :: AstLu -> TestCase
 ast a = mempty {testAst = Just a}
 
-typedAst :: [(String, A1.Unit)] -> TestCase
+typedAst :: [(Name, UnitMc)] -> TestCase
 typedAst pairs = mempty {testTypedAst = Just $ multiFromList pairs}
 
 typeErrors :: Errors -> TestCase

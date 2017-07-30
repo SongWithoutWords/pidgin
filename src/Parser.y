@@ -108,14 +108,14 @@ units
 unit
   : namespace       { $1 }
   | class           { UClass $1 }
-  | function        { UFunc $1 }
+  | function        { UFuncL $1 }
   | var             { UVar $1 }
 
 namespace
-  : tknNamespace name indentedUnits { UNamespace $2 $3 }
+  : tknNamespace name indentedUnits { UNamespaceL $2 $3 }
 
 class
-  : tknClass typename indentedMembers  { Class $2 $3 } 
+  : tknClass typename indentedMembers  { ClassL $2 $3 } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -127,7 +127,7 @@ members
 
 member
   : accessMod class         { MClass $1 $2 }
-  | accessMod mut function  { MFunc $1 $2 $3 }
+  | accessMod mut function  { MFuncL $1 $2 $3 }
   | accessMod This lambda   { MCons $1 $3 }
   | accessMod var           { MVar $1 $2}
 
@@ -143,7 +143,7 @@ lambda
   : signature "=>" block             { Lambda $1 $3 }
 
 signature
-  : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
+  : purityAndParams optionRetType { SigU (fst $1) (snd $1) $2}
 
 purityAndParams
   : "(" ")"                         { Pure & [] }
@@ -159,9 +159,9 @@ namedParam
   : mut type name { Param $1 $2 $3 }
 
 funcType
-  : type                   retType  { TFunc Pure [$1] $ Just $2 }
-  | purity                 retType  { TFunc $1 [] $ Just $2 }
-  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $ Just $4 }
+  : type                   retType  { TFunc Pure [$1] $2 }
+  | purity                 retType  { TFunc $1 [] $ $2 }
+  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
 
 purityAndTypes
   : {- none -}        { Pure & [] }
@@ -261,7 +261,7 @@ condBlock
   : expr then block { CondBlock $1 $3 }
 
 var
-  : mut maybeType name "=" expr { Var $1 $2 $3 $5 }
+  : mut maybeType name "=" expr { VarLu $1 $2 $3 $5 }
 
 expr
   : eIf     { $1 }

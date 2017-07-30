@@ -1,5 +1,7 @@
-{-# language MultiParamTypeClasses #-}
+{-# language DataKinds #-}
+{-# language GADTs #-}
 {-# language FlexibleInstances #-}
+{-# language MultiParamTypeClasses #-}
 
 module TypeCheck(typeCheckAst) where
 
@@ -7,8 +9,8 @@ import Data.Maybe
 
 import Preface
 
-import Ast
-import qualified Ast1 as A1
+import Ast hiding(Checked)
+import Ast0ToAst1
 import TypeCheckM
 
 
@@ -28,6 +30,14 @@ instance TypeCompare (Maybe Type) (Maybe Type) where
   Nothing <~ _ = return ()
   (Just a) <~ b = a <~ b
 
+instance TypeCompare Type TypeOrErrors where
+  _ <~ (Errors _) = return ()
+  a <~ (Type b) = a <~ b -- This isn't right: this will flip the "expected/received"
+
+instance TypeCompare TypeOrErrors TypeOrErrors where
+  (Errors _) <~ _ = return ()
+  (Type a) <~ b = a <~ b -- This isn't right: this will flip the "expected/received"
+
 instance TypeCompare Type [Type] where
   typ <~ typs = mapM_ (typ<~) typs
 
@@ -36,89 +46,122 @@ unify [] = TNone
 unify (x:_) = x -- TODO: Do this right
 
 -- Knot tying implementation - it's awesome!
-typeCheckAst :: Ast -> (A1.Ast, Errors)
+typeCheckAst :: AstLu -> (AstMc, Errors)
 typeCheckAst ast = let
-  untypedAst = A1.mapAst ast
-  result@(typedAst, _) = runTypeCheck (TypeContext [] $ GlobalBindings typedAst) $ typeCheck untypedAst
+  untypedAst = mapAst ast
+  result@(typedAst, _) = runTypeCheck (TypeContext [] $ GlobalBindings typedAst) $ typeCheckUnitTable untypedAst
   in result
 
-class Checked a where
-  typeCheck :: a -> TypeCheckM a
+typeCheckUnitTable :: Table UnitMu -> TypeCheckM (Table UnitMc)
+typeCheckUnitTable unitTable = do
+  unitsChecked <- mapM typeCheckUnits unitTable
+  return unitsChecked
 
-instance Checked A1.Ast where
-  typeCheck = mapM typeCheck
+typeCheckUnits :: [UnitMu] -> TypeCheckM [UnitMc]
+typeCheckUnits = mapM typeCheckUnit
 
-instance Checked [A1.Unit] where
-  typeCheck = mapM typeCheck
+typeCheckUnit :: UnitMu -> TypeCheckM UnitMc
+typeCheckUnit unit = case unit of
+    UNamespaceM n -> UNamespaceM <$> typeCheckUnitTable n
+    UFuncM l -> UFuncM <$> typeCheckLambda l
+    UVar v -> UVar <$> typeCheckVar v
 
-instance Checked A1.Unit where
-  typeCheck unit = case unit of
-    A1.UNamespace n -> A1.UNamespace <$> typeCheck n
-    A1.UFunc l -> A1.UFunc <$> typeCheck l
-    A1.UVar v -> A1.UVar <$> typeCheck v
 
-instance Checked Lambda where
-  typeCheck (Lambda (Sig p params mrt) b) = do
+class EnforceOrInfer a b where
+  enforceOrInfer :: a -> b -> TypeCheckM TypeOrErrors
 
-    -- TODO: I have a problem right now at the boundary between global and local scope.
-    -- A polymorphic context class which can be either global or local may fix this
+instance EnforceOrInfer (Maybe Type) TypeOrErrors where
+  enforceOrInfer (Just prescribedType) assignedTypeRes = do
+    prescribedType <~ assignedTypeRes
+    foundType prescribedType
+  enforceOrInfer Nothing assignedTypeRes = return assignedTypeRes
+
+instance EnforceOrInfer (Maybe Type) Type where
+  enforceOrInfer (Just prescribedType) assignedType = do
+    prescribedType <~ assignedType
+    foundType prescribedType
+  enforceOrInfer Nothing assignedType = foundType assignedType
+
+
+typeCheckLambda :: LambdaU -> TypeCheckM LambdaC
+typeCheckLambda (Lambda (SigU p params returnTypeMaybe) b) = do
     (TypeContext history bindings) <- ask
-
-
     let blockContext = TypeContext history $ initBlockBindings bindings params
-
     (b', typesReturned) <- local (\ _ -> blockContext) $ typeCheckBlock b
-
-    case mrt of
-      Nothing -> return $ Lambda (Sig p params (Just $ unify typesReturned)) b'
-      Just rt -> do
-        rt <~ typesReturned
-        return $ Lambda (Sig p params (Just rt)) b'
+    let typesReturnedUnified = unify $ mapMaybe getType typesReturned
+    returnType <- enforceOrInfer returnTypeMaybe typesReturnedUnified
+    return $ Lambda (SigC p params returnType) b'
 
 
 -- Yields a type checked block and a list of returned types
-typeCheckBlock :: Block -> TypeCheckM (Block, [Type])
+typeCheckBlock :: BlockU -> TypeCheckM (BlockC, [TypeOrErrors])
 typeCheckBlock [] = return ([], [])
-typeCheckBlock b@[SExpr a] = do { tRet <- findType a; return (b, maybeToList tRet)}
+typeCheckBlock b@[SExpr expr] = do
+  (exprChecked, exprTypeResult) <- typeCheckExpr expr
+  return ([SExpr exprChecked], [exprTypeResult])
 
 -- TODO: Maintain a context within the block.
 
-
-instance Checked A1.Var where
-  typeCheck (A1.Var lMut maybeLType rhs) = do
-    maybeRType <- findType rhs
-    maybeLType <~ maybeRType
-    return $ A1.Var lMut (maybeLType ?? maybeRType) rhs
-
-findType :: Expr -> TypeCheckM (Maybe Type)
-findType expr = do
-  case expr of
-    EApp app -> findTypeApp app
-    EName n -> findTypeName n
-    EIf e1 cond e2 -> findTypeIf e1 cond e2
-    EAdd e1 e2 -> findTypeBinOp e1 e2
-    EMul e1 e2 -> findTypeBinOp e1 e2
-    ELitBln _ -> found TBln
-    ELitChr _ -> found TChr
-    ELitFlt _ -> found TFlt
-    ELitInt _ -> found TInt
-    ELitStr _ -> found TStr
+typeCheckVar :: VarMu -> TypeCheckM VarMc
+typeCheckVar (VarMu lMut lTypeMaybe rhs) = do
+  (rhsChecked, rhsTypeResult) <- typeCheckExpr rhs
+  varType <- enforceOrInfer lTypeMaybe rhsTypeResult
+  return $ VarMc lMut varType $ rhsChecked
 
 
-findTypeApp :: App -> TypeCheckM (Maybe Type)
-findTypeApp (App e params) = do
-  maybeEType <- findType e
-  case maybeEType of
-    Nothing -> return Nothing
-    Just eType -> case eType of
-      TFunc purity paramTypes ret -> findTypeApp' purity paramTypes ret
-      _ -> do raise $ NonApplicable eType; return Nothing
+typeCheckExpr :: ExprU -> TypeCheckM (ExprC, TypeOrErrors)
+typeCheckExpr expr = case expr of
 
-findTypeApp' :: Purity -> [Type] -> Maybe Type -> TypeCheckM (Maybe Type)
-findTypeApp' _ _ = return
+  EApp app -> do
+    (appChecked, appType) <- typeCheckApp app
+    return (EApp appChecked, appType)
 
-findTypeName :: Name -> TypeCheckM (Maybe Type)
-findTypeName n = do
+  EName name -> do
+    nameType <- typeCheckName name
+    return (EName name, nameType)
+
+  EIf e1 ec e2 -> do
+    ((e1c, ecc, e2c), ifType) <- typeCheckIf e1 ec e2
+    return (EIf e1c ecc e2c, ifType)
+
+  EAdd e1 e2 -> do
+    ((e1c, e2c), tp) <- typeCheckBinOp e1 e2
+    return ((EAdd e1c e2c), tp)
+
+  EMul e1 e2 -> do
+    ((e1c, e2c), tp) <- typeCheckBinOp e1 e2
+    return ((EMul e1c e2c), tp)
+
+  ELitBln b -> return $ (ELitBln b, Type $ TBln)
+  ELitFlt f -> return $ (ELitFlt f, Type $ TFlt)
+  ELitInt i -> return $ (ELitInt i, Type $ TInt)
+  ELitStr s -> return $ (ELitStr s, Type $ TStr)
+
+
+typeCheckApp :: AppU -> TypeCheckM (AppC, TypeOrErrors)
+typeCheckApp (App e args) = do
+  (eChecked, eTypeRes) <- typeCheckExpr e
+  (argsChecked, _) <- typeCheckArgs args -- todo: must account for the types
+  let appChecked = App eChecked argsChecked
+  case eTypeRes of
+    Errors _ -> return undefined -- $ (App eChecked params, Errors [ErrorPropagated errors])
+    -- Nothing -> return Nothing
+    Type eType -> case eType of
+      TFunc _ _ ret -> return (appChecked, Type ret)
+      _ -> do raise $ NonApplicable eType; return (appChecked, Errors [NonApplicable eType])
+
+      -- _ -> do raise $ NonApplicable eType; return $ Errors [NonApplicable eType]
+
+typeCheckApp' :: Purity -> [Type] -> Type -> TypeCheckM TypeOrErrors
+typeCheckApp' _ _ = return . Type -- Obvious madness and code smell here too
+
+typeCheckArgs :: ArgsU -> TypeCheckM (ArgsC, [TypeOrErrors])
+typeCheckArgs (Args purity exprs) = do --(_, )
+  exprResults <- mapM typeCheckExpr exprs
+  return (Args purity $ map fst exprResults, map snd exprResults)
+
+typeCheckName :: Name -> TypeCheckM TypeOrErrors
+typeCheckName n = do
 
 -- In order to carry these names with me, can I put them in the Monad, or am I out of luck?
 -- Will this work, can this work?
@@ -126,46 +169,52 @@ findTypeName n = do
   TypeContext searchHistory bindings <- ask
 
   if elem n searchHistory then do
-     raise RecursiveDefinition; return Nothing
+     raise RecursiveDefinition; return $ Errors [RecursiveDefinition]
   else do
     local (pushSearchName n) $ findTypeName' $ lookupKinds bindings n
 
     where
-      findTypeName' :: [Kind] -> TypeCheckM (Maybe Type)
+      findTypeName' :: [Kind] -> TypeCheckM TypeOrErrors
       findTypeName' ks = case ks of
         [] -> do
           raise $ UnknownId n
-          return Nothing
+          return $ Errors [UnknownId n]
         [k] -> case k of
-          KExpr t -> return t
+          KExpr t -> foundType t
           KType -> do
             raise NeedExprFoundType
-            return Nothing
+            return $ Errors [NeedExprFoundType]
           KNamespace -> do
             raise NeedExprFoundNamespace
-            return Nothing
+            return $ Errors [NeedExprFoundNamespace]
         _ -> do
           raise $ CompetingDefinitions
-          return Nothing
+          return $ Errors [CompetingDefinitions]
 
+typeCheckIf :: ExprU -> ExprU -> ExprU -> TypeCheckM ((ExprC, ExprC, ExprC), TypeOrErrors)
+typeCheckIf e1 ec e2 = do
+  (e1Checked, type1) <- typeCheckExpr e1
+  (e2Checked, type2) <- typeCheckExpr e2
+  (ecChecked, typeC) <- typeCheckExpr ec
 
-findTypeIf :: Expr -> Expr -> Expr -> TypeCheckM (Maybe Type)
-findTypeIf a cond b = do
-  ta <- findType a
-  tcond <- findType cond
-  tb <- findType b
   -- TODO: determine common root type, e.g. typeof(a if a.exists else none) == ?A
-  ta <~ tb   -- ensure that the types of the expressions are compatible
-  TBln <~ tcond -- ensure the conditional expression is boolean
-  return ta
+  type1 <~ type2   -- ensure that the types of the expressions are compatible
 
--- TODO: I absolutely must generalize operatorts (hardcoding every possibility is not happening)
-findTypeBinOp :: Expr -> Expr -> TypeCheckM (Maybe Type)
-findTypeBinOp a b = do
-  ta <- findType a
-  tb <- findType b
+  case typeC of
+    Type t -> do TBln <~ t
+    Errors _ -> return ()
+  return ((e1Checked, ecChecked, e2Checked), Errors [])
+
+
+-- TODO: I must generalize operators (hardcoding every possibility is not happening)
+
+typeCheckBinOp :: ExprU -> ExprU -> TypeCheckM ((ExprC, ExprC), TypeOrErrors)
+typeCheckBinOp e1 e2 = do
+  (e1Checked, type1) <- typeCheckExpr e1
+  (e2Checked, type2) <- typeCheckExpr e2
+
   -- TODO: determine common root type, e.g. typeof(3 + 4.7) == TFlt
-  ta <~ tb -- this is not right, but is better than nothing
-  return ta
+  type1 <~ type2 -- this is not right, but is better than nothing
 
+  return ((e1Checked, e2Checked), type1)
 

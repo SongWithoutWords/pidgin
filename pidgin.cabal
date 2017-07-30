@@ -18,7 +18,7 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Ast
-                     , Ast1
+                     , Ast0ToAst1
                      , AstUtil
                      , FormatAst
                      , Lexer

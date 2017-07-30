@@ -4,6 +4,17 @@ import Types
 
 import qualified Data.Set as Set
 
+data TypeOrErrors
+  = Type Type
+  | Errors Errors
+  deriving(Eq, Show)
+
+getType :: TypeOrErrors -> Maybe Type
+getType (Type t) = Just t
+getType _ = Nothing
+
+type Errors = [Error]
+
 data Error
 
   = UnknownId String
@@ -25,7 +36,7 @@ data Error
   | NeedExprFoundType
   | NeedExprFoundNamespace
 
-  deriving(Eq, Show)
+  | ErrorPropagated Errors
 
-type Errors = [Error]
+  deriving(Eq, Show)
 

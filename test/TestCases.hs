@@ -4,7 +4,7 @@ import TestCase
 import TestComposer
 
 import Ast
-import qualified Ast1 as A1
+-- import qualified Ast1 as A1
 import qualified Tokens as T
 import TypeErrors
 
@@ -99,7 +99,7 @@ testCases =
   , name "def pi"
     <> source "$ pi = 3.14159265"
     <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
-    <> ast [ UVar $ Var Imut Nothing "pi" $ ELitFlt 3.14159265 ]
+    <> ast [ UVar $ VarLu Imut Nothing "pi" $ ELitFlt 3.14159265 ]
     <> typeErrors []
 
   , name "def pi, def e"
@@ -113,7 +113,7 @@ testCases =
   , name "op expr"
     <> source "$ three = 1 + 2"
     <> tokens [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
-    <> ast [ UVar $ Var Imut Nothing "three" $ EAdd (ELitInt 1) (ELitInt 2) ]
+    <> ast [ UVar $ VarLu Imut Nothing "three" $ EAdd (ELitInt 1) (ELitInt 2) ]
     <> typeErrors []
 
   , name "if expr"
@@ -121,7 +121,7 @@ testCases =
     <> tokens [ T.Dollar, T.Name "msg", T.Equal, T.LitStr "it works!", T.If, T.True, T.Else, T.LitStr "or not :(" ]
     <> ast
       [ UVar
-        $ Var Imut Nothing "msg"
+        $ VarLu Imut Nothing "msg"
           $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(") ]
     <> typeErrors []
 
@@ -131,7 +131,7 @@ testCases =
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
     <> ast
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [Param Imut TBln "b"] $ Just TBln)
+      [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln)
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -145,7 +145,7 @@ testCases =
       , T.False, T.If, T.Name "b", T.Else, T.True
       , T.Dedent]
     <> ast
-      [ UFunc $ Func "negate" $ Lambda (Sig Pure [Param Imut TBln "b"] $ Just TBln)
+      [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln)
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -160,8 +160,8 @@ testCases =
       , T.Name "n", T.Star, T.Name "factorial", T.LParen, T.Name "n", T.Minus, T.LitInt 1, T.RParen
       , T.Dedent]
     <> ast
-      [ UFunc $ Func "factorial" $ Lambda
-          ( Sig Pure [Param Imut TNat "n"] $ Just TNat)
+      [ UFuncL $ Func "factorial" $ Lambda
+          ( SigU Pure [Param Imut TNat "n"] $ Just TNat)
           [ SExpr
             $ EIf
               (ELitInt 1)
@@ -179,8 +179,8 @@ testCases =
       "clothing(Weather w) -> Clothing =>\n\
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
     <> ast
-      [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
+      [ UFuncL $ Func "clothing" $ Lambda
+        ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
           $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
@@ -197,8 +197,8 @@ testCases =
       \    tShirt if w.isSunny else\n\
       \    jacket"
     <> ast
-      [ UFunc $ Func "clothing" $ Lambda
-        ( Sig Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
+      [ UFuncL $ Func "clothing" $ Lambda
+        ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
           $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
@@ -231,12 +231,12 @@ testCases =
         , T.Dedent ]
 
       <> ast
-        [ UFunc
+        [ UFuncL
           $ Func "drawWidget"
             $ Lambda
-              ( Sig PWrite [Param Imut TNat "width", Param Imut TNat "height"] $ Just TNone )
+              ( SigU PWrite [Param Imut TNat "width", Param Imut TNat "height"] $ Just TNone )
               [ SVar
-                $ Var Imut Nothing "w" (ECons "Widget" $ Args Pure [EName "width", EName "height"])
+                $ VarLu Imut Nothing "w" (ECons "Widget" $ Args Pure [EName "width", EName "height"])
               , SIf
                 $ Iff
                   $ CondBlock
@@ -269,16 +269,16 @@ testCases =
         , T.Dedent ]
 
     <> ast
-      [ UFunc
+      [ UFuncL
         $ Func "quadratic"
           $ Lambda
-            ( Sig Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"]
-              $ Just $ TFunc Pure [TFlt] $ Just TFlt
+            ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"]
+              $ Just $ TFunc Pure [TFlt] $ TFlt
             )
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( Sig
+                  ( SigU
                     Pure
                     [Param Imut TFlt "x"]
                     $ Just TFlt
@@ -299,14 +299,14 @@ testCases =
       \    (Flt x) =>\n\
       \        a*x*x + b*x + c"
     <> ast
-      [ UFunc
+      [ UFuncL
         $ Func "quadratic"
           $ Lambda
-            ( Sig Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] Nothing)
+            ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] Nothing)
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( Sig Pure [Param Imut TFlt "x"] Nothing)
+                  ( SigU Pure [Param Imut TFlt "x"] Nothing)
                   [ SExpr
                     $ EAdd
                       ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
@@ -322,10 +322,10 @@ testCases =
       "singleRoot(Flt a, Flt b, Flt c) -> Flt =>\n\
       \    (-b + math.sqrt(b*b - 4*a*c)) / 2*a"
     <> ast
-      [ UFunc
+      [ UFuncL
         $ Func "singleRoot"
           $ Lambda
-          ( Sig Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] $ Just TFlt )
+          ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] $ Just TFlt )
           [ SExpr
             $ EDiv
               ( EAdd
@@ -372,32 +372,32 @@ testCases =
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
   , source "Int a = true"
-    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitBln True)]
+    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ ELitBln True)]
     <> typeErrors [TypeConflict {expected = TInt, received = TBln}]
 
   , source "$ a = b"
-    <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")]
+    <> typedAst [("a", UVar $ VarMc Imut (Errors [UnknownId "b"]) $ EName "b")]
     <> typeErrors [UnknownId "b"]
 
   -- TODO: a proper error type and error handling for recursive definitions
   , source "$ a = a"
-    <> typedAst [("a", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
+    <> typedAst [("a", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
     <> typeErrors [RecursiveDefinition]
 
   , source "$ a = b; $ b = a"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")
-                , ("b", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
     <> typeErrors [RecursiveDefinition]
 
   , source "$ a = b; $ b = c; $ c = a"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut Nothing $ EName "b")
-                , ("b", A1.UVar $ A1.Var Imut Nothing $ EName "c")
-                , ("c", A1.UVar $ A1.Var Imut Nothing $ EName "a")]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "c")
+                , ("c", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
     <> typeErrors [RecursiveDefinition]
 
   , source "$ a = 1; $ b = b + a"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 1)
-                , ("b", A1.UVar $ A1.Var Imut Nothing $ EAdd (EName "b") (EName "a"))]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 1)
+                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EAdd (EName "b") (EName "a"))]
     <> typeErrors [RecursiveDefinition]
 
   , source "$ a = true; $ a = false; $ b = a"
@@ -407,58 +407,58 @@ testCases =
     <> typeErrors [CompetingDefinitions]
 
   , source "$ a = true; $ b = a"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ ELitBln True)
-                , ("b", A1.UVar $ A1.Var Imut (Just TBln) $ EName "a")]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ ELitBln True)
+                , ("b", UVar $ VarMc Imut (Type TBln) $ EName "a")]
     <> typeErrors []
 
   , source "$ a = b; $ b = true"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ EName "b")
-                , ("b", A1.UVar $ A1.Var Imut (Just TBln) $ ELitBln True)]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Type TBln) $ ELitBln True)]
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
   , source "$ a = 5; $ b = a; $ c = b"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)
-                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "a")
-                , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ EName "b")]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)
+                , ("b", UVar $ VarMc Imut (Type TInt) $ EName "a")
+                , ("c", UVar $ VarMc Imut (Type TInt) $ EName "b")]
     <> typeErrors []
 
   , source "$ a = 5; $ b = a; Bln c = b"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)
-                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "a")
-                , ("c", A1.UVar $ A1.Var Imut (Just TBln) $ EName "b")]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)
+                , ("b", UVar $ VarMc Imut (Type TInt) $ EName "a")
+                , ("c", UVar $ VarMc Imut (Type TBln) $ EName "b")]
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
   , source "Bln a = b; $ b = c; $ c = 5"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TBln) $ EName "b")
-                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ EName "c")
-                , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 5)]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Type TInt) $ EName "c")
+                , ("c", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)]
     <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
 
 
   -- TypeCheck operator tests
   , source "$ a = 3 + 7"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EAdd (ELitInt 3) (ELitInt 7))]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ EAdd (ELitInt 3) (ELitInt 7))]
     <> typeErrors []
 
   , source "$ a = b + c; $ b = 3; $ c = 7"
-    <> typedAst [ ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EAdd (EName "b") (EName "c"))
-                , ("b", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 3)
-                , ("c", A1.UVar $ A1.Var Imut (Just TInt) $ ELitInt 7)]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ EAdd (EName "b") (EName "c"))
+                , ("b", UVar $ VarMc Imut (Type TInt) $ ELitInt 3)
+                , ("c", UVar $ VarMc Imut (Type TInt) $ ELitInt 7)]
     <> typeErrors []
 
   , source "$ a = 1 if true else 0"
-    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitInt 0))]
+    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitInt 0))]
     <> typeErrors []
 
   , source "$ a = 1 if \"true\" else 0"
-    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitStr "true") (ELitInt 0))]
+    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitStr "true") (ELitInt 0))]
     <> typeErrors [TypeConflict {expected = TBln, received = TStr}]
 
   , source "$ a = 1 if true else \"zero\""
-    <> typedAst [("a", A1.UVar $ A1.Var Imut (Just TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitStr "zero"))]
+    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitStr "zero"))]
     <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
 
 
@@ -471,12 +471,12 @@ testCases =
       "one() -> Int => 1\n\
       \$ a = one()"
     <> typedAst
-      [ ( "one", A1.UFunc $
+      [ ( "one", UFuncM $
         Lambda
-          ( Sig Pure [] $ Just TInt)
+          ( SigC Pure [] $ Type TInt)
           [ SExpr $ ELitInt 1]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "one") $ Args Pure [])
+      , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "one") $ Args Pure [])
       ]
     <> typeErrors []
 
@@ -496,12 +496,12 @@ testCases =
       "inc(Int x) -> Int => x + 1\n\
       \$ a = inc(1)"
     <> typedAst
-      [ ( "inc", A1.UFunc $
+      [ ( "inc", UFuncM $
         Lambda
-          ( Sig Pure [Param Imut TInt "x"] $ Just TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1] )
+      , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1] )
       ]
     <> typeErrors []
 
@@ -510,12 +510,12 @@ testCases =
       "inc(Int x) -> Int => x + 1\n\
       \$ a = inc(inc(1))"
     <> typedAst
-      [ ( "inc", A1.UFunc $
+      [ ( "inc", UFuncM $
         Lambda
-          ( Sig Pure [Param Imut TInt "x"] (Just TInt) )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $
+      , ( "a", UVar $ VarMc Imut (Type TInt) $
           EApp $ App (EName "inc") $ Args Pure [EApp $ App (EName "inc") $ Args Pure [ELitInt 1]]
         )
       ]
@@ -543,12 +543,12 @@ testCases =
       "inc(Int x) => x + 1\n\
       \$ a = inc(1)"
     <> typedAst
-      [ ("inc", A1.UFunc $
+      [ ("inc", UFuncM $
         Lambda
-          ( Sig Pure [Param Imut TInt "x"] $ Just TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
+      , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
       ]
     <> typeErrors []
 
@@ -557,12 +557,12 @@ testCases =
       "inc(Int x) => x + 1\n\
       \$ a = inc(\"one\")"
     <> typedAst
-      [ ("inc", A1.UFunc $
+      [ ("inc", UFuncM $
         Lambda
-          ( Sig Pure [Param Imut TInt "x"] $ Just TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
-      , ("a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitStr "one"])
+      , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitStr "one"])
       ]
     <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
 
@@ -574,14 +574,14 @@ testCases =
       \\n\
       \$ a = inc(1)"
     <> typedAst
-      [ ( "inc", A1.UFunc $
+      [ ( "inc", UFuncM $
         Lambda
-          ( Sig Pure [Param Imut TInt "x"] (Just TInt) )
-          [ SVar $ Var Imut (Just TInt) "one" (ELitInt 1)
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
+          [ SVar $ VarLc Imut (Type TInt) "one" (ELitInt 1)
           , SExpr $ EAdd (EName "x") (EName "one")
           ]
         )
-      , ( "a", A1.UVar $ A1.Var Imut (Just TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
+      , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
       ]
     <> typeErrors []
  ]

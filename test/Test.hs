@@ -75,7 +75,7 @@ displayName t = fromMaybe "" $ testName t `orElse` testSource t
 tokenInput :: TestCase -> Maybe Tokens
 tokenInput t = testTokens t `orElse` (scanTokens <$> testSource t)
 
-astInput :: TestCase -> Maybe Ast
+astInput :: TestCase -> Maybe AstLu
 astInput t = testAst t `orElse` (parse <$> tokenInput t)
 
 testEq :: (Eq a, Show a) => String -> a -> a -> TestTree

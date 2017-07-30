@@ -6,7 +6,7 @@ module TestCase
 -- import Preface
 
 import Ast
-import qualified Ast1 as A1
+-- import qualified Ast1 as A1
 import Tokens
 import TypeErrors
 
@@ -21,8 +21,8 @@ data TestCase = TestCase
   { testName :: Maybe String
   , testSource :: Maybe String
   , testTokens :: Maybe Tokens
-  , testAst :: Maybe Ast
-  , testTypedAst :: Maybe A1.Ast
+  , testAst :: Maybe AstLu
+  , testTypedAst :: Maybe AstMc
   , testTypeErrors :: Maybe Errors }
   deriving(Eq, Show)
 

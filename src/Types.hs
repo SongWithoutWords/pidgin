@@ -3,13 +3,13 @@ module Types where
 data Kind
   = KNamespace
   | KType
-  | KExpr (Maybe Type)
+  | KExpr Type -- Should be (Either Type [TypeError])? Should have own module?
 
 data Type
   = TUser Typename
 
   -- Neither caller nor callee need care about the left-most mutability of parameter and return types
-  | TFunc Purity [Type] (Maybe Type)
+  | TFunc Purity [Type] Type
 
   | TTempRef Mut Type
   | TPersRef Mut Type
@@ -43,3 +43,4 @@ data Mut
   deriving(Eq, Ord, Show)
 
 type Typename = String
+

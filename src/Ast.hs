@@ -1,31 +1,90 @@
+{-# language DataKinds #-}
+{-# language FlexibleInstances #-}
+{-# language GADTs #-}
+{-# language KindSignatures #-}
+{-# language StandaloneDeriving #-}
+
+-- Potential future edit: parameterize using actual collection and type thang
+-- (may be able to reuse more code across data constructors)
+
 module Ast
-  ( module Ast,
-    module Types
+  ( module Ast
+  , module Types
   ) where
 
+-- import Data.Map
+
+import MultiMap
 import Types
+import TypeErrors
 
 -- Finite number of steps friend!
+data Storage
+  = SList
+  | SMap
 
-type Ast = [Unit]
+data TypePhase
+  = TpChecked
+  | TpUnchecked
 
-data Unit
-  = UNamespace Name [Unit]
-  | UClass Class
-  | UFunc Func
-  | UVar Var -- May want to disallow global mutable variables
-  deriving(Eq, Show)
 
-data Class
-  = Class Name [Member]
-  deriving(Eq, Show)
+type Table a = MultiMap Name a
 
-data Member
-  = MClass Access Class
-  | MFunc Access Mut Func
-  | MCons Access Lambda
-  | MVar Access Var
-  deriving(Eq, Show)
+type AstLu = [UnitLu] -- Ast 'SList 'TpUnchecked
+type AstMu = Table UnitMu -- Ast 'SMap 'TpUnchecked
+type AstMc = Table UnitMc -- Ast 'SMap 'TpChecked
+-- data Ast :: Storage -> TypePhase -> * where
+  -- Ast0 :: [Unit0] -> Ast0
+  -- Ast1 :: Table Unit1 -> Ast1
+  -- Ast2 :: Table Unit2 -> Ast2
+
+-- deriving instance Eq (Ast col tc)
+-- deriving instance Show (Ast col tc)
+
+
+type UnitLu = Unit 'SList 'TpUnchecked
+type UnitMu = Unit 'SMap 'TpUnchecked
+type UnitMc = Unit 'SMap 'TpChecked
+data Unit :: Storage -> TypePhase -> * where
+
+  UNamespaceL :: Name -> [Unit 'SList ts] -> Unit 'SList ts
+  UNamespaceM :: Table (Unit 'SMap ts) -> Unit 'SMap ts
+
+  UClass :: Class col ts -> Unit col ts
+
+  UFuncL :: Func ts -> Unit 'SList ts
+  UFuncM :: Lambda ts -> Unit 'SMap ts
+
+  UVar :: Var col ts -> Unit col ts
+
+deriving instance Eq (Unit col tc)
+deriving instance Show (Unit col tc)
+
+
+type ClassLu = Class 'SList 'TpUnchecked
+type ClassMu = Class 'SMap 'TpUnchecked
+type ClassMc = Class 'SMap 'TpChecked
+data Class :: Storage -> TypePhase -> * where
+  ClassL :: Name -> [Member 'SList tc] -> Class 'SList tc
+  ClassM :: Table (Member 'SMap tc) -> Class 'SMap tc
+
+deriving instance Eq (Class col tc)
+deriving instance Show (Class col tc)
+
+
+type MemberLu = Member 'SList 'TpUnchecked
+type MemberMu = Member 'SMap 'TpUnchecked
+type MemberMc = Member 'SMap 'TpChecked
+data Member :: Storage -> TypePhase -> * where
+  MClass :: Access -> Class col tc -> Member col tc
+  MFuncL :: Access -> Mut -> Func tc -> Member 'SList tc
+  MFuncM :: Access -> Mut -> Lambda tc -> Member 'SMap tc
+  MCons :: Access -> Lambda tc -> Member col tc
+  MVar :: Access -> Var col tc -> Member col tc
+
+deriving instance Eq (Member col tc)
+deriving instance Show (Member col tc)
+
 
 data Access
   = Pub
@@ -33,18 +92,31 @@ data Access
   | Pri
   deriving(Eq, Show)
 
-data Func
-  = Func Name Lambda
-  deriving(Eq, Show)
+data Func :: TypePhase -> * where
+  Func :: Name -> Lambda tc -> Func tc
 
-data Lambda
-  = Lambda Sig Block
-  deriving(Eq, Show)
+deriving instance Eq (Func tc)
+deriving instance Show (Func tc)
 
-data Sig
-  -- Callee cares about left-most mutability of param types but not return
-  = Sig Purity Params (Maybe Type)
-  deriving(Eq, Show)
+
+type LambdaU = Lambda 'TpUnchecked
+type LambdaC = Lambda 'TpChecked
+data Lambda :: TypePhase -> * where
+  Lambda :: Sig tc -> Block tc -> Lambda tc
+
+deriving instance Eq (Lambda tc)
+deriving instance Show (Lambda tc)
+
+
+type SigU = Sig 'TpUnchecked
+type SigC = Sig 'TpChecked
+data Sig :: TypePhase -> * where
+  SigU :: Purity -> Params -> Maybe Type -> Sig 'TpUnchecked
+  SigC :: Purity -> Params -> TypeOrErrors -> Sig 'TpChecked
+
+deriving instance Eq (Sig tc)
+deriving instance Show (Sig tc)
+
 
 type Params = [Param]
 
@@ -52,80 +124,117 @@ data Param
   = Param Mut Type Name
   deriving(Eq, Show)
 
-type Block = [Stmt]
+type BlockU = Block 'TpUnchecked
+type BlockC = Block 'TpChecked
+type Block tc = [Stmt tc]
 
-data Stmt
-  = SAssign LExpr Expr
-  | SVar Var
-  | SFunc Func
-  | SIf IfBranch
-  | SExpr Expr
-  | SRet Expr
-  deriving(Eq, Show)
+data Stmt :: TypePhase -> * where
+  SAssign :: LExpr tc -> Expr tc -> Stmt tc
+  SVar :: Var 'SList tc -> Stmt tc
+  SFunc :: Func tc -> Stmt tc
+  SIf :: IfBranch tc -> Stmt tc
+  SExpr :: Expr tc -> Stmt tc
+  SRet :: Expr tc -> Stmt tc
 
-data IfBranch
-  = Iff CondBlock
-  | IfElse CondBlock Block
-  | IfElif CondBlock IfBranch
-  deriving(Eq, Show)
+deriving instance Eq (Stmt tc)
+deriving instance Show (Stmt tc)
 
-data CondBlock
-  = CondBlock Expr Block
-  deriving(Eq, Show)
 
-data Var
-  = Var Mut (Maybe Type) Name Expr
-  deriving(Eq, Show)
+data IfBranch :: TypePhase -> *  where
+  Iff :: CondBlock tc -> IfBranch tc
+  IfElse :: CondBlock tc -> Block tc -> IfBranch tc
+  IfElif :: CondBlock tc -> IfBranch tc -> IfBranch tc
 
-data Expr
-  = EApp App
-  | ESelect Select
-  | EName Name
+deriving instance Eq (IfBranch tc)
+deriving instance Show (IfBranch tc)
 
-  | EIf Expr {- if -} Expr {- else -} Expr
-  | ELambda Lambda
-  | ECons Typename Args
+data CondBlock :: TypePhase -> * where
+  CondBlock :: Expr tc -> Block tc -> CondBlock tc
+
+deriving instance Eq (CondBlock tc)
+deriving instance Show (CondBlock tc)
+
+
+type VarLu = Var 'SList 'TpUnchecked
+type VarMu = Var 'SMap 'TpUnchecked
+type VarLc = Var 'SList 'TpChecked
+type VarMc = Var 'SMap 'TpChecked
+data Var :: Storage -> TypePhase -> * where
+  VarLu :: Mut -> Maybe Type -> Name -> ExprU -> VarLu
+  VarMu :: Mut -> Maybe Type -> ExprU -> VarMu
+  VarLc :: Mut -> TypeOrErrors -> Name -> ExprC -> VarLc
+  VarMc :: Mut -> TypeOrErrors -> ExprC -> VarMc
+
+deriving instance Eq (Var f c)
+deriving instance Show (Var f c)
+
+type ExprU = Expr 'TpUnchecked
+type ExprC = Expr 'TpChecked
+data Expr :: TypePhase -> * where
+  EApp :: App tc -> Expr tc
+  ESelect :: Select tc -> Expr tc
+  EName :: Name -> Expr tc
+
+  EIf :: Expr tc -> {- if -} Expr tc -> {- else -} Expr tc -> Expr tc
+  ELambda :: Lambda tc -> Expr tc
+  ECons :: Typename -> Args tc -> Expr tc
 
   -- Unary operators
-  | ENegate Expr
+  ENegate :: Expr tc -> Expr tc
 
   -- Binary operators
-  | EAdd Expr Expr
-  | ESub Expr Expr
-  | EMul Expr Expr
-  | EDiv Expr Expr
-  | EGreater Expr Expr
-  | ELesser Expr Expr
-  | EGreaterEq Expr Expr
-  | ELesserEq Expr Expr
+  EAdd :: Expr tc -> Expr tc -> Expr tc
+  ESub :: Expr tc -> Expr tc -> Expr tc
+  EMul :: Expr tc -> Expr tc -> Expr tc
+  EDiv :: Expr tc -> Expr tc -> Expr tc
+  EGreater :: Expr tc -> Expr tc -> Expr tc
+  ELesser :: Expr tc -> Expr tc -> Expr tc
+  EGreaterEq :: Expr tc -> Expr tc -> Expr tc
+  ELesserEq :: Expr tc -> Expr tc -> Expr tc
 
   -- Literals
-  | ELitBln Bool
-  | ELitChr Char
-  | ELitFlt Float
-  | ELitInt Int
-  | ELitStr String
+  ELitBln :: Bool -> Expr tc
+  ELitChr :: Char -> Expr tc
+  ELitFlt :: Float -> Expr tc
+  ELitInt :: Int -> Expr tc
+  ELitStr :: String -> Expr tc
 
-  deriving(Eq, Show)
+deriving instance Eq (Expr tc)
+deriving instance Show (Expr tc)
+
 
 -- Expressions that can appear on the left side of an assignment
-data LExpr
-  = LApp App
-  | LSelect Select
-  | LName Name
-  deriving(Eq, Show)
+data LExpr :: TypePhase -> * where
+  LApp :: App tc -> LExpr tc
+  LSelect :: Select tc -> LExpr tc
+  LName :: Name -> LExpr tc
 
-data App
-  = App Expr Args
-  deriving(Eq, Show)
+deriving instance Eq (LExpr tc)
+deriving instance Show (LExpr tc)
 
-data Args
-  = Args Purity [Expr]
-  deriving(Eq, Show)
+type AppU = App 'TpUnchecked
+type AppC = App 'TpChecked
+data App :: TypePhase -> * where
+  App :: Expr tc -> Args tc -> App tc
 
-data Select
-  = Select Expr Name
-  deriving(Eq, Show)
+deriving instance Eq (App tc)
+deriving instance Show (App tc)
+
+type ArgsU = Args 'TpUnchecked
+type ArgsC = Args 'TpChecked
+data Args :: TypePhase -> * where
+  Args :: Purity -> [Expr tc] -> Args tc
+
+deriving instance Eq (Args tc)
+deriving instance Show (Args tc)
+
+
+data Select :: TypePhase -> * where
+  Select :: Expr tc -> Name -> Select tc
+
+deriving instance Eq (Select tc)
+deriving instance Show (Select tc)
+
 
 type Name = String
 
