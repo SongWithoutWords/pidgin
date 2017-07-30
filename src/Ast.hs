@@ -1,18 +1,15 @@
 {-# language DataKinds #-}
-{-# language FlexibleInstances #-}
 {-# language GADTs #-}
 {-# language KindSignatures #-}
 {-# language StandaloneDeriving #-}
 
--- Potential future edit: parameterize using actual collection and type thang
+-- Potential future edit: parameterize using actual collection and an inferrable type
 -- (may be able to reuse more code across data constructors)
 
 module Ast
   ( module Ast
   , module Types
   ) where
-
--- import Data.Map
 
 import MultiMap
 import Types
@@ -30,16 +27,9 @@ data TypePhase
 
 type Table a = MultiMap Name a
 
-type AstLu = [UnitLu] -- Ast 'SList 'TpUnchecked
-type AstMu = Table UnitMu -- Ast 'SMap 'TpUnchecked
-type AstMc = Table UnitMc -- Ast 'SMap 'TpChecked
--- data Ast :: Storage -> TypePhase -> * where
-  -- Ast0 :: [Unit0] -> Ast0
-  -- Ast1 :: Table Unit1 -> Ast1
-  -- Ast2 :: Table Unit2 -> Ast2
-
--- deriving instance Eq (Ast col tc)
--- deriving instance Show (Ast col tc)
+type AstLu = [UnitLu]
+type AstMu = Table UnitMu
+type AstMc = Table UnitMc
 
 
 type UnitLu = Unit 'SList 'TpUnchecked
