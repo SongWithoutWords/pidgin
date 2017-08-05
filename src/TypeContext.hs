@@ -38,7 +38,8 @@ lookupKinds context name = case context of
     kindOfUnit u = case u of
       UNamespaceM _ -> KNamespace
       UClass _ -> KType
-      UFuncM (Lambda (SigC _ _ typeOrError) _) -> case typeOrError of Type t -> KExpr t
+      UFuncM (Lambda (SigC purity params typeOrError) _) -> case typeOrError of
+        Type returnType -> KExpr (TFunc purity (paramTypesOf params) returnType)
       UVar (VarMc _ typeOrError _) -> case typeOrError of Type t -> KExpr t
 
 initBlockBindings :: Bindings -> Params -> Bindings
