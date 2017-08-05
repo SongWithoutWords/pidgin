@@ -69,11 +69,11 @@ instance HasAccess (Member a b) where
 class IsTypeDecl a where
   typeOf :: a -> Type
 
--- instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
-  -- typeOf = typeOf . sigOf
+instance {-#OVERLAPPING#-} HasSig a => IsTypeDecl a where
+  typeOf = typeOf . sigOf
 
--- instance {-#OVERLAPPING#-} IsTypeDecl (Sig tp) where
-  -- typeOf a = TFunc (purityOf a) (paramTypesOf a) (returnTypeOf a)
+instance {-#OVERLAPPING#-} IsTypeDecl (Sig tp) where
+  typeOf a = TFunc (purityOf a) (paramTypesOf a) (case returnTypeOf a of Just t -> t)
 
 instance {-#OVERLAPPING#-} IsTypeDecl Param where
   typeOf (Param _ t _) = t
