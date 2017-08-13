@@ -2,19 +2,19 @@
 
 module Debug where
 
-import Debug.Trace
+import qualified Debug.Trace as Trace
 
-dbTrace :: a -> String -> a
+trace :: String -> a -> a
 #ifdef DEBUG
-dbTrace a t = trace t a
+trace s a = Trace.trace s a
 #else
-dbTrace a _ = a
+trace a _ = a
 #endif
 
-dbTraceM :: Monad m => String -> m ()
+traceM :: Monad m => String -> m ()
 #ifdef DEBUG
-dbTraceM t = traceM t
+traceM s = Trace.traceM s
 #else
-dbTraceM _ = return ()
+traceM _ = return ()
 #endif
 
