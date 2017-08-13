@@ -8,7 +8,7 @@ trace :: String -> a -> a
 #ifdef DEBUG
 trace s a = Trace.trace s a
 #else
-trace a _ = a
+trace _ a = a
 #endif
 
 traceM :: Monad m => String -> m ()
