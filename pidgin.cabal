@@ -14,7 +14,15 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 
+flag debug
+      description: Enable debug logging
+      default: False
+
 library
+
+  if flag(debug)
+     cpp-options: -DDEBUG
+
   hs-source-dirs:      src
 
   exposed-modules:     Ast
@@ -32,6 +40,8 @@ library
                      , TypeContext
                      , TypeErrors
                      , Types
+
+  other-modules:       Debug
 
   build-depends:       base
                      , containers
