@@ -35,6 +35,7 @@ library
                      , Parser
                      , Preface
                      , Tokens 
+                     , Transforms
                      , TypeCheck
                      , TypeCheckM
                      , TypeContext
