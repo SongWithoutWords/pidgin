@@ -54,6 +54,7 @@ library
   build-depends:       base
                      , containers
                      , array
+                     , monad-st
                      , mtl
                      , transformers
 
