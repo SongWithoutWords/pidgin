@@ -5,8 +5,8 @@ import Ast
 import AstUtil
 import MultiMap
 
-mapAst :: AstLu -> AstMu
-mapAst = mapUnits
+multiMapAst :: AstLu -> AstMu
+multiMapAst = mapUnits
 
 mapUnits :: [UnitLu] -> Table UnitMu
 mapUnits = multiFromList . map mapUnit
