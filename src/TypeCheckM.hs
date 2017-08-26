@@ -6,7 +6,7 @@ module TypeCheckM
   , TypeContext(..)
 
   -- Imported monads
-  , runReaderT
+  , evalStateT
   , runWriterT
   , runST
   , newSTRef
@@ -23,12 +23,11 @@ module TypeCheckM
   ) where
 
 import Control.Monad
-import Control.Monad.Reader
+import Control.Monad.State
 import Control.Monad.ST
 import Control.Monad.ST.Unsafe
 import Control.Monad.Writer
 import Data.STRef
-
 
 import Ast
 import Debug
@@ -38,25 +37,26 @@ type HistoryRef s = STRef s [Name]
 
 data TypeContext s = TypeContext Bindings (HistoryRef s)
 
-type TypeCheckM s a = ReaderT (TypeContext s) (WriterT Errors (ST s)) a
+type TypeCheckM s a = StateT (TypeContext s) (WriterT Errors (ST s)) a
+
 
 typeCheckLazy :: TypeCheckM s a -> TypeCheckM s a
 typeCheckLazy typeCheckM = do
-  env <- ask
+  env <- get
   resultAndErrors <- lift $ lift $
     unsafeInterleaveST $
       runWriterT $
-        runReaderT typeCheckM env
+        evalStateT typeCheckM env
   tell $ snd resultAndErrors
   return $ fst resultAndErrors
 
 getBindings :: TypeCheckM s Bindings
 getBindings = do
-  TypeContext bindings _ <- ask
+  TypeContext bindings _ <- get
   return bindings
 
 withBindings :: Bindings -> TypeCheckM s a -> TypeCheckM s a
-withBindings newBindings = local
+withBindings newBindings = withStateT
   (\(TypeContext _ history)->TypeContext newBindings history)
 
 modifyHistory :: ([Name] -> [Name]) -> TypeCheckM s ()
@@ -66,7 +66,7 @@ modifyHistory f = do
 
 getHistoryRef :: TypeCheckM s (HistoryRef s)
 getHistoryRef = do
-  TypeContext _ historyRef <- ask
+  TypeContext _ historyRef <- get
   return historyRef
 
 getHistory :: TypeCheckM s [Name]
@@ -87,6 +87,6 @@ popSearchName = do
   traceM $ "pop:  " ++ show history
 
 raise :: Error -> TypeCheckM s ()
-raise e = tell [e]-- return () -- TODO
+raise e = tell [e]
 
 

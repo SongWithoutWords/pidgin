@@ -54,7 +54,7 @@ unify (x:_) = x -- TODO: Do this right
 typeCheckAst :: AstMu -> (AstMc, Errors)
 typeCheckAst ast = trace "typeCheckAst" $ runST $ do
   history <- newSTRef []
-  rec result@(typedAst, _) <- runWriterT $ runReaderT
+  rec result@(typedAst, _) <- runWriterT $ evalStateT
         (typeCheckUnitTable ast) $
         TypeContext (GlobalBindings typedAst) history
   return result
