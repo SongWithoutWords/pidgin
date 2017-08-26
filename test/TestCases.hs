@@ -395,6 +395,12 @@ testCases =
                 , ("c", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
     <> typeErrors [RecursiveDefinition]
 
+  , source "$ a = b; $ b = c; $ c = b"
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [ErrorPropagated [RecursiveDefinition]]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "c")
+                , ("c", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "b")]
+    <> typeErrors [RecursiveDefinition]
+
   , source "$ a = 1; $ b = b + a"
     <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 1)
                 , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EAdd (EName "b") (EName "a"))]
