@@ -148,16 +148,29 @@ typeCheckExpr expr = trace "typeCheckExpr" $ do
 typeCheckApp :: AppU -> TypeCheckM s (AppC, TypeOrErrors)
 typeCheckApp (App e args) = trace "typeCheckApp" $ do
   (eChecked, eTypeRes) <- typeCheckExpr e
-  (argsChecked, _) <- typeCheckArgs args -- todo: must account for the types
+  (argsChecked, argTypes) <- typeCheckArgs args -- todo: must account for the types
   let appChecked = App eChecked argsChecked
   case eTypeRes of
     Errors _ -> return undefined -- $ (App eChecked params, Errors [ErrorPropagated errors])
     Type eType -> case eType of
-      TFunc _ _ ret -> return (appChecked, Type ret)
+      TFunc purity paramTypes ret -> do
+        let (Args argPurity _) = argsChecked
+        typeCheckApp' (purity, paramTypes) (argPurity, argTypes)
+        return (appChecked, Type ret)
+
       _ -> do raise $ NonApplicable eType; return (appChecked, Errors [NonApplicable eType])
 
-typeCheckApp' :: Purity -> [Type] -> Type -> TypeCheckM s TypeOrErrors
-typeCheckApp' _ _ = return . Type -- Obvious madness and code smell here too
+  where
+    typeCheckApp' :: (Purity, [Type]) -> (Purity, [TypeOrErrors]) -> TypeCheckM s ()
+    typeCheckApp' (paramPurity, paramTypes) (argPurity, argTypes) = do
+      when (paramPurity /= argPurity) $ raise $ WrongPurity paramPurity argPurity
+
+      if length paramTypes /= length argTypes then
+        raise $ WrongNumArgs (length paramTypes) (length argTypes)
+      else
+        -- Pairwise comparison of each type
+        zipWithM_ (<~) paramTypes argTypes
+
 
 typeCheckArgs :: ArgsU -> TypeCheckM s (ArgsC, [TypeOrErrors])
 typeCheckArgs (Args purity exprs) = do --(_, )
