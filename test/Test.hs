@@ -20,10 +20,10 @@ import Data.Maybe
 main :: IO ()
 main = defaultMain tests
 
-testTimeoutMs = 10000
+testTimeout_μs = 10000
 
 tests :: TestTree
-tests = localOption (mkTimeout testTimeoutMs) $ testGroup "tests"
+tests = localOption (mkTimeout testTimeout_μs) $ testGroup "tests"
   [ lexerTests
   , parserTests
   , typeInferenceTests
