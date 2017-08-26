@@ -148,19 +148,20 @@ testCases =
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
+  -- TODO: support dependently typed natural numbers
   , name "factorial"
     <> source
-      "factorial(Nat n) -> Nat =>\n\
+      "factorial(Int n) -> Int =>\n\
       \    1 if n <= 0 else n * factorial(n-1)"
     <> tokens
-      [ T.Name "factorial", T.LParen, T.TypeNat, T.Name "n", T.RParen, T.ThinArrow, T.TypeNat, T.FatArrow
+      [ T.Name "factorial", T.LParen, T.TypeInt, T.Name "n", T.RParen, T.ThinArrow, T.TypeInt, T.FatArrow
       , T.Indent
       , T.LitInt 1, T.If, T.Name "n", T.LesserEq, T.LitInt 0, T.Else
       , T.Name "n", T.Star, T.Name "factorial", T.LParen, T.Name "n", T.Minus, T.LitInt 1, T.RParen
       , T.Dedent]
     <> ast
       [ UFuncL $ Func "factorial" $ Lambda
-          ( SigU Pure [Param Imut TNat "n"] $ Just TNat)
+          ( SigU Pure [Param Imut TInt "n"] $ Just TInt)
           [ SExpr
             $ EIf
               (ELitInt 1)
