@@ -22,10 +22,10 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Ast
-                     , Ast0ToAst1
                      , AstUtil
                      , FormatAst
                      , Lexer
+                     , MultiMapAst
                      , MultiMap
                      , ParseError
                      , Parser

@@ -1,43 +1,9 @@
 {-# language GADTs #-}
-module Ast0ToAst1 where
-
--- To avoid code duplication, I think I could parameterize Ast on the type of collection it used
-
--- import MultiMap
-
--- import qualified Ast as A
--- import AstUtil
-
--- type Table a = MultiMap String a
--- type Entry a = (String, a)
-
--- type Ast = Table Unit
-
--- type UnitTable = Table Unit
--- type MemberTable = Table Member
-
--- data Unit
---   = UNamespace UnitTable
---   | UClass MemberTable
---   | UFunc A.Lambda
---   | UVar Var
---   deriving(Eq, Show)
-
--- data Member
---   = MClass A.Access MemberTable
---   | MFunc A.Access A.Mut A.Lambda
---   | MCons A.Access A.Lambda
---   | MVar A.Access Var
---   deriving(Eq, Show)
-
--- data Var
---   = Var A.Mut (Maybe A.Type) A.Expr
---   deriving(Eq, Show)
+module MultiMapAst where
 
 import Ast
 import AstUtil
 import MultiMap
-
 
 mapAst :: AstLu -> AstMu
 mapAst = mapUnits
