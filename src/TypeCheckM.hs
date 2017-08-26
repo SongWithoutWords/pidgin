@@ -1,36 +1,34 @@
 module TypeCheckM
   ( TypeCheckM
+  , module Control.Monad
   , module TypeContext
 
   , TypeContext(..)
 
-  -- Built-in monads
-  , lift
-
+  -- Imported monads
   , runReaderT
   , runWriterT
-
   , runST
   , newSTRef
 
   -- Typecheck monad
   , typeCheckLazy
-
   , getBindings
   , withBindings
-
   , getHistory
   , pushSearchName
   , popSearchName
-
   , raise
+
   ) where
 
+import Control.Monad
 import Control.Monad.Reader
-import Data.STRef
 import Control.Monad.ST
 import Control.Monad.ST.Unsafe
 import Control.Monad.Writer
+import Data.STRef
+
 
 import Ast
 import Debug
