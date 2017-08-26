@@ -91,23 +91,53 @@ instance EnforceOrInfer (Maybe Type) Type where
 
 
 typeCheckLambda :: LambdaU -> TypeCheckM s LambdaC
-typeCheckLambda (Lambda (SigU p params returnTypeMaybe) b) = do
-
+typeCheckLambda (Lambda (SigU p params returnTypeMaybe) returnStyle block) = do
   bindings <- getBindings
   let blockBindings = initBlockBindings bindings params
 
-  (b', typesReturned) <- withBindings blockBindings $ typeCheckBlock b
+  (block', typesReturned) <- withBindings blockBindings $ typeCheckBlock block returnStyle
+
   let typesReturnedUnified = unify $ mapMaybe getType typesReturned
   returnType <- enforceOrInfer returnTypeMaybe typesReturnedUnified
-  return $ Lambda (SigC p params returnType) b'
-
+  return $ Lambda (SigC p params returnType) returnStyle block'
 
 -- Yields a type checked block and a list of returned types
-typeCheckBlock :: BlockU -> TypeCheckM s (BlockC, [TypeOrErrors])
-typeCheckBlock [] = return ([], [])
-typeCheckBlock b@[SExpr expr] = do
-  (exprChecked, exprTypeResult) <- typeCheckExpr expr
-  return ([SExpr exprChecked], [exprTypeResult])
+typeCheckBlock :: [StmtU] -> RetNotation -> TypeCheckM s ([StmtC], [TypeOrErrors])
+typeCheckBlock [] _ = return ([], [])
+typeCheckBlock [SExpr e] ImplicitRet = do
+  (e', eType) <- typeCheckExpr e
+  return ([SExpr e'], [eType])
+typeCheckBlock (stmt:stmts) retStyle = do
+  (stmt', maybeRet) <- typeCheckStmt stmt
+  (stmts', rets) <- typeCheckBlock stmts retStyle
+  return (stmt':stmts', maybeRet ?: rets)
+
+typeCheckStmt :: StmtU -> TypeCheckM s (StmtC, Maybe TypeOrErrors)
+typeCheckStmt stmt = case stmt of
+
+  -- TODO: will need to account for mutations in future
+  SAssign lexpr expr -> undefined
+
+  SVar (VarLu mut optionalType name e) -> do
+    (e', eType) <- typeCheckExpr e
+    varType <- enforceOrInfer optionalType eType
+    modifyBindings $ addLocalBinding name $ case eType of
+      Type t -> KExpr t
+      Errors es -> KError es
+    return (SVar $ VarLc mut varType name e', Nothing)
+
+  SFunc f -> undefined
+
+  SIf ifBranch -> undefined
+
+  -- TODO: detect useless expressions
+  SExpr e -> do
+    (e', _) <- typeCheckExpr e
+    return (SExpr e', Nothing)
+
+  SRet e -> undefined
+
+
 
 -- TODO: Maintain a context within the block.
 
@@ -200,12 +230,6 @@ typeCheckName name = trace ("typeCheckName " ++ name) $ do
   else do
     bindings <- getBindings
     findTypeName' $ lookupKinds bindings name
-
-    -- pushSearchName name
-    -- result <- findTypeName' $ lookupKinds bindings name
-    -- popSearchName
-    -- return result
-
     where
       findTypeName' :: [Kind] -> TypeCheckM s TypeOrErrors
       findTypeName' ks = trace "findTypeName'" $ case ks of

@@ -12,18 +12,19 @@ import Kinds
 
 import MultiMap
 
+type LocalBindings = MultiMap Name Kind -- Really I might want to track values as well
 
 data Bindings
   = GlobalBindings AstMc
-  | BlockBindings {innerScope::AstMc, outerScope::Bindings}
+  | LocalBindings LocalBindings Bindings
 
 lookupKinds :: Bindings -> Name -> [Kind]
 lookupKinds context name = case context of
-  GlobalBindings table -> lookupInAst table name
-  BlockBindings inner outer -> lookupInAst inner name ++ lookupKinds outer name
+  GlobalBindings ast -> astLookup ast name
+  LocalBindings inner outer -> blockLookup name inner ++ lookupKinds outer name
   where
-    lookupInAst :: Map Name [UnitMc] -> Name -> [Kind]
-    lookupInAst table n  = map kindOfUnit (multiLookup n table)
+    astLookup :: AstMc -> Name -> [Kind]
+    astLookup table n  = map kindOfUnit (multiLookup n table)
 
     kindOfUnit :: UnitMc -> Kind
     kindOfUnit u = case u of
@@ -31,19 +32,27 @@ lookupKinds context name = case context of
       UClass _ -> KType
 
       -- TODO: how to handle this error case?
-      UFuncM (Lambda (SigC purity params typeOrError) _) -> case typeOrError of
+      UFuncM (Lambda (SigC purity params typeOrError) _ _) -> case typeOrError of
         Type returnType -> KExpr (TFunc purity (paramTypesOf params) returnType)
 
       UVar (VarMc _ typeOrError _) -> case typeOrError of
         Type t -> KExpr t
         Errors e -> KError e
 
-initBlockBindings :: Bindings -> Params -> Bindings
-initBlockBindings outerContext params = BlockBindings (initLocalContextFromParams params) outerContext
-  where
-    initLocalContextFromParams :: Params -> Map Name [UnitMc]
-    initLocalContextFromParams = multiFromList . map paramToUnit
+    blockLookup :: Name -> LocalBindings -> [Kind]
+    blockLookup n table = multiLookup n table
 
-    paramToUnit :: Param -> (String, UnitMc)
-    paramToUnit (Param m t n) = (n, UVar $ VarMc m (Type t) $ EName n)
+initBlockBindings :: Bindings -> Params -> Bindings
+initBlockBindings outerContext params = LocalBindings (initLocalBindingsFromParams params) outerContext
+  where
+    initLocalBindingsFromParams :: Params -> LocalBindings
+    initLocalBindingsFromParams = multiFromList . map paramToNameAndKind
+
+    paramToNameAndKind :: Param -> (Name, Kind)
+    -- TODO: This raises a really good question, what am I doing about mutability?
+    paramToNameAndKind (Param m t n) = (n, KExpr t)
+
+addLocalBinding :: Name -> Kind -> Bindings -> Bindings
+addLocalBinding name kind (LocalBindings innerBindings outerBindings) =
+  LocalBindings (multiInsert name kind innerBindings) outerBindings
 
