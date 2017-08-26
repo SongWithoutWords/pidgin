@@ -1,4 +1,3 @@
-{-# language DataKinds #-}
 {-# language GADTs #-}
 {-# language FlexibleInstances #-}
 {-# language MultiParamTypeClasses #-}
@@ -20,8 +19,7 @@ class TypeCompare a b where
 
 -- I think I can probably generalize the rhs to a functor. I think.
 instance TypeCompare Type Type where
-  a <~ b | (a /= b) = raise TypeConflict { expected = a, received = b }
-         | otherwise = return ()
+  a <~ b = when (a /= b) $ raise TypeConflict { typeRequired = a, typeFound = b }
 
 instance TypeCompare Type (Maybe Type) where
   _ <~ Nothing = return ()

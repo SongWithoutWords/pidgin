@@ -369,11 +369,11 @@ testCases =
     <> typeErrors []
 
   , source "Bln a = 5"
-    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
+    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "Int a = true"
     <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ ELitBln True)]
-    <> typeErrors [TypeConflict {expected = TInt, received = TBln}]
+    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TBln}]
 
   , source "$ a = b"
     <> typedAst [("a", UVar $ VarMc Imut (Errors [UnknownId "b"]) $ EName "b")]
@@ -417,7 +417,7 @@ testCases =
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
-    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
+    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "$ a = 5; $ b = a; $ c = b"
     <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)
@@ -429,13 +429,13 @@ testCases =
     <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)
                 , ("b", UVar $ VarMc Imut (Type TInt) $ EName "a")
                 , ("c", UVar $ VarMc Imut (Type TBln) $ EName "b")]
-    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
+    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "Bln a = b; $ b = c; $ c = 5"
     <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ EName "b")
                 , ("b", UVar $ VarMc Imut (Type TInt) $ EName "c")
                 , ("c", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)]
-    <> typeErrors [TypeConflict {expected = TBln, received = TInt}]
+    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
 
   -- TypeCheck operator tests
@@ -455,11 +455,11 @@ testCases =
 
   , source "$ a = 1 if \"true\" else 0"
     <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitStr "true") (ELitInt 0))]
-    <> typeErrors [TypeConflict {expected = TBln, received = TStr}]
+    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TStr}]
 
   , source "$ a = 1 if true else \"zero\""
     <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitStr "zero"))]
-    <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
+    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
 
   -- TypeCheck function tests
@@ -486,13 +486,13 @@ testCases =
   , name "one explicit, wrong return type"
     <> source
       "one() -> Int => \"one\""
-    <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
+    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
   , name "one implicit, wrong num args"
     <> source
       "one() => 1\n\
       \$ a = one(1)"
-    <> typeErrors [ArgCount {acExpected = 0, acReceived = 1}]
+    <> typeErrors [WrongNumArgs {numArgsRequired = 0, numArgsFound = 1}]
 
   , name "inc explicit"
     <> source
@@ -527,19 +527,19 @@ testCases =
   , name "inc explicit, wrong return type"
     <> source
       "inc(Int x) -> Int => \"one\""
-    <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
+    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
-  , name "inc explicit, wrong num of args (a)"
+  , name "inc explicit, wrong num args (a)"
     <> source
       "inc(Int x) -> Int => x + 1\n\
       \$ a = inc()"
-    <> typeErrors []
+    <> typeErrors [WrongNumArgs {numArgsRequired = 1, numArgsFound = 0}]
 
-  , name "inc explicit, wrong num of args (b)"
+  , name "inc explicit, wrong num args (b)"
     <> source
       "inc(Int x) -> Int => x + 1\n\
       \$ a = inc(1, 2)"
-    <> typeErrors []
+    <> typeErrors [WrongNumArgs {numArgsRequired = 1, numArgsFound = 2}]
 
   , name "inc implicit"
     <> source
@@ -567,7 +567,7 @@ testCases =
         )
       , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitStr "one"])
       ]
-    <> typeErrors [TypeConflict {expected = TInt, received = TStr}]
+    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
   , name "inc implicit, local var"
     <> source

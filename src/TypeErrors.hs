@@ -20,13 +20,14 @@ data Error
   = UnknownId String
 
   -- Better conflict or mismatch?
-  | TypeConflict { expected :: Type, received :: Type }
+  | TypeConflict { typeRequired :: Type, typeFound :: Type }
 
   -- Could be called incompatible types? No common supertype?
   | FailedToUnify (Set.Set Type)
 
   | NonApplicable Type
-  | ArgCount { acExpected :: Int, acReceived :: Int }
+  | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
+  | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
 
   -- Should be multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
