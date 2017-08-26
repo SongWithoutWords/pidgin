@@ -7,8 +7,9 @@ import Test.Tasty.HUnit
 import Lexer
 import Parser
 
-import Tokens
 import Ast
+import MultiMapAst
+import Tokens
 
 import TypeCheck -- as Type
 -- import qualified TestCases as Test
@@ -54,7 +55,7 @@ typeInferenceTest :: TestCase -> Maybe TestTree
 typeInferenceTest t = tryTestEq
   (displayName t)
   (testTypedAst t)
-  (fst . typeCheckAst <$> astInput t)
+  (fst . typeCheckAst . multiMapAst <$> astInput t)
 
 typeCheckTests :: TestTree
 typeCheckTests = testGroup "type checker" $ mapMaybe typeCheckTest testCases
@@ -63,7 +64,7 @@ typeCheckTest :: TestCase -> Maybe TestTree
 typeCheckTest t = tryTestEq
   (displayName t)
   (testTypeErrors t)
-  (snd . typeCheckAst <$> astInput t)
+  (snd . typeCheckAst . multiMapAst <$> astInput t)
 
 -- TODO: replace tryTestEq :: String -> Maybe a -> Maybe a -> Maybe TestTree
 --          with tryTestEq :: TestCase -> (TestCase -> Maybe a) -> (TestCase -> Maybe a) -> Maybe TestTree
