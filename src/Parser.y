@@ -140,7 +140,8 @@ function
   : name lambda { Func $1 $2 }
 
 lambda
-  : signature "=>" block             { Lambda $1 $3 }
+  : signature "=>" block    { Lambda $1 ImplicitRet $3 }
+  | signature ":"  block    { Lambda $1 ExplicitRet $3 }
 
 signature
   : purityAndParams optionRetType { SigU (fst $1) (snd $1) $2}

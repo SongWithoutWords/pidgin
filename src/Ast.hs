@@ -88,11 +88,15 @@ data Func :: TypePhase -> * where
 deriving instance Eq (Func tc)
 deriving instance Show (Func tc)
 
+data RetNotation
+  = ImplicitRet
+  | ExplicitRet
+  deriving(Eq, Show)
 
 type LambdaU = Lambda 'TpUnchecked
 type LambdaC = Lambda 'TpChecked
 data Lambda :: TypePhase -> * where
-  Lambda :: Sig tc -> Block tc -> Lambda tc
+  Lambda :: Sig tc -> RetNotation -> Block tc -> Lambda tc
 
 deriving instance Eq (Lambda tc)
 deriving instance Show (Lambda tc)
@@ -118,6 +122,8 @@ type BlockU = Block 'TpUnchecked
 type BlockC = Block 'TpChecked
 type Block tc = [Stmt tc]
 
+type StmtU = Stmt 'TpUnchecked
+type StmtC = Stmt 'TpChecked
 data Stmt :: TypePhase -> * where
   SAssign :: LExpr tc -> Expr tc -> Stmt tc
   SVar :: Var 'SList tc -> Stmt tc

@@ -100,7 +100,7 @@ instance HasLambda a => HasSig a where
  sigOf = sigOf . lambdaOf
 
 instance {-#OVERLAPPING#-} HasSig (Lambda 'TpUnchecked) where
- sigOf (Lambda s _) = s
+ sigOf (Lambda s _ _) = s
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -161,5 +161,5 @@ instance HasLambda a => HasBlock a where
   blockOf = blockOf . lambdaOf
 
 instance {-#OVERLAPPING#-} HasBlock LambdaU where
-  blockOf (Lambda _ b) = b
+  blockOf (Lambda _ _ b) = b
 

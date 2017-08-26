@@ -130,7 +130,7 @@ testCases =
       [ T.Name "negate", T.LParen, T.TypeBln, T.Name "b", T.RParen, T.ThinArrow, T.TypeBln, T.FatArrow
       , T.False, T.If, T.Name "b", T.Else, T.True]
     <> ast
-      [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln)
+      [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln) ImplicitRet
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -144,7 +144,7 @@ testCases =
       , T.False, T.If, T.Name "b", T.Else, T.True
       , T.Dedent]
     <> ast
-      [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln)
+      [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln) ImplicitRet
         [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
       ]
 
@@ -161,7 +161,7 @@ testCases =
       , T.Dedent]
     <> ast
       [ UFuncL $ Func "factorial" $ Lambda
-          ( SigU Pure [Param Imut TInt "n"] $ Just TInt)
+          ( SigU Pure [Param Imut TInt "n"] $ Just TInt) ImplicitRet
           [ SExpr
             $ EIf
               (ELitInt 1)
@@ -180,7 +180,7 @@ testCases =
       \    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket"
     <> ast
       [ UFuncL $ Func "clothing" $ Lambda
-        ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
+        ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
           $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
@@ -198,7 +198,7 @@ testCases =
       \    jacket"
     <> ast
       [ UFuncL $ Func "clothing" $ Lambda
-        ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" )
+        ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
         [ SExpr
           $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
           $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
@@ -209,7 +209,7 @@ testCases =
 
     , name "draw widget (imperative if)"
       <> source
-      "drawWidget(~@, Nat width, Nat height) -> None =>\n\
+      "drawWidget(~@, Nat width, Nat height):\n\
       \    $ w = Widget(width, height)\n\
       \    if w.exists then\n\
       \        w.draw(~@)"
@@ -219,7 +219,7 @@ testCases =
         , T.LParen, T.Tilde, T.At
         , T.Comma, T.TypeNat, T.Name "width"
         , T.Comma, T.TypeNat, T.Name "height"
-        , T.RParen, T.ThinArrow, T.TypeNone, T.FatArrow
+        , T.RParen, T.Colon
         , T.Indent
           , T.Dollar, T.Name "w", T.Equal
             , T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
@@ -234,7 +234,8 @@ testCases =
         [ UFuncL
           $ Func "drawWidget"
             $ Lambda
-              ( SigU PWrite [Param Imut TNat "width", Param Imut TNat "height"] $ Just TNone )
+              ( SigU PWrite [Param Imut TNat "width", Param Imut TNat "height"] $ Nothing )
+              ExplicitRet
               [ SVar
                 $ VarLu Imut Nothing "w" (ECons "Widget" $ Args Pure [EName "width", EName "height"])
               , SIf
@@ -274,15 +275,11 @@ testCases =
           $ Lambda
             ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"]
               $ Just $ TFunc Pure [TFlt] $ TFlt
-            )
+            ) ImplicitRet
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( SigU
-                    Pure
-                    [Param Imut TFlt "x"]
-                    $ Just TFlt
-                  )
+                  ( SigU Pure [Param Imut TFlt "x"] $ Just TFlt ) ImplicitRet
                   [ SExpr
                     $ EAdd
                       ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
@@ -302,11 +299,11 @@ testCases =
       [ UFuncL
         $ Func "quadratic"
           $ Lambda
-            ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] Nothing)
+            ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] Nothing) ImplicitRet
             [ SExpr
               $ ELambda
                 $ Lambda
-                  ( SigU Pure [Param Imut TFlt "x"] Nothing)
+                  ( SigU Pure [Param Imut TFlt "x"] Nothing) ImplicitRet
                   [ SExpr
                     $ EAdd
                       ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
@@ -325,7 +322,7 @@ testCases =
       [ UFuncL
         $ Func "singleRoot"
           $ Lambda
-          ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] $ Just TFlt )
+          ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] $ Just TFlt ) ImplicitRet
           [ SExpr
             $ EDiv
               ( EAdd
@@ -487,7 +484,7 @@ testCases =
     <> typedAst
       [ ( "one", UFuncM $
         Lambda
-          ( SigC Pure [] $ Type TInt)
+          ( SigC Pure [] $ Type TInt) ImplicitRet
           [ SExpr $ ELitInt 1]
         )
       , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "one") $ Args Pure [])
@@ -512,7 +509,7 @@ testCases =
     <> typedAst
       [ ( "inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
       , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1] )
@@ -526,7 +523,7 @@ testCases =
     <> typedAst
       [ ( "inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
           [ SExpr $ EAdd (EName "x") $ ELitInt 1]
         )
       , ( "a", UVar $ VarMc Imut (Type TInt) $
@@ -559,7 +556,7 @@ testCases =
     <> typedAst
       [ ("inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
       , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
@@ -573,7 +570,7 @@ testCases =
     <> typedAst
       [ ("inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
           [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
         )
       , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitStr "one"])
@@ -590,7 +587,7 @@ testCases =
     <> typedAst
       [ ( "inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt )
+          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
           [ SVar $ VarLc Imut (Type TInt) "one" (ELitInt 1)
           , SExpr $ EAdd (EName "x") (EName "one")
           ]
