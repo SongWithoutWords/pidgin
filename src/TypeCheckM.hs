@@ -4,35 +4,25 @@ module TypeCheckM
 
   , TypeContext(..)
 
-  -- General control
+  -- Built-in monads
   , lift
 
-  -- Reader Monad
-  -- , ask
   , runReaderT
-
   , runWriterT
 
-  -- , evalRWST
-
-  -- ST Monad
   , runST
   , newSTRef
-  -- , unsafeInterleaveST
 
+  -- Typecheck monad
   , typeCheckLazy
 
-  -- Bindings
   , getBindings
   , withBindings
 
-  -- Search history
   , getHistory
   , pushSearchName
   , popSearchName
 
-  -- Errors
-  -- , tell
   , raise
   ) where
 
@@ -41,8 +31,6 @@ import Data.STRef
 import Control.Monad.ST
 import Control.Monad.ST.Unsafe
 import Control.Monad.Writer
-
--- import Control.Monad.RWS
 
 import Ast
 import Debug
