@@ -17,14 +17,7 @@ cabal-version:       >=1.10
 extra-source-files:    src/Lexer.x
                      , src/Parser.y
 
-flag debug
-      description: Enable debug logging
-      default: False
-
 library
-
-  if flag(debug)
-     cpp-options: -DDEBUG
 
   hs-source-dirs:      src
 
@@ -46,7 +39,6 @@ library
                      , Types
 
   other-modules:       Debug
-
 
   build-tools:         alex
                      , happy

@@ -1,20 +1,13 @@
-{-# language CPP #-}
-
 module Debug where
 
 import qualified Debug.Trace as Trace
 
+debug :: Bool
+debug = False
+
 trace :: String -> a -> a
-#ifdef DEBUG
-trace s a = Trace.trace s a
-#else
-trace _ a = a
-#endif
+trace s a = if debug then Trace.trace s a else a
 
 traceM :: Monad m => String -> m ()
-#ifdef DEBUG
-traceM s = Trace.traceM s
-#else
-traceM _ = return ()
-#endif
+traceM s = if debug then Trace.traceM s else return ()
 
