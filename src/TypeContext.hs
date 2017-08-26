@@ -1,25 +1,16 @@
 {-# language GADTs #-}
 
-module TypeContext where
+module TypeContext
+  ( module Ast
+  , module TypeContext
+  , module Kinds
+  ) where
 
 import Ast
 import AstUtil
-import TypeErrors
--- import qualified Ast1 as A1
+import Kinds
 
 import MultiMap
-
-data TypeContext = TypeContext
-  { tcSearchHistory::[Name]
-  , tcBindings::Bindings}
-
-pushSearchName :: Name -> TypeContext -> TypeContext
-pushSearchName name (TypeContext names bindings) = TypeContext (name:names) bindings
-
-popSearchName :: TypeContext -> TypeContext
-popSearchName tc@(TypeContext names bindings) = case names of
-  _:ns -> TypeContext ns bindings
-  _ -> tc
 
 
 data Bindings
@@ -32,15 +23,20 @@ lookupKinds context name = case context of
   BlockBindings local global -> lookupInAst local name ++ lookupKinds global name
   where
     lookupInAst :: Map Name [UnitMc] -> Name -> [Kind]
-    lookupInAst table n  = map kindOfUnit (multiLookup n table)--case multiLookup n ast of
+    lookupInAst table n  = map kindOfUnit (multiLookup n table)
 
     kindOfUnit :: UnitMc -> Kind
     kindOfUnit u = case u of
       UNamespaceM _ -> KNamespace
       UClass _ -> KType
+
+      -- TODO: how to handle this error case?
       UFuncM (Lambda (SigC purity params typeOrError) _) -> case typeOrError of
         Type returnType -> KExpr (TFunc purity (paramTypesOf params) returnType)
-      UVar (VarMc _ typeOrError _) -> case typeOrError of Type t -> KExpr t
+
+      UVar (VarMc _ typeOrError _) -> case typeOrError of
+        Type t -> KExpr t
+        Errors e -> KError e
 
 initBlockBindings :: Bindings -> Params -> Bindings
 initBlockBindings outerContext params = BlockBindings (initLocalContextFromParams params) outerContext

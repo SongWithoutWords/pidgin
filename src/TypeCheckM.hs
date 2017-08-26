@@ -1,35 +1,94 @@
 module TypeCheckM
-  ( module TypeCheckM
-  , module Writer
-  , module Reader
+  ( TypeCheckM
   , module TypeContext
-  , module TypeErrors
+
+  , TypeContext(..)
+
+  -- General control
+  , lift
+
+  -- Reader Monad
+  , ask
+  , runReaderT
+
+  , runWriterT
+
+  , evalRWST
+
+  -- ST Monad
+  , runST
+  , newSTRef
+  , unsafeInterleaveST
+
+  -- Bindings
+  , getBindings
+  , withBindings
+
+  -- Search history
+  , getHistory
+  , pushSearchName
+  , popSearchName
+
+  -- Errors
+  , tell
+  , raise
   ) where
 
-import Control.Monad.State
-import Control.Monad.Writer as Writer
-import Control.Monad.Trans.Reader as Reader
+import Control.Monad.Reader
+import Data.STRef
+import Control.Monad.ST
+import Control.Monad.ST.Unsafe
+import Control.Monad.Writer
 
+import Control.Monad.RWS
+
+import Ast
+import Debug
 import TypeContext
-import TypeErrors
-import Types
 
-type ReadWriteM r w a = ReaderT r (Writer w) a
-type TypeCheckM a = ReadWriteM TypeContext Errors a
+type HistoryRef s = STRef s [Name]
 
-runTypeCheck :: TypeContext -> TypeCheckM a -> (a, Errors)
-runTypeCheck context typeCheckM = runWriter $ runReaderT typeCheckM context
+data TypeContext s = TypeContext Bindings (HistoryRef s)
 
-raise :: Error -> TypeCheckM ()
-raise e = tell [e]
+type TypeCheckM s a = ReaderT (TypeContext s) (WriterT Errors (ST s)) a
 
-foundType :: Monad m => Type -> m TypeOrErrors --(Maybe a)
-foundType = return . Type
+getBindings :: TypeCheckM s Bindings
+getBindings = do
+  TypeContext bindings _ <- ask
+  return bindings
 
-type CheckedAst = ()
-type UncheckedAst = ()
+withBindings :: Bindings -> TypeCheckM s a -> TypeCheckM s a
+withBindings newBindings = local
+  (\(TypeContext _ history)->TypeContext newBindings history)
 
-type StateReaderM r s a = ReaderT r (State s) a
-type TypeCheckState a = StateReaderM UncheckedAst CheckedAst a
+modifyHistory :: ([Name] -> [Name]) -> TypeCheckM s ()
+modifyHistory f = do
+  ref <- getHistoryRef
+  lift $ lift $ modifySTRef ref f
+
+getHistoryRef :: TypeCheckM s (HistoryRef s)
+getHistoryRef = do
+  TypeContext _ historyRef <- ask
+  return historyRef
+
+getHistory :: TypeCheckM s [Name]
+getHistory = do
+  ref <- getHistoryRef
+  lift $ lift $ readSTRef ref
+
+pushSearchName :: Name -> TypeCheckM s ()
+pushSearchName name = do
+  modifyHistory $ \names -> name:names
+  history <- getHistory
+  traceM $ "push " ++ name ++ " -> " ++ show history
+
+popSearchName :: TypeCheckM s ()
+popSearchName = do
+  modifyHistory $ \(_:names) -> names
+  history <- getHistory
+  traceM $ "pop:  " ++ show history
+
+raise :: Error -> TypeCheckM s ()
+raise e = tell [e]-- return () -- TODO
 
 
