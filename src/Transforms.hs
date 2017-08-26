@@ -16,4 +16,4 @@ import TypeCheck
 f |> g = g . f
 
 lexParseCheck :: String -> (AstMc, Errors)
-lexParseCheck = scanTokens |> parse |> mapAst |> typeCheckAst
+lexParseCheck = scanTokens |> parse |> multiMapAst |> typeCheckAst
