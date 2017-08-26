@@ -3,6 +3,7 @@ module Debug where
 import qualified Debug.Trace as Trace
 
 debug :: Bool
+-- debug = True
 debug = False
 
 trace :: String -> a -> a
