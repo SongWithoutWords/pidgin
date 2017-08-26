@@ -135,9 +135,17 @@ typeCheckExpr expr = trace "typeCheckExpr" $ do
       ((e1c, e2c), tp) <- typeCheckBinOp e1 e2
       return ((EAdd e1c e2c), tp)
 
+    ESub e1 e2 -> do
+      ((e1c, e2c), tp) <- typeCheckBinOp e1 e2
+      return ((EAdd e1c e2c), tp)
+
     EMul e1 e2 -> do
       ((e1c, e2c), tp) <- typeCheckBinOp e1 e2
       return ((EMul e1c e2c), tp)
+
+    ELesserEq e1 e2 -> do
+      ((e1c, e2c), tp) <- typeCheckComparison e1 e2
+      return ((ELesserEq e1c e2c), tp)
 
     ELitBln b -> return $ (ELitBln b, Type $ TBln)
     ELitFlt f -> return $ (ELitFlt f, Type $ TFlt)
@@ -151,7 +159,7 @@ typeCheckApp (App e args) = trace "typeCheckApp" $ do
   (argsChecked, argTypes) <- typeCheckArgs args -- todo: must account for the types
   let appChecked = App eChecked argsChecked
   case eTypeRes of
-    Errors _ -> return undefined -- $ (App eChecked params, Errors [ErrorPropagated errors])
+    Errors errors -> return $ (App eChecked argsChecked, Errors [ErrorPropagated errors])
     Type eType -> case eType of
       TFunc purity paramTypes ret -> do
         let (Args argPurity _) = argsChecked
@@ -227,11 +235,18 @@ typeCheckIf e1 ec e2 = do
 
 typeCheckBinOp :: ExprU -> ExprU -> TypeCheckM s ((ExprC, ExprC), TypeOrErrors)
 typeCheckBinOp e1 e2 = do
-  (e1Checked, type1) <- typeCheckExpr e1
-  (e2Checked, type2) <- typeCheckExpr e2
+  (e1c, type1) <- typeCheckExpr e1
+  (e2c, type2) <- typeCheckExpr e2
 
-  -- TODO: determine common root type, e.g. typeof(3 + 4.7) == TFlt
+  -- TODO: support operations between unrelated types, e.g. scalar and vector
   type1 <~ type2 -- this is not right, but is better than nothing
 
-  return ((e1Checked, e2Checked), type1)
+  return ((e1c, e2c), type1)
+
+typeCheckComparison :: ExprU -> ExprU -> TypeCheckM s ((ExprC, ExprC), TypeOrErrors)
+typeCheckComparison e1 e2 = do
+  (e1c, type1) <- typeCheckExpr e1
+  (e2c, type2) <- typeCheckExpr e2
+  type1 <~ type2
+  return ((e1c, e2c), Type TBln)
 
