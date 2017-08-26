@@ -1,4 +1,3 @@
-
 import Preface
 
 import Test.Tasty
@@ -11,8 +10,7 @@ import Ast
 import MultiMapAst
 import Tokens
 
-import TypeCheck -- as Type
--- import qualified TestCases as Test
+import TypeCheck
 import TestCases
 
 import TestCase()
