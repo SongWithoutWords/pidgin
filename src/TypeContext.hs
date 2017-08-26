@@ -14,13 +14,13 @@ import MultiMap
 
 
 data Bindings
-  = GlobalBindings (Map Name [UnitMc])
-  | BlockBindings {innerScope:: Map Name [UnitMc], outerScope::Bindings}
+  = GlobalBindings AstMc
+  | BlockBindings {innerScope::AstMc, outerScope::Bindings}
 
 lookupKinds :: Bindings -> Name -> [Kind]
 lookupKinds context name = case context of
   GlobalBindings table -> lookupInAst table name
-  BlockBindings local global -> lookupInAst local name ++ lookupKinds global name
+  BlockBindings inner outer -> lookupInAst inner name ++ lookupKinds outer name
   where
     lookupInAst :: Map Name [UnitMc] -> Name -> [Kind]
     lookupInAst table n  = map kindOfUnit (multiLookup n table)
