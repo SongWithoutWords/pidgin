@@ -4,7 +4,6 @@ import TestCase
 import TestComposer
 
 import Ast
--- import qualified Ast1 as A1
 import qualified Tokens as T
 import TypeErrors
 
