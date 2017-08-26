@@ -227,4 +227,5 @@ deriving instance Show (Select tc)
 
 
 type Name = String
+type Names = [Name]
 
