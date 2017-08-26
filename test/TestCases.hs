@@ -380,30 +380,35 @@ testCases =
 
   -- TODO: a proper error type and error handling for recursive definitions
   , source "$ a = a"
-    <> typedAst [("a", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
-    <> typeErrors [RecursiveDefinition]
+    <> typedAst [("a", UVar $ VarMc Imut (Errors [recursiveDefinition ["a"]]) $ EName "a")]
+    <> typeErrors [recursiveDefinition ["a"]]
 
   , source "$ a = b; $ b = a"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
-    <> typeErrors [RecursiveDefinition]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b"]]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b"]]) $ EName "a")]
+    <> typeErrors [recursiveDefinition ["a", "b"]]
+
+  , source "$ a = b; $ b = b"
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [ErrorPropagated [recursiveDefinition ["b"]]]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["b"]]) $ EName "b")]
+    <> typeErrors [recursiveDefinition ["b"]]
 
   , source "$ a = b; $ b = c; $ c = a"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "c")
-                , ("c", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "a")]
-    <> typeErrors [RecursiveDefinition]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b", "c"]]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b", "c"]]) $ EName "c")
+                , ("c", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b", "c"]]) $ EName "a")]
+    <> typeErrors [recursiveDefinition ["a", "b", "c"]]
 
   , source "$ a = b; $ b = c; $ c = b"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [ErrorPropagated [RecursiveDefinition]]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "c")
-                , ("c", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EName "b")]
-    <> typeErrors [RecursiveDefinition]
+    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [ErrorPropagated [recursiveDefinition ["b", "c"]]]) $ EName "b")
+                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["b", "c"]]) $ EName "c")
+                , ("c", UVar $ VarMc Imut (Errors [recursiveDefinition ["b", "c"]]) $ EName "b")]
+    <> typeErrors [recursiveDefinition ["b", "c"]]
 
   , source "$ a = 1; $ b = b + a"
     <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 1)
-                , ("b", UVar $ VarMc Imut (Errors [RecursiveDefinition]) $ EAdd (EName "b") (EName "a"))]
-    <> typeErrors [RecursiveDefinition]
+                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["b"]]) $ EAdd (EName "b") (EName "a"))]
+    <> typeErrors [recursiveDefinition ["b"]]
 
   , source "$ a = true; $ a = false; $ b = a"
     <> typeErrors [CompetingDefinitions]

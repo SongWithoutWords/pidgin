@@ -1,5 +1,7 @@
 module TypeErrors where
 
+-- TODO: May as well rexport types from Ast now
+-- import Ast
 import Types
 
 import qualified Data.Set as Set
@@ -32,7 +34,7 @@ data Error
   -- Should be multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
 
-  | RecursiveDefinition
+  | RecursiveDefinition (Set.Set String) -- should really be names
 
   | NeedExprFoundType
   | NeedExprFoundNamespace
@@ -40,4 +42,7 @@ data Error
   | ErrorPropagated Errors
 
   deriving(Eq, Show)
+
+recursiveDefinition :: [String] -> Error
+recursiveDefinition = RecursiveDefinition . Set.fromList
 

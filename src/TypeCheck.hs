@@ -7,6 +7,8 @@ module TypeCheck(typeCheckAst) where
 
 import Data.Maybe
 
+import Preface
+
 import Ast
 import Debug
 import MultiMap
@@ -190,12 +192,20 @@ typeCheckName name = trace ("typeCheckName " ++ name) $ do
   history <- getHistory
   traceM $ "searching for name " ++ name ++ " in " ++ show history
   if elem name history then do
-    traceM $ "found "++name++" in "++show history++"; raising recursive definition"
-    raise RecursiveDefinition
-    return $ Errors [RecursiveDefinition]
+    traceM $ "found " ++ name ++ " in " ++ show history ++
+      "; raising recursive definition"
+    let cycle = takeWhileInclusive (\x -> x /= name) history
+    raise $ recursiveDefinition cycle
+    return $ Errors [recursiveDefinition cycle]
   else do
     bindings <- getBindings
     findTypeName' $ lookupKinds bindings name
+
+    -- pushSearchName name
+    -- result <- findTypeName' $ lookupKinds bindings name
+    -- popSearchName
+    -- return result
+
     where
       findTypeName' :: [Kind] -> TypeCheckM s TypeOrErrors
       findTypeName' ks = trace "findTypeName'" $ case ks of
@@ -210,8 +220,14 @@ typeCheckName name = trace ("typeCheckName " ++ name) $ do
           KNamespace -> do
             raise NeedExprFoundNamespace
             return $ Errors [NeedExprFoundNamespace]
-          KError es -> do
-            return $ Errors [ErrorPropagated es]
+          KError es -> case es of
+            [RecursiveDefinition cycle] -> do
+              history <- getHistory
+              let sourceName = head history
+              if elem sourceName cycle
+              then return $ Errors [RecursiveDefinition cycle]
+              else return $ Errors [ErrorPropagated es]
+            _ -> trace "unrelated error" $ return $ Errors [ErrorPropagated es]
         _ -> do
           raise $ CompetingDefinitions
           return $ Errors [CompetingDefinitions]
