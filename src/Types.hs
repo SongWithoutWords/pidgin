@@ -1,10 +1,5 @@
 module Types where
 
-data Kind
-  = KNamespace
-  | KType
-  | KExpr Type -- Should be (Either Type [TypeError])? Should have own module?
-
 data Type
   = TUser Typename
 

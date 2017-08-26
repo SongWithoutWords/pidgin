@@ -24,6 +24,7 @@ library
   exposed-modules:     Ast
                      , AstUtil
                      , FormatAst
+                     , Kinds
                      , Lexer
                      , MultiMapAst
                      , MultiMap
