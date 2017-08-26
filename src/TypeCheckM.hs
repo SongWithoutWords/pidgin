@@ -8,17 +8,19 @@ module TypeCheckM
   , lift
 
   -- Reader Monad
-  , ask
+  -- , ask
   , runReaderT
 
   , runWriterT
 
-  , evalRWST
+  -- , evalRWST
 
   -- ST Monad
   , runST
   , newSTRef
-  , unsafeInterleaveST
+  -- , unsafeInterleaveST
+
+  , typeCheckLazy
 
   -- Bindings
   , getBindings
@@ -30,7 +32,7 @@ module TypeCheckM
   , popSearchName
 
   -- Errors
-  , tell
+  -- , tell
   , raise
   ) where
 
@@ -40,7 +42,7 @@ import Control.Monad.ST
 import Control.Monad.ST.Unsafe
 import Control.Monad.Writer
 
-import Control.Monad.RWS
+-- import Control.Monad.RWS
 
 import Ast
 import Debug
@@ -51,6 +53,16 @@ type HistoryRef s = STRef s [Name]
 data TypeContext s = TypeContext Bindings (HistoryRef s)
 
 type TypeCheckM s a = ReaderT (TypeContext s) (WriterT Errors (ST s)) a
+
+typeCheckLazy :: TypeCheckM s a -> TypeCheckM s a
+typeCheckLazy typeCheckM = do
+  env <- ask
+  resultAndErrors <- lift $ lift $
+    unsafeInterleaveST $
+      runWriterT $
+        runReaderT typeCheckM env
+  tell $ snd resultAndErrors
+  return $ fst resultAndErrors
 
 getBindings :: TypeCheckM s Bindings
 getBindings = do

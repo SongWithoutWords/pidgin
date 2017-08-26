@@ -61,17 +61,7 @@ typeCheckAst ast = trace "typeCheckAst" $ runST $ do
 
 typeCheckUnitTable :: AstMu -> TypeCheckM s AstMc
 typeCheckUnitTable unitTable = trace "typeCheckUnitTable" $
-  multiMapWithKeyM typeCheckUnitLazy unitTable
-
-typeCheckUnitLazy :: Name -> UnitMu -> TypeCheckM s UnitMc
-typeCheckUnitLazy name unit = do
-  env <- ask
-  resultAndErrors <- lift $ lift $
-    unsafeInterleaveST $
-      runWriterT $
-        runReaderT (typeCheckUnit name unit) env
-  tell $ snd resultAndErrors
-  return $ fst resultAndErrors
+  multiMapWithKeyM (\name unit -> typeCheckLazy $ typeCheckUnit name unit) unitTable
 
 typeCheckUnit :: Name -> UnitMu -> TypeCheckM s UnitMc
 typeCheckUnit name unit = trace "typeCheckUnit" $ do
