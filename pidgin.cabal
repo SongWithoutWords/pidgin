@@ -23,6 +23,7 @@ library
 
   exposed-modules:     Ast
                      , AstUtil
+                     , CodeGen
                      , FormatAst
                      , Kinds
                      , Lexer
@@ -47,6 +48,8 @@ library
   build-depends:       base
                      , containers
                      , array
+                     , llvm-hs
+                     , llvm-hs-pure
                      , monad-st
                      , mtl
                      , transformers
