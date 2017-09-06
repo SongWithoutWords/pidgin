@@ -21,8 +21,8 @@ data Storage
   | SMap
 
 data TypePhase
-  = TpChecked
-  | TpUnchecked
+  = Typed
+  | UnTyped
 
 
 type Table a = MultiMap Name a
@@ -32,9 +32,9 @@ type AstMu = Table UnitMu
 type AstMc = Table UnitMc
 
 
-type UnitLu = Unit 'SList 'TpUnchecked
-type UnitMu = Unit 'SMap 'TpUnchecked
-type UnitMc = Unit 'SMap 'TpChecked
+type UnitLu = Unit 'SList 'UnTyped
+type UnitMu = Unit 'SMap 'UnTyped
+type UnitMc = Unit 'SMap 'Typed
 data Unit :: Storage -> TypePhase -> * where
 
   UNamespaceL :: Name -> [Unit 'SList ts] -> Unit 'SList ts
@@ -51,9 +51,9 @@ deriving instance Eq (Unit col tc)
 deriving instance Show (Unit col tc)
 
 
-type ClassLu = Class 'SList 'TpUnchecked
-type ClassMu = Class 'SMap 'TpUnchecked
-type ClassMc = Class 'SMap 'TpChecked
+type ClassLu = Class 'SList 'UnTyped
+type ClassMu = Class 'SMap 'UnTyped
+type ClassMc = Class 'SMap 'Typed
 data Class :: Storage -> TypePhase -> * where
   ClassL :: Name -> [Member 'SList tc] -> Class 'SList tc
   ClassM :: Table (Member 'SMap tc) -> Class 'SMap tc
@@ -62,9 +62,9 @@ deriving instance Eq (Class col tc)
 deriving instance Show (Class col tc)
 
 
-type MemberLu = Member 'SList 'TpUnchecked
-type MemberMu = Member 'SMap 'TpUnchecked
-type MemberMc = Member 'SMap 'TpChecked
+type MemberLu = Member 'SList 'UnTyped
+type MemberMu = Member 'SMap 'UnTyped
+type MemberMc = Member 'SMap 'Typed
 data Member :: Storage -> TypePhase -> * where
   MClass :: Access -> Class col tc -> Member col tc
   MFuncL :: Access -> Mut -> Func tc -> Member 'SList tc
@@ -93,8 +93,8 @@ data RetNotation
   | ExplicitRet
   deriving(Eq, Show)
 
-type LambdaU = Lambda 'TpUnchecked
-type LambdaC = Lambda 'TpChecked
+type LambdaU = Lambda 'UnTyped
+type LambdaC = Lambda 'Typed
 data Lambda :: TypePhase -> * where
   Lambda :: Sig tc -> RetNotation -> Block tc -> Lambda tc
 
@@ -102,11 +102,11 @@ deriving instance Eq (Lambda tc)
 deriving instance Show (Lambda tc)
 
 
-type SigU = Sig 'TpUnchecked
-type SigC = Sig 'TpChecked
+type SigU = Sig 'UnTyped
+type SigC = Sig 'Typed
 data Sig :: TypePhase -> * where
-  SigU :: Purity -> Params -> Maybe Type -> Sig 'TpUnchecked
-  SigC :: Purity -> Params -> TypeOrErrors -> Sig 'TpChecked
+  SigU :: Purity -> Params -> Maybe Type -> Sig 'UnTyped
+  SigC :: Purity -> Params -> TypeOrErrors -> Sig 'Typed
 
 deriving instance Eq (Sig tc)
 deriving instance Show (Sig tc)
@@ -118,12 +118,12 @@ data Param
   = Param Mut Type Name
   deriving(Eq, Show)
 
-type BlockU = Block 'TpUnchecked
-type BlockC = Block 'TpChecked
+type BlockU = Block 'UnTyped
+type BlockC = Block 'Typed
 type Block tc = [Stmt tc]
 
-type StmtU = Stmt 'TpUnchecked
-type StmtC = Stmt 'TpChecked
+type StmtU = Stmt 'UnTyped
+type StmtC = Stmt 'Typed
 data Stmt :: TypePhase -> * where
   SAssign :: LExpr tc -> Expr tc -> Stmt tc
   SVar :: Var 'SList tc -> Stmt tc
@@ -151,10 +151,10 @@ deriving instance Eq (CondBlock tc)
 deriving instance Show (CondBlock tc)
 
 
-type VarLu = Var 'SList 'TpUnchecked
-type VarMu = Var 'SMap 'TpUnchecked
-type VarLc = Var 'SList 'TpChecked
-type VarMc = Var 'SMap 'TpChecked
+type VarLu = Var 'SList 'UnTyped
+type VarMu = Var 'SMap 'UnTyped
+type VarLc = Var 'SList 'Typed
+type VarMc = Var 'SMap 'Typed
 data Var :: Storage -> TypePhase -> * where
   VarLu :: Mut -> Maybe Type -> Name -> ExprU -> VarLu
   VarMu :: Mut -> Maybe Type -> ExprU -> VarMu
@@ -164,8 +164,12 @@ data Var :: Storage -> TypePhase -> * where
 deriving instance Eq (Var f c)
 deriving instance Show (Var f c)
 
-type ExprU = Expr 'TpUnchecked
-type ExprC = Expr 'TpChecked
+data ExprX :: TypePhase -> * where
+  ExprU :: Expr 'UnTyped -> ExprX 'UnTyped
+  ExprC :: Type -> Expr 'Typed -> ExprX 'Typed
+
+type ExprU = Expr 'UnTyped
+type ExprC = Expr 'Typed
 data Expr :: TypePhase -> * where
   EApp :: App tc -> Expr tc
   ESelect :: Select tc -> Expr tc
@@ -208,16 +212,16 @@ data LExpr :: TypePhase -> * where
 deriving instance Eq (LExpr tc)
 deriving instance Show (LExpr tc)
 
-type AppU = App 'TpUnchecked
-type AppC = App 'TpChecked
+type AppU = App 'UnTyped
+type AppC = App 'Typed
 data App :: TypePhase -> * where
   App :: Expr tc -> Args tc -> App tc
 
 deriving instance Eq (App tc)
 deriving instance Show (App tc)
 
-type ArgsU = Args 'TpUnchecked
-type ArgsC = Args 'TpChecked
+type ArgsU = Args 'UnTyped
+type ArgsC = Args 'Typed
 data Args :: TypePhase -> * where
   Args :: Purity -> [Expr tc] -> Args tc
 

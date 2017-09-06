@@ -86,9 +86,9 @@ setType t (VarLu m _ n e) = VarLu m (Just t) n e
 
 ------------------------------------------------------------------------------------------------------------------------
 class HasLambda a where
-  lambdaOf :: a -> Lambda 'TpUnchecked
+  lambdaOf :: a -> Lambda 'UnTyped
 
-instance HasLambda (Func 'TpUnchecked) where
+instance HasLambda (Func 'UnTyped) where
   lambdaOf (Func _ l) = l
 
 
@@ -99,7 +99,7 @@ class HasSig a where
 instance HasLambda a => HasSig a where
  sigOf = sigOf . lambdaOf
 
-instance {-#OVERLAPPING#-} HasSig (Lambda 'TpUnchecked) where
+instance {-#OVERLAPPING#-} HasSig (Lambda 'UnTyped) where
  sigOf (Lambda s _ _) = s
 
 
