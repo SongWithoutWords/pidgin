@@ -7,7 +7,6 @@ module TypeContext
   ) where
 
 import Ast
-import AstUtil
 import Kinds
 
 import MultiMap
@@ -33,7 +32,7 @@ lookupKinds context name = case context of
 
       -- TODO: how to handle this error case?
       UFuncM (Lambda (SigC purity params typeOrError) _ _) -> case typeOrError of
-        Type returnType -> KExpr (TFunc purity (paramTypesOf params) returnType)
+        Type returnType -> KExpr (TFunc purity (map (\(Param _ t _) -> t) params) returnType)
 
       UVar (VarMc _ typeOrError _) -> case typeOrError of
         Type t -> KExpr t

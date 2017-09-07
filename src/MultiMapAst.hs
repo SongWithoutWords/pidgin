@@ -2,7 +2,7 @@
 module MultiMapAst where
 
 import Ast
-import AstUtil
+-- import AstUtil
 import MultiMap
 
 multiMapAst :: AstLu -> AstMu
@@ -12,27 +12,23 @@ mapUnits :: [UnitLu] -> Table UnitMu
 mapUnits = multiFromList . map mapUnit
 
 mapUnit :: UnitLu -> (Name, UnitMu)
-mapUnit u = (nameOf u, mapUnit' u)
-
-mapUnit' :: UnitLu -> UnitMu
-mapUnit' (UNamespaceL _ units) = UNamespaceM $ mapUnits units
-mapUnit' (UClass c) = UClass $ ClassM $ mapMembers $ membersOf c
-mapUnit' (UFuncL f) = UFuncM $ lambdaOf f
-mapUnit' (UVar v) = UVar $ mapVar v
+mapUnit unit = case unit of
+  UNamespaceL name units         -> (name, UNamespaceM $ mapUnits units)
+  UClass (ClassL name members)   -> (name, UClass $ ClassM $ mapMembers members)
+  UFuncL (Func name lambda)      -> (name, UFuncM $ lambda)
+  UVar (VarLu mut typ name expr) -> (name, UVar $ VarMu mut typ expr)
 
 mapMembers :: [MemberLu] -> Map Name [MemberMu]
 mapMembers = multiFromList . map mapMember
 
 mapMember :: MemberLu -> (Name, MemberMu)
-mapMember m = (nameOf m, mapMember' m)
+mapMember member = case member of
+  MClass acc (ClassL name members)  -> (name, MClass acc $ ClassM $ mapMembers $ members)
+  MCons acc lambda                  -> ("This", MCons acc lambda)
+  MFuncL acc mut (Func name lambda) -> (name, MFuncM acc mut lambda)
+  MVar acc var                      -> (fst $ mapVar var, MVar acc $ snd $ mapVar var)
 
-mapMember' :: MemberLu -> MemberMu
-mapMember' (MClass a c) = MClass a $ ClassM $ mapMembers $ membersOf c
-mapMember' (MCons a l) = MCons a l
-mapMember' (MFuncL a mut f) = MFuncM a mut $ lambdaOf f
-mapMember' (MVar a v) = MVar a $ mapVar v
-
-mapVar :: VarLu -> VarMu
-mapVar (VarLu m t _ e) = VarMu m t e
+mapVar :: VarLu -> (Name, VarMu)
+mapVar (VarLu mut typ name expr) = (name, VarMu mut typ expr)
 
 

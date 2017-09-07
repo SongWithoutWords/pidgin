@@ -22,7 +22,6 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Ast
-                     , AstUtil
                      , CodeGen
                      , FormatAst
                      , Kinds
