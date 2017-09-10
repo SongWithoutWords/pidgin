@@ -126,6 +126,12 @@ type BlockU = Block 'UnTyped
 type BlockC = Block 'Typed
 type Block tc = [Stmt tc]
 
+-- TODO: some changes to consider
+  -- Either limit Stmts to apps and lone exprs only at the end of blocks,
+  -- or replace SExpr with SRet or SApp at some stage before code generation
+
+  -- Also consider bringing back Type and MType
+
 type StmtU = Stmt 'UnTyped
 type StmtC = Stmt 'Typed
 data Stmt :: TypePhase -> * where
