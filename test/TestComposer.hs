@@ -5,9 +5,7 @@ import MultiMap
 import TestCase
 
 import Ast
--- import qualified Ast1 as A1
 import Tokens
-import TypeErrors
 
 -- example usage: myTest = source "$ a = 5; Bln b = a" <> typeErrors [TypeConflict TBln TInt]
 

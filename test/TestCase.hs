@@ -3,16 +3,9 @@ module TestCase
   , module Data.Monoid
   ) where
 
--- import Preface
-
 import Ast
--- import qualified Ast1 as A1
 import Tokens
-import TypeErrors
 
-
--- import Data.Generics.Maybe
--- import Data.Maybe
 import Data.Monoid
 
 type TestCases = [TestCase]

@@ -4,8 +4,9 @@ import TestCase
 import TestComposer
 
 import Ast
+import AstBuilderU
+import AstBuilderT
 import qualified Tokens as T
-import TypeErrors
 
 
 testCases :: TestCases
@@ -98,7 +99,7 @@ testCases =
   , name "def pi"
     <> source "$ pi = 3.14159265"
     <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
-    <> ast [ UVar $ VarLu Imut Nothing "pi" $ ELitFlt 3.14159265 ]
+    <> ast [ UVar $ VarLu Imut Nothing "pi" $ eValFlt 3.14159265 ]
     <> typeErrors []
 
   , name "def pi, def e"
@@ -112,7 +113,7 @@ testCases =
   , name "op expr"
     <> source "$ three = 1 + 2"
     <> tokens [ T.Dollar, T.Name "three", T.Equal, T.LitInt 1, T.Plus, T.LitInt 2 ]
-    <> ast [ UVar $ VarLu Imut Nothing "three" $ EAdd (ELitInt 1) (ELitInt 2) ]
+    <> ast [ UVar $ VarLu Imut Nothing "three" $ eBinOp Add (eValInt 1) (eValInt 2) ]
     <> typeErrors []
 
   , name "if expr"
@@ -121,7 +122,7 @@ testCases =
     <> ast
       [ UVar
         $ VarLu Imut Nothing "msg"
-          $ EIf (ELitStr "it works!") (ELitBln True) (ELitStr "or not :(") ]
+          $ eIf (eValStr "it works!") (eValBln True) (eValStr "or not :(") ]
     <> typeErrors []
 
   , name "negate inline"
@@ -131,7 +132,7 @@ testCases =
       , T.False, T.If, T.Name "b", T.Else, T.True]
     <> ast
       [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln) ImplicitRet
-        [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
+        [ SExpr $ eIf (eValBln False) (eName "b") (eValBln True) ]
       ]
 
   , name "negate block"
@@ -145,7 +146,7 @@ testCases =
       , T.Dedent]
     <> ast
       [ UFuncL $ Func "negate" $ Lambda (SigU Pure [Param Imut TBln "b"] $ Just TBln) ImplicitRet
-        [ SExpr $ EIf (ELitBln False) (EName "b") (ELitBln True) ]
+        [ SExpr $ eIf (eValBln False) (eName "b") (eValBln True) ]
       ]
 
   -- TODO: support dependently typed natural numbers
@@ -163,12 +164,12 @@ testCases =
       [ UFuncL $ Func "factorial" $ Lambda
           ( SigU Pure [Param Imut TInt "n"] $ Just TInt) ImplicitRet
           [ SExpr
-            $ EIf
-              (ELitInt 1)
-              (ELesserEq (EName "n") (ELitInt 0))
-              (EMul
-                  (EName "n")
-                  $ EApp $ App (EName "factorial") $ Args Pure [ESub (EName "n") (ELitInt 1)]
+            $ eIf
+              (eValInt 1)
+              (eBinOp LesserEq (eName "n") (eValInt 0))
+              (eBinOp Mul
+                  (eName "n")
+                  $ eApp (eName "factorial") $ Args Pure [eBinOp Sub (eName "n") (eValInt 1)]
               )
           ]
       ]
@@ -182,10 +183,10 @@ testCases =
       [ UFuncL $ Func "clothing" $ Lambda
         ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
         [ SExpr
-          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
-          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
-          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
-          $ EName "jacket"
+          $ eIf (eName "rainCoat") (eSelect (eName "w") "isRaining")
+          $ eIf (eName "coat") (eSelect (eName "w") "isCold")
+          $ eIf (eName "tShirt") (eSelect (eName "w") "isSunny")
+          $ eName "jacket"
         ]
       ]
 
@@ -200,10 +201,10 @@ testCases =
       [ UFuncL $ Func "clothing" $ Lambda
         ( SigU Pure [Param Imut (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
         [ SExpr
-          $ EIf (EName "rainCoat") (ESelect $ Select (EName "w") "isRaining")
-          $ EIf (EName "coat") (ESelect $ Select (EName "w") "isCold")
-          $ EIf (EName "tShirt") (ESelect $ Select (EName "w") "isSunny")
-          $ EName "jacket"
+          $ eIf (eName "rainCoat") (eSelect (eName "w") "isRaining")
+          $ eIf (eName "coat") (eSelect (eName "w") "isCold")
+          $ eIf (eName "tShirt") (eSelect (eName "w") "isSunny")
+          $ eName "jacket"
         ]
       ]
 
@@ -237,12 +238,12 @@ testCases =
               ( SigU PWrite [Param Imut TNat "width", Param Imut TNat "height"] $ Nothing )
               ExplicitRet
               [ SVar
-                $ VarLu Imut Nothing "w" (ECons "Widget" $ Args Pure [EName "width", EName "height"])
+                $ VarLu Imut Nothing "w" (eCons "Widget" $ Args Pure [eName "width", eName "height"])
               , SIf
                 $ Iff
                   $ CondBlock
-                    ( ESelect $ Select (EName "w") "exists" )
-                    [ SExpr $ EApp $ App (ESelect $ Select (EName "w") "draw") $ Args PWrite [] ]
+                    ( eSelect (eName "w") "exists" )
+                    [ SExpr $ eApp (eSelect (eName "w") "draw") $ Args PWrite [] ]
               ]
         ]
 
@@ -277,15 +278,14 @@ testCases =
               $ Just $ TFunc Pure [TFlt] $ TFlt
             ) ImplicitRet
             [ SExpr
-              $ ELambda
-                $ Lambda
+              $ eLambda
                   ( SigU Pure [Param Imut TFlt "x"] $ Just TFlt ) ImplicitRet
                   [ SExpr
-                    $ EAdd
-                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
-                      $ EAdd
-                        ( EMul ( EName "b") $ EName "x" )
-                        $ EName "c"
+                    $ eBinOp Add
+                      ( eBinOp Mul (eName "a") $ eBinOp Mul (eName "x") (eName "x") )
+                      $ eBinOp Add
+                        ( eBinOp Mul ( eName "b") $ eName "x" )
+                        $ eName "c"
                   ]
             ]
       ]
@@ -301,16 +301,15 @@ testCases =
           $ Lambda
             ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] Nothing) ImplicitRet
             [ SExpr
-              $ ELambda
-                $ Lambda
-                  ( SigU Pure [Param Imut TFlt "x"] Nothing) ImplicitRet
-                  [ SExpr
-                    $ EAdd
-                      ( EMul (EName "a") $ EMul (EName "x") (EName "x") )
-                      $ EAdd
-                        ( EMul (EName "b") $ EName "x" )
-                        $ EName "c"
-                  ]
+              $ eLambda
+                ( SigU Pure [Param Imut TFlt "x"] Nothing) ImplicitRet
+                [ SExpr
+                  $ eBinOp Add
+                    ( eBinOp Mul (eName "a") $ eBinOp Mul (eName "x") (eName "x") )
+                    $ eBinOp Add
+                      ( eBinOp Mul (eName "b") $ eName "x" )
+                      $ eName "c"
+                ]
             ]
       ]
 
@@ -324,19 +323,19 @@ testCases =
           $ Lambda
           ( SigU Pure [Param Imut TFlt "a", Param Imut TFlt "b", Param Imut TFlt "c"] $ Just TFlt ) ImplicitRet
           [ SExpr
-            $ EDiv
-              ( EAdd
-                ( ENegate (EName "b") )
-                $ EApp $ App
-                  (ESelect $ Select (EName "math") "sqrt" )
+            $ eBinOp Div
+              ( eBinOp Add
+                ( eUnOp Neg (eName "b") )
+                $ eApp
+                  (eSelect (eName "math") "sqrt" )
                   $ Args
                     Pure
-                    [ ESub
-                      (EMul (EName "b") (EName "b"))
-                      (EMul (ELitInt 4) $ EMul (EName "a") (EName "c"))
+                    [ eBinOp Sub
+                      (eBinOp Mul (eName "b") (eName "b"))
+                      (eBinOp Mul (eValInt 4) $ eBinOp Mul (eName "a") (eName "c"))
                     ]
               )
-              (EMul (ELitInt 2) (EName "a"))
+              (eBinOp Mul (eValInt 2) (eName "a"))
           ]
       ]
 
@@ -369,44 +368,68 @@ testCases =
     <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "Int a = true"
-    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ ELitBln True)]
+    <> typedAst [("a", UVar $ VarMc Imut TInt $ ExprT TBln $ EValBln True)]
     <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TBln}]
 
   , source "$ a = b"
-    <> typedAst [("a", UVar $ VarMc Imut (Errors [UnknownId "b"]) $ EName "b")]
+    <> typedAst [("a", UVar $ VarMc Imut (TError $ UnknownId "b")
+                   $ ExprT (TError $ UnknownId "b") $ EName "b")]
     <> typeErrors [UnknownId "b"]
 
   -- TODO: a proper error type and error handling for recursive definitions
   , source "$ a = a"
-    <> typedAst [("a", UVar $ VarMc Imut (Errors [recursiveDefinition ["a"]]) $ EName "a")]
+    <> typedAst [("a", UVar $ VarMc Imut (TError $ recursiveDefinition ["a"])
+                   $ ExprT (TError $ recursiveDefinition ["a"]) $ EName "a")]
+
     <> typeErrors [recursiveDefinition ["a"]]
 
   , source "$ a = b; $ b = a"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b"]]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b"]]) $ EName "a")]
+    <> let recErr = TError $ recursiveDefinition ["a", "b"]
+       in typedAst [ ("a", UVar $ VarMc Imut recErr $ ExprT recErr $ EName "b")
+                   , ("b", UVar $ VarMc Imut recErr $ ExprT recErr $ EName "a")]
     <> typeErrors [recursiveDefinition ["a", "b"]]
 
+
   , source "$ a = b; $ b = b"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [ErrorPropagated [recursiveDefinition ["b"]]]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["b"]]) $ EName "b")]
+    <> let recDef = recursiveDefinition ["b"]
+           bType = TError recDef
+       in typedAst
+          [ ("a", UVar $ VarMc Imut (TError Propagated) $ ExprT (TError Propagated) $ EName "b")
+          , ("b", UVar $ VarMc Imut bType $ ExprT bType $ EName "b")]
+
     <> typeErrors [recursiveDefinition ["b"]]
+
 
   , source "$ a = b; $ b = c; $ c = a"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b", "c"]]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b", "c"]]) $ EName "c")
-                , ("c", UVar $ VarMc Imut (Errors [recursiveDefinition ["a", "b", "c"]]) $ EName "a")]
+
+    <> let cycleT = TError $ recursiveDefinition ["a", "b", "c"] in
+       typedAst [ ("a", UVar $ VarMc Imut cycleT $ ExprT cycleT $ EName "b")
+                , ("b", UVar $ VarMc Imut cycleT $ ExprT cycleT $ EName "c")
+                , ("c", UVar $ VarMc Imut cycleT $ ExprT cycleT $ EName "a")]
+
     <> typeErrors [recursiveDefinition ["a", "b", "c"]]
 
+
   , source "$ a = b; $ b = c; $ c = b"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Errors [ErrorPropagated [recursiveDefinition ["b", "c"]]]) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["b", "c"]]) $ EName "c")
-                , ("c", UVar $ VarMc Imut (Errors [recursiveDefinition ["b", "c"]]) $ EName "b")]
+    <> let cycle = recursiveDefinition ["b", "c"]
+           cycleT = TError cycle in
+       typedAst [ ("a", UVar $ VarMc Imut (TError Propagated) $ ExprT (TError Propagated) $ EName "b")
+                , ("b", UVar $ VarMc Imut cycleT $ ExprT cycleT $ EName "c")
+                , ("c", UVar $ VarMc Imut cycleT $ ExprT cycleT $ EName "b")]
     <> typeErrors [recursiveDefinition ["b", "c"]]
 
+
   , source "$ a = 1; $ b = b + a"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 1)
-                , ("b", UVar $ VarMc Imut (Errors [recursiveDefinition ["b"]]) $ EAdd (EName "b") (EName "a"))]
+
+    <> let bType = TError $ recursiveDefinition ["b"]
+       in typedAst [ ("a", UVar $ VarMc Imut TInt $ ExprT TInt $ EValInt 1)
+                  , ("b", UVar $ VarMc Imut (TError Propagated) $ ExprT (TError Propagated)
+                      $ EBinOp Add
+                        (ExprT (TError $ recursiveDefinition ["b"]) $ EName "b")
+                        (ExprT TInt $ EName "a"))]
+
     <> typeErrors [recursiveDefinition ["b"]]
+
 
   , source "$ a = true; $ a = false; $ b = a"
     <> typeErrors [CompetingDefinitions]
@@ -415,58 +438,58 @@ testCases =
     <> typeErrors [CompetingDefinitions]
 
   , source "$ a = true; $ b = a"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ ELitBln True)
-                , ("b", UVar $ VarMc Imut (Type TBln) $ EName "a")]
+    <> typedAst [ ("a", UVar $ VarMc Imut TBln $ tValBln True)
+                , ("b", UVar $ VarMc Imut TBln $ tName TBln "a")]
     <> typeErrors []
 
   , source "$ a = b; $ b = true"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Type TBln) $ ELitBln True)]
+    <> typedAst [ ("a", UVar $ VarMc Imut TBln $ tName TBln "b")
+                , ("b", UVar $ VarMc Imut TBln $ tValBln True)]
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
     <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "$ a = 5; $ b = a; $ c = b"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)
-                , ("b", UVar $ VarMc Imut (Type TInt) $ EName "a")
-                , ("c", UVar $ VarMc Imut (Type TInt) $ EName "b")]
+    <> typedAst [ ("a", UVar $ VarMc Imut TInt $ tValInt 5)
+                , ("b", UVar $ VarMc Imut TInt $ tName TInt "a")
+                , ("c", UVar $ VarMc Imut TInt $ tName TInt "b")]
     <> typeErrors []
 
   , source "$ a = 5; $ b = a; Bln c = b"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)
-                , ("b", UVar $ VarMc Imut (Type TInt) $ EName "a")
-                , ("c", UVar $ VarMc Imut (Type TBln) $ EName "b")]
+    <> typedAst [ ("a", UVar $ VarMc Imut TInt $ tValInt 5)
+                , ("b", UVar $ VarMc Imut TInt $ tName TInt "a")
+                , ("c", UVar $ VarMc Imut TBln $ tName TInt "b")]
     <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "Bln a = b; $ b = c; $ c = 5"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TBln) $ EName "b")
-                , ("b", UVar $ VarMc Imut (Type TInt) $ EName "c")
-                , ("c", UVar $ VarMc Imut (Type TInt) $ ELitInt 5)]
+    <> typedAst [ ("a", UVar $ VarMc Imut TBln $ tName TInt "b")
+                , ("b", UVar $ VarMc Imut TInt $ tName TInt "c")
+                , ("c", UVar $ VarMc Imut TInt $ tValInt 5)]
     <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
 
   -- TypeCheck operator tests
   , source "$ a = 3 + 7"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ EAdd (ELitInt 3) (ELitInt 7))]
+    <> typedAst [ ("a", UVar $ VarMc Imut TInt $ tBinOp TInt Add (tValInt 3) (tValInt 7))]
     <> typeErrors []
 
   , source "$ a = b + c; $ b = 3; $ c = 7"
-    <> typedAst [ ("a", UVar $ VarMc Imut (Type TInt) $ EAdd (EName "b") (EName "c"))
-                , ("b", UVar $ VarMc Imut (Type TInt) $ ELitInt 3)
-                , ("c", UVar $ VarMc Imut (Type TInt) $ ELitInt 7)]
+    <> typedAst [ ("a", UVar $ VarMc Imut TInt $ tBinOp TInt Add (tName TInt "b") (tName TInt "c"))
+                , ("b", UVar $ VarMc Imut TInt $ tValInt 3)
+                , ("c", UVar $ VarMc Imut TInt $ tValInt 7)]
     <> typeErrors []
 
   , source "$ a = 1 if true else 0"
-    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitInt 0))]
+    <> typedAst [("a", UVar $ VarMc Imut TInt $ tIf TInt (tValInt 1) (tValBln True) (tValInt 0))]
     <> typeErrors []
 
   , source "$ a = 1 if \"true\" else 0"
-    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitStr "true") (ELitInt 0))]
+    <> typedAst [("a", UVar $ VarMc Imut TInt $ tIf TInt (tValInt 1) (tValStr "true") (tValInt 0))]
     <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TStr}]
 
   , source "$ a = 1 if true else \"zero\""
-    <> typedAst [("a", UVar $ VarMc Imut (Type TInt) $ EIf (ELitInt 1) (ELitBln True) (ELitStr "zero"))]
+    <> typedAst [("a", UVar $ VarMc Imut TInt $ tIf TInt (tValInt 1) (tValBln True) (tValStr "zero"))]
     <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
 
@@ -484,10 +507,10 @@ testCases =
     <> typedAst
       [ ( "one", UFuncM $
         Lambda
-          ( SigC Pure [] $ Type TInt) ImplicitRet
-          [ SExpr $ ELitInt 1]
+          ( SigC Pure [] TInt) ImplicitRet
+          [ SExpr $ tValInt 1]
         )
-      , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "one") $ Args Pure [])
+      , ( "a", UVar $ VarMc Imut TInt $ tApp TInt (tName (TFunc Pure [] TInt) "one") $ Args Pure [])
       ]
     <> typeErrors []
 
@@ -509,10 +532,11 @@ testCases =
     <> typedAst
       [ ( "inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
-          [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
+          ( SigC Pure [Param Imut TInt "x"] TInt ) ImplicitRet
+          [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1 ]
         )
-      , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1] )
+      , ( "a", UVar $ VarMc Imut TInt $
+          tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1] )
       ]
     <> typeErrors []
 
@@ -520,14 +544,16 @@ testCases =
     <> source
       "inc(Int x) -> Int => x + 1\n\
       \$ a = inc(inc(1))"
-    <> typedAst
+    <> let incType = TFunc Pure [TInt] TInt in
+      typedAst
       [ ( "inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
-          [ SExpr $ EAdd (EName "x") $ ELitInt 1]
+          ( SigC Pure [Param Imut TInt "x"] TInt ) ImplicitRet
+          [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1]
         )
-      , ( "a", UVar $ VarMc Imut (Type TInt) $
-          EApp $ App (EName "inc") $ Args Pure [EApp $ App (EName "inc") $ Args Pure [ELitInt 1]]
+      , ( "a", UVar $ VarMc Imut TInt $
+          tApp TInt (tName incType "inc") $ Args Pure
+            [tApp TInt (tName incType "inc") $ Args Pure [tValInt 1]]
         )
       ]
     <> typeErrors []
@@ -556,10 +582,10 @@ testCases =
     <> typedAst
       [ ("inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
-          [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
+          ( SigC Pure [Param Imut TInt "x"] TInt ) ImplicitRet
+          [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1 ]
         )
-      , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
+      , ("a", UVar $ VarMc Imut TInt $ tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1])
       ]
     <> typeErrors []
 
@@ -570,10 +596,11 @@ testCases =
     <> typedAst
       [ ("inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
-          [ SExpr $ EAdd (EName "x") $ ELitInt 1 ]
+          ( SigC Pure [Param Imut TInt "x"] TInt ) ImplicitRet
+          [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1 ]
         )
-      , ("a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitStr "one"])
+      , ("a", UVar $ VarMc Imut TInt
+          $ tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValStr "one"])
       ]
     <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
@@ -587,12 +614,13 @@ testCases =
     <> typedAst
       [ ( "inc", UFuncM $
         Lambda
-          ( SigC Pure [Param Imut TInt "x"] $ Type TInt ) ImplicitRet
-          [ SVar $ VarLc Imut (Type TInt) "one" (ELitInt 1)
-          , SExpr $ EAdd (EName "x") (EName "one")
+          ( SigC Pure [Param Imut TInt "x"] TInt ) ImplicitRet
+          [ SVar $ VarLc Imut TInt "one" (tValInt 1)
+          , SExpr $ tBinOp TInt Add (tName TInt "x") (tName TInt "one")
           ]
         )
-      , ( "a", UVar $ VarMc Imut (Type TInt) $ EApp $ App (EName "inc") $ Args Pure [ELitInt 1])
+      , ( "a", UVar $ VarMc Imut TInt
+          $ tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1])
       ]
     <> typeErrors []
  ]

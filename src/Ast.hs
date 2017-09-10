@@ -3,19 +3,14 @@
 {-# language KindSignatures #-}
 {-# language StandaloneDeriving #-}
 
--- Potential future edit: parameterize using actual collection and an inferrable type
--- (may be able to reuse more code across data constructors)
-
 module Ast
   ( module Ast
-  , module Types
   ) where
 
-import MultiMap
-import Types
-import TypeErrors
+import qualified Data.Set as Set
 
--- Finite number of steps friend!
+import MultiMap
+
 data Storage
   = SList
   | SMap
@@ -24,6 +19,7 @@ data TypePhase
   = Typed
   | UnTyped
 
+-- Finite number of steps friend!
 
 type Table a = MultiMap Name a
 
@@ -105,18 +101,26 @@ deriving instance Show (Lambda tc)
 type SigU = Sig 'UnTyped
 type SigC = Sig 'Typed
 data Sig :: TypePhase -> * where
-  SigU :: Purity -> Params -> Maybe Type -> Sig 'UnTyped
-  SigC :: Purity -> Params -> TypeOrErrors -> Sig 'Typed
+  SigU :: Purity -> ParamsU -> Maybe TypeU -> Sig 'UnTyped
+  SigC :: Purity -> ParamsT -> TypeT -> Sig 'Typed
 
 deriving instance Eq (Sig tc)
 deriving instance Show (Sig tc)
 
 
-type Params = [Param]
+type ParamsU = Params 'UnTyped
+type ParamsT = Params 'Typed
+type Params tp = [Param tp]
 
-data Param
-  = Param Mut Type Name
+type ParamU = Param 'UnTyped
+type ParamT = Param 'Typed
+data Param :: TypePhase -> * where
+  Param :: Mut -> Type tp -> Name -> Param tp
   deriving(Eq, Show)
+
+-- data Param
+--   = Param Mut Type Name
+--   deriving(Eq, Show)
 
 type BlockU = Block 'UnTyped
 type BlockC = Block 'Typed
@@ -156,61 +160,87 @@ type VarMu = Var 'SMap 'UnTyped
 type VarLc = Var 'SList 'Typed
 type VarMc = Var 'SMap 'Typed
 data Var :: Storage -> TypePhase -> * where
-  VarLu :: Mut -> Maybe Type -> Name -> ExprU -> VarLu
-  VarMu :: Mut -> Maybe Type -> ExprU -> VarMu
-  VarLc :: Mut -> TypeOrErrors -> Name -> ExprC -> VarLc
-  VarMc :: Mut -> TypeOrErrors -> ExprC -> VarMc
+  VarLu :: Mut -> Maybe TypeU -> Name -> ExprU -> VarLu
+  VarMu :: Mut -> Maybe TypeU -> ExprU -> VarMu
+  VarLc :: Mut -> TypeT -> Name -> ExprT -> VarLc
+  VarMc :: Mut -> TypeT -> ExprT -> VarMc
 
 deriving instance Eq (Var f c)
 deriving instance Show (Var f c)
 
-data ExprX :: TypePhase -> * where
-  ExprU :: Expr 'UnTyped -> ExprX 'UnTyped
-  ExprC :: Type -> Expr 'Typed -> ExprX 'Typed
-
 type ExprU = Expr 'UnTyped
-type ExprC = Expr 'Typed
+type ExprT = Expr 'Typed
 data Expr :: TypePhase -> * where
-  EApp :: App tc -> Expr tc
-  ESelect :: Select tc -> Expr tc
-  EName :: Name -> Expr tc
-
-  EIf :: Expr tc -> {- if -} Expr tc -> {- else -} Expr tc -> Expr tc
-  ELambda :: Lambda tc -> Expr tc
-  ECons :: Typename -> Args tc -> Expr tc
-
-  -- Unary operators
-  ENegate :: Expr tc -> Expr tc
-
-  -- Binary operators
-  EAdd :: Expr tc -> Expr tc -> Expr tc
-  ESub :: Expr tc -> Expr tc -> Expr tc
-  EMul :: Expr tc -> Expr tc -> Expr tc
-  EDiv :: Expr tc -> Expr tc -> Expr tc
-  EGreater :: Expr tc -> Expr tc -> Expr tc
-  ELesser :: Expr tc -> Expr tc -> Expr tc
-  EGreaterEq :: Expr tc -> Expr tc -> Expr tc
-  ELesserEq :: Expr tc -> Expr tc -> Expr tc
-
-  -- Literals
-  ELitBln :: Bool -> Expr tc
-  ELitChr :: Char -> Expr tc
-  ELitFlt :: Float -> Expr tc
-  ELitInt :: Int -> Expr tc
-  ELitStr :: String -> Expr tc
+  ExprU :: ExprU' -> ExprU
+  ExprT :: TypeT -> ExprT' -> ExprT
 
 deriving instance Eq (Expr tc)
 deriving instance Show (Expr tc)
 
+type ExprU' = Expr' 'UnTyped
+type ExprT' = Expr' 'Typed
+data Expr' :: TypePhase -> * where
+  EApp :: App tc -> Expr' tc
+  ESelect :: Select tc -> Expr' tc
+  EName :: Name -> Expr' tc
 
--- Expressions that can appear on the left side of an assignment
+  EIf :: Expr tc -> {- if -} Expr tc -> {- else -} Expr tc -> Expr' tc
+  ELambda :: Lambda tc -> Expr' tc
+  ECons :: Typename -> Args tc -> Expr' tc
+
+  EUnOp :: UnOp -> Expr tc -> Expr' tc
+  EBinOp :: BinOp -> Expr tc -> Expr tc -> Expr' tc
+
+  -- Literals
+  EValBln :: Bool -> Expr' tc
+  EValChr :: Char -> Expr' tc
+  EValFlt :: Float -> Expr' tc
+  EValInt :: Int -> Expr' tc
+  EValStr :: String -> Expr' tc
+
+deriving instance Eq (Expr' tc)
+deriving instance Show (Expr' tc)
+
+data UnOp
+  = Not
+  | Neg
+  deriving(Eq, Show)
+
+data BinOp
+  = And
+  | Or
+  | Add
+  | Sub
+  | Mul
+  | Div
+  | Greater
+  | Lesser
+  | GreaterEq
+  | LesserEq
+  | Equal
+  | OpUser String
+  deriving(Eq, Ord, Show)
+
+
+type LExprU = LExpr 'UnTyped
+type LExprT = LExpr 'Typed
 data LExpr :: TypePhase -> * where
-  LApp :: App tc -> LExpr tc
-  LSelect :: Select tc -> LExpr tc
-  LName :: Name -> LExpr tc
+  LExprU :: LExprU' -> LExprU
+  LExprT :: TypeT -> LExprT' -> LExprT
 
 deriving instance Eq (LExpr tc)
 deriving instance Show (LExpr tc)
+
+-- LExpr are a subset of Expr that can appear on the left side of an assignment
+type LExprU' = LExpr' 'UnTyped
+type LExprT' = LExpr' 'Typed
+data LExpr' :: TypePhase -> * where
+  LApp :: App tc -> LExpr' tc
+  LSelect :: Select tc -> LExpr' tc
+  LName :: Name -> LExpr' tc
+
+deriving instance Eq (LExpr' tc)
+deriving instance Show (LExpr' tc)
 
 type AppU = App 'UnTyped
 type AppC = App 'Typed
@@ -219,6 +249,7 @@ data App :: TypePhase -> * where
 
 deriving instance Eq (App tc)
 deriving instance Show (App tc)
+
 
 type ArgsU = Args 'UnTyped
 type ArgsC = Args 'Typed
@@ -235,7 +266,96 @@ data Select :: TypePhase -> * where
 deriving instance Eq (Select tc)
 deriving instance Show (Select tc)
 
-
 type Name = String
 type Names = [Name]
+
+
+data Kind
+  = KNamespace
+  | KType
+  | KExpr TypeT
+
+type TypeU = Type 'UnTyped
+type TypeT = Type 'Typed
+data Type :: TypePhase -> * where
+  TUser :: Typename -> Type tp
+
+  -- Neither caller nor callee care about left-most mutability of param and return types
+  TFunc :: Purity -> [Type tp] -> Type tp -> Type tp
+
+  TTempRef :: Mut -> Type tp -> Type tp
+  TPersRef :: Mut -> Type tp -> Type tp
+
+  TOption :: Mut -> Type tp -> Type tp
+  TZeroPlus :: Mut -> Type tp -> Type tp
+  TOnePlus :: Mut -> Type tp -> Type tp
+
+  TBln :: Type tp
+  TChr :: Type tp
+  TFlt :: Type tp
+  TInt :: Type tp
+  TNat :: Type tp
+  TStr :: Type tp
+
+  TNone :: Type tp
+
+  -- Type errors can only occur after the ast has been type checked
+  TError :: Error -> TypeT
+
+deriving instance Eq (Type tp)
+deriving instance Ord (Type tp)
+deriving instance Show (Type tp)
+
+type Typename = String
+
+data Purity
+  = Pure
+  | PRead
+  | PWrite
+  deriving(Eq, Ord, Show)
+
+data Mut
+  = Mut         -- Mutable in present scope
+  | Imut        -- Immutable in present scope
+  -- Constant   -- Not mutable in any scope - planned
+  -- CtConstant -- Known at compile time - planned
+  deriving(Eq, Ord, Show)
+
+
+type Errors = [Error]
+
+data Error
+
+  = UnknownId String
+
+  | UnknownTypeName String
+  | AmbiguousTypeName String
+
+  -- Better conflict or mismatch?
+  | TypeConflict { typeRequired :: TypeT, typeFound :: TypeT }
+
+  -- Incompatible types? No common supertype?
+  | FailedToUnify (Set.Set TypeT)
+
+  | NonApplicable TypeT
+  | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
+  | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
+
+  | UndefinedOperator BinOp TypeT TypeT
+
+  -- Multiple, competing, duplicate, overlapping, contrandictory?...
+  | CompetingDefinitions
+
+  | RecursiveDefinition (Set.Set Name)
+
+  | NeedExprFoundType
+  | NeedExprFoundNamespace
+
+  | Propagated
+
+  deriving(Eq, Ord, Show)
+
+recursiveDefinition :: [String] -> Error
+recursiveDefinition = RecursiveDefinition . Set.fromList
+
 

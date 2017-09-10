@@ -3,11 +3,9 @@
 module TypeContext
   ( module Ast
   , module TypeContext
-  , module Kinds
   ) where
 
 import Ast
-import Kinds
 
 import MultiMap
 
@@ -30,26 +28,24 @@ lookupKinds context name = case context of
       UNamespaceM _ -> KNamespace
       UClass _ -> KType
 
-      -- TODO: how to handle this error case?
-      UFuncM (Lambda (SigC purity params typeOrError) _ _) -> case typeOrError of
-        Type returnType -> KExpr (TFunc purity (map (\(Param _ t _) -> t) params) returnType)
+      UFuncM (Lambda (SigC purity params returnType) _ _) ->
+        KExpr (TFunc purity (map (\(Param _ t _) -> t) params) returnType)
 
-      UVar (VarMc _ typeOrError _) -> case typeOrError of
-        Type t -> KExpr t
-        Errors e -> KError e
+      UVar (VarMc _ typ _) -> KExpr typ
 
     blockLookup :: Name -> LocalBindings -> [Kind]
     blockLookup n table = multiLookup n table
 
-initBlockBindings :: Bindings -> Params -> Bindings
+initBlockBindings :: Bindings -> ParamsT -> Bindings
 initBlockBindings outerContext params = LocalBindings (initLocalBindingsFromParams params) outerContext
   where
-    initLocalBindingsFromParams :: Params -> LocalBindings
+    initLocalBindingsFromParams :: ParamsT -> LocalBindings
     initLocalBindingsFromParams = multiFromList . map paramToNameAndKind
 
-    paramToNameAndKind :: Param -> (Name, Kind)
-    -- TODO: This raises a really good question, what am I doing about mutability?
-    paramToNameAndKind (Param m t n) = (n, KExpr t)
+    paramToNameAndKind :: ParamT -> (Name, Kind)
+
+    -- TODO: This raises a good question, how am I enforcing mutability?
+    paramToNameAndKind (Param _ t n) = (n, KExpr t)
 
 addLocalBinding :: Name -> Kind -> Bindings -> Bindings
 addLocalBinding name kind (LocalBindings innerBindings outerBindings) =

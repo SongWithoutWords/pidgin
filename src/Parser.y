@@ -4,6 +4,7 @@ module Parser where
 import Preface
 
 import Ast
+import AstBuilderU
 import ParseError
 import qualified Tokens as T
 }
@@ -255,7 +256,7 @@ shallowStmt
 
 ifBranch
   : if condBlock                    { Iff $2 }
-  | if condBlock else block { IfElse $2 $4 }
+  | if condBlock else block         { IfElse $2 $4 }
   | if condBlock else ifBranch      { IfElif $2 $4 }
 
 condBlock
@@ -265,22 +266,22 @@ var
   : mut maybeType name "=" expr { VarLu $1 $2 $3 $5 }
 
 expr
-  : eIf     { $1 }
-  | lambda  { ELambda $1 }
+  : eIf    { ExprU $1 }
+  | lambda { ExprU $ ELambda $1 }
 
-  | apply   { EApp $1 }
-  | select  { ESelect $1 }
-  | name    { EName $1 }
+  | apply  { ExprU $ EApp $1 }
+  | select { ExprU $ ESelect $1 }
+  | name   { ExprU $ EName $1 }
   
-  | cons    { $1 }
+  | cons   { ExprU $1 }
 
-  | op      { $1 }
+  | op     { $1 }
 
-  | litBln { ELitBln $1 }
-  | litChr { ELitChr $1 }
-  | litFlt { ELitFlt $1 }
-  | litInt { ELitInt $1 }
-  | litStr { ELitStr $1 }
+  | litBln { ExprU $ EValBln $1 }
+  | litChr { ExprU $ EValChr $1 }
+  | litFlt { ExprU $ EValFlt $1 }
+  | litInt { ExprU $ EValInt $1 }
+  | litStr { ExprU $ EValStr $1 }
 
 eIf
   : expr if expr else optEol expr { EIf $1 $3 $6 }
@@ -290,24 +291,28 @@ optEol
   | {- none -}  {}
 
 lexpr
-  : apply   { LApp $1 }
-  | select  { LSelect $1 } 
-  | name    { LName $1 }
+  : apply   { LExprU $ LApp $1 }
+  | select  { LExprU $ LSelect $1 } 
+  | name    { LExprU $ LName $1 }
 
 select
   : expr "." name   { Select $1 $3 }
 
 op
   : "(" expr ")"            { $2 }
-  | "-" expr %prec prec_neg { ENegate $2 }
-  | expr "+" expr           { EAdd $1 $3 }
-  | expr "-" expr           { ESub $1 $3 }
-  | expr "*" expr           { EMul $1 $3 }
-  | expr "/" expr           { EDiv $1 $3 }
-  | expr ">" expr           { EGreater $1 $3 }
-  | expr "<" expr           { ELesser $1 $3 }
-  | expr ">=" expr          { EGreaterEq $1 $3 }
-  | expr "<=" expr          { ELesserEq $1 $3 } 
+
+  | "-" expr %prec prec_neg { eUnOp Neg $2 } -- ExprU $ ENegate $2 }
+
+  | expr "+" expr           { eBinOp Add $1 $3 } -- ExprU $ EAdd $1 $3 }
+  | expr "-" expr           { eBinOp Sub $1 $3 } -- ExprU $ ESub $1 $3 }
+  | expr "*" expr           { eBinOp Mul $1 $3 } -- ExprU $ EMul $1 $3 }
+  | expr "/" expr           { eBinOp Div $1 $3 } -- ExprU $ EDiv $1 $3 }
+  | expr ">" expr           { eBinOp Greater $1 $3 } -- ExprU $ EGreater $1 $3 }
+  | expr "<" expr           { eBinOp Lesser $1 $3 } -- ExprU $ ELesser $1 $3 }
+  | expr ">=" expr          { eBinOp GreaterEq $1 $3 } -- ExprU $ EGreaterEq $1 $3 }
+  | expr "<=" expr          { eBinOp LesserEq $1 $3 } -- ExprU $ ELesserEq $1 $3 } 
+
+  | expr name expr          { eBinOp (OpUser $2) $1 $3 }
 
 litBln
   : true  {True}

@@ -20,6 +20,7 @@ module TypeCheckM
   , pushSearchName
   , popSearchName
   , raise
+  , foundError
 
   ) where
 
@@ -104,5 +105,10 @@ popSearchName = do
 
 raise :: Error -> TypeCheckM s ()
 raise e = tell [e]
+
+foundError :: Error -> TypeCheckM s TypeT
+foundError err = do
+  raise err
+  return $ TError err
 
 

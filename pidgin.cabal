@@ -22,9 +22,10 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Ast
+                     , AstBuilderT
+                     , AstBuilderU
                      , CodeGen
                      , FormatAst
-                     , Kinds
                      , Lexer
                      , MultiMapAst
                      , MultiMap
@@ -34,12 +35,11 @@ library
                      , Tokens 
                      , Transforms
                      , TypeCheck
-                     , TypeCheckM
-                     , TypeContext
-                     , TypeErrors
-                     , Types
 
   other-modules:       Debug
+                     , TypeCheckM
+                     , TypeCheckUtil
+                     , TypeContext
 
   build-tools:         alex
                      , happy
