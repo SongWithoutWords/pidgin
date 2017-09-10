@@ -27,6 +27,7 @@ library
                      , CodeGen
                      , FormatAst
                      , Lexer
+                     , LlvmUtil
                      , MultiMapAst
                      , MultiMap
                      , ParseError
@@ -45,6 +46,7 @@ library
                      , happy
 
   build-depends:       base
+                     , bytestring
                      , containers
                      , array
                      , llvm-hs
