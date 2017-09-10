@@ -38,6 +38,7 @@ library
                      , TypeCheck
 
   other-modules:       Debug
+                     , CodeGenUtil
                      , TypeCheckM
                      , TypeCheckUtil
                      , TypeContext
