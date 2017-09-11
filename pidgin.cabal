@@ -25,6 +25,7 @@ library
                      , AstBuilderT
                      , AstBuilderU
                      , CodeGen
+                     , CodeGenM
                      , FormatAst
                      , Lexer
                      , LlvmUtil
