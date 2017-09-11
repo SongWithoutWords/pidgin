@@ -1,16 +1,28 @@
 module CodeGenUtil where
 
-import qualified LLVM.AST as LAst
+import Data.String
 
-import qualified LLVM.AST.Type as LType
+import qualified LLVM.AST as A
+import qualified LLVM.AST.Type as T
 
 import Ast
+import CodeGenM
 
-typeToLlvmType :: TypeT -> LAst.Type
+typeToLlvmType :: TypeT -> A.Type
 typeToLlvmType t = case t of
-  TBln -> LType.i1
-  TChr -> LType.i8
-  TFlt -> LType.float
-  TInt -> LType.i32
+  TBln -> T.i1
+  TChr -> T.i8
+  TFlt -> T.float
+  TInt -> T.i32
+
+typeOfOperand :: A.Operand -> A.Type
+typeOfOperand op = case op of
+  A.LocalReference typ _ -> typ
+  -- A.ConstantOperand (Constant )
+
+addLocalBinding :: String -> TypeT -> CodeGenM ()
+addLocalBinding name typ = addBinding name $ A.LocalReference (typeToLlvmType typ) (fromString name)
+
+
 
 

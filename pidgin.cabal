@@ -25,7 +25,6 @@ library
                      , AstBuilderT
                      , AstBuilderU
                      , CodeGen
-                     , CodeGenM
                      , FormatAst
                      , Lexer
                      , LlvmUtil
@@ -39,6 +38,8 @@ library
                      , TypeCheck
 
   other-modules:       Debug
+                     , CodeGenInstructions
+                     , CodeGenM
                      , CodeGenUtil
                      , TypeCheckM
                      , TypeCheckUtil

@@ -11,8 +11,11 @@ import Data.String
 
 import qualified LLVM.AST as A
 import qualified LLVM.AST.Global as G
+import qualified LLVM.AST.Type as T
 
 import Ast
+import CodeGenInstructions
+import CodeGenM
 import CodeGenUtil
 import MultiMap
 
@@ -24,7 +27,6 @@ codeGen ast = A.defaultModule
 
 genUnit :: String -> UnitMc -> A.Definition
 genUnit name unit = A.GlobalDefinition $ case unit of
-
 
   -- It is quite stupid that this "ret notation" survives all the way to code gen
   -- Although I think purity could be discarded earlier in copilation, it may help
@@ -39,26 +41,44 @@ genUnit name unit = A.GlobalDefinition $ case unit of
 -- Lets see what we can do the good old fashioned way first, may soon resort to monads
 
 -- I'll figure it out!
-genBlock :: ParamsT -> BlockC -> [A.BasicBlock]
-genBlock params block =
-  [ A.BasicBlock "entry"
-    (concatMap genStmt block)
-    undefined
-  ]
+genBlock :: ParamsT -> BlockC -> [G.BasicBlock] -- CodeGenM ()
+genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
 
-genStmt :: StmtC -> [A.Named A.Instruction]
+genBlock' :: ParamsT -> BlockC -> CodeGenM ()
+genBlock' params block = do
+  entryBlockName <- addBlock $ fromString "entry"
+  setBlock entryBlockName
+  mapM_ addParamBinding params
+  mapM_ genStmt block
+
+addParamBinding :: ParamT -> CodeGenM ()
+addParamBinding (Param _ typ name) = addLocalBinding name typ
+ 
+
+genStmt :: StmtC -> CodeGenM ()
 genStmt stmt = case stmt of
 
-  SVar (VarLc mut typ name e) ->
-    let (intermediaries, instruction) = genExpr e in
-    intermediaries ++ [(fromString name) A.:= instruction]
-
+  SVar (VarLc _ _ name e) -> do
+    oper <- genExpr e
+    addBinding name oper
 
 -- returns a sequence of temporaries and the final instruction
-genExpr :: ExprT -> ([A.Named A.Instruction], A.Instruction)
+genExpr :: ExprT -> CodeGenM A.Operand
 genExpr (ExprT t e) = case e of
-  EBinOp op a b -> undefined
 
-  
+  EBinOp op a@(ExprT ta _) b@(ExprT tb _) -> let
+    genBinOp :: BinOp -> TypeT -> TypeT -> A.Operand -> A.Operand -> CodeGenM A.Operand
+
+    -- how does llvm handle operations between different sized ints?
+
+    genBinOp Add TInt TInt = add 32
+
+    genBinOp Add TFlt TFlt = fadd T.FloatFP
+
+    in do
+      a' <- genExpr a
+      b' <- genExpr b
+      genBinOp op ta tb a' b'
+
 
 
