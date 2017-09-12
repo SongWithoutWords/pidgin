@@ -15,14 +15,15 @@ typeToLlvmType t = case t of
   TFlt -> T.float
   TInt -> T.i32
 
+nameToLlvmName :: Name -> A.Name
+nameToLlvmName = fromString
+
 typeOfOperand :: A.Operand -> A.Type
 typeOfOperand op = case op of
   A.LocalReference typ _ -> typ
-  -- A.ConstantOperand (Constant )
 
 addLocalBinding :: String -> TypeT -> CodeGenM ()
-addLocalBinding name typ = addBinding name $ A.LocalReference (typeToLlvmType typ) (fromString name)
-
-
+addLocalBinding name typ = addBinding name
+  $ A.LocalReference (typeToLlvmType typ) (nameToLlvmName name)
 
 
