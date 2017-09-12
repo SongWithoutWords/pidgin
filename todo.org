@@ -1,6 +1,7 @@
-* Project Todos 
-** General improvements
+* todos
+** Parsing/Ast
 *** TODO Should I parse operators as functions generally, possibly even expressions?
+*** TODO Suffix and type parameter cleanup in ast
 ** Type checking
 ** Code generation
 *** TODO Eliminate implicit rets before code generation, possibly during post parse
