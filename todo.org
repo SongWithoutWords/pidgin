@@ -5,6 +5,7 @@
 ** Code generation
 *** TODO Eliminate implicit rets before code generation, possibly during post parse
 **** TODO Make the change in the ast
+***** TODO Optional ret at the end of each block, eliminate useless expressions as well
 **** TODO Make the necessary changes so that it runs and compiles
 ** Misc
 *** TODO Delete old makefile
