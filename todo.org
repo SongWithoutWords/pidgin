@@ -1,0 +1,11 @@
+* Project Todos 
+** General improvements
+*** TODO Should I parse operators as functions generally, possibly even expressions?
+** Type checking
+** Code generation
+*** TODO Eliminate implicit rets before code generation, possibly during post parse
+**** TODO Make the change in the ast
+**** TODO Make the necessary changes so that it runs and compiles
+** Misc
+*** TODO Delete old makefile
+     
