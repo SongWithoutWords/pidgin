@@ -28,10 +28,10 @@ library
                      , FormatAst
                      , Lexer
                      , LlvmUtil
-                     , MultiMapAst
                      , MultiMap
                      , ParseError
                      , Parser
+                     , PostParseAst
                      , Preface
                      , Tokens 
                      , Transforms

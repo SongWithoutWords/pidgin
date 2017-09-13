@@ -1,19 +1,19 @@
 {-# language GADTs #-}
 
-module MultiMapAst (multiMapAst) where
+module PostParseAst (postParseAst) where
 
 import Control.Monad.Writer
 
 import Ast
 import MultiMap
 
+postParseAst :: Ast0 -> (Ast1, Errors)
+postParseAst = runWriter . mapUnits
+
 type ErrorM a = Writer Errors a
 
 raise :: Error -> ErrorM ()
 raise e = tell [e]
-
-multiMapAst :: Ast0 -> (Ast1, Errors)
-multiMapAst = runWriter . mapUnits
 
 mapNamedList :: (a -> ErrorM b) -> [Named a] -> ErrorM (Table b)
 mapNamedList f xs = do
