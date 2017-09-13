@@ -11,65 +11,67 @@ import qualified Data.Set as Set
 
 import MultiMap
 
-data Storage
-  = SList
-  | SMap
 
-data TypePhase
-  = Typed
-  | UnTyped
+data A -- Post-parse phase
+  = A0
+  | A1
+
+data B -- Type-checking phase
+  = B0
+  | B1
 
 -- Finite number of steps friend!
+  -- Also, bring back MType!
+
+data Named a = Named Name a
+  deriving(Eq, Show)
 
 type Table a = MultiMap Name a
 
-type AstLu = [UnitLu]
-type AstMu = Table UnitMu
-type AstMc = Table UnitMc
+type Ast0 = [Named Unit0]
+type Ast1 = Table Unit1
+type Ast2 = Table Unit2
+
+type Unit0 = Unit 'A0 'B0
+type Unit1 = Unit 'A1 'B0
+type Unit2 = Unit 'A1 'B1
+data Unit :: A -> B -> * where
+
+  UNamespace0 :: [Named (Unit 'A0 b)] -> Unit 'A0 b
+  UNamespace1 :: Table (Unit 'A1 b) -> Unit 'A1 b
+
+  UClass :: Class a b -> Unit a b
+  UFunc :: Func a b -> Unit a b
+  UVar :: Var a b -> Unit a b
+
+deriving instance Eq (Unit a b)
+deriving instance Show (Unit a b)
 
 
-type UnitLu = Unit 'SList 'UnTyped
-type UnitMu = Unit 'SMap 'UnTyped
-type UnitMc = Unit 'SMap 'Typed
-data Unit :: Storage -> TypePhase -> * where
+type Class0 = Class 'A0 'B0
+type Class1 = Class 'A1 'B0
+type Class2 = Class 'A1 'B1
+data Class :: A -> B -> * where
+  Class0 :: [Named (Member 'A0 b)] -> Class 'A0 b
+  Class1 :: Table (Member 'A1 b) -> Class 'A1 b
 
-  UNamespaceL :: Name -> [Unit 'SList ts] -> Unit 'SList ts
-  UNamespaceM :: Table (Unit 'SMap ts) -> Unit 'SMap ts
-
-  UClass :: Class col ts -> Unit col ts
-
-  UFuncL :: Func ts -> Unit 'SList ts
-  UFuncM :: Lambda ts -> Unit 'SMap ts
-
-  UVar :: Var col ts -> Unit col ts
-
-deriving instance Eq (Unit col tc)
-deriving instance Show (Unit col tc)
+deriving instance Eq (Class a b)
+deriving instance Show (Class a b)
 
 
-type ClassLu = Class 'SList 'UnTyped
-type ClassMu = Class 'SMap 'UnTyped
-type ClassMc = Class 'SMap 'Typed
-data Class :: Storage -> TypePhase -> * where
-  ClassL :: Name -> [Member 'SList tc] -> Class 'SList tc
-  ClassM :: Table (Member 'SMap tc) -> Class 'SMap tc
+type Member0 = Member 'A0 'B0
+type Member1 = Member 'A1 'B0
+type Member2 = Member 'A1 'B1
+data Member :: A -> B -> * where
+  MClass :: Access -> Class a b -> Member a b
 
-deriving instance Eq (Class col tc)
-deriving instance Show (Class col tc)
+  MFunc :: Access -> Mut -> Func a b -> Member a b
 
+  MCons :: Access -> Func a b -> Member a b
+  MVar :: Access -> Var a b -> Member a b
 
-type MemberLu = Member 'SList 'UnTyped
-type MemberMu = Member 'SMap 'UnTyped
-type MemberMc = Member 'SMap 'Typed
-data Member :: Storage -> TypePhase -> * where
-  MClass :: Access -> Class col tc -> Member col tc
-  MFuncL :: Access -> Mut -> Func tc -> Member 'SList tc
-  MFuncM :: Access -> Mut -> Lambda tc -> Member 'SMap tc
-  MCons :: Access -> Lambda tc -> Member col tc
-  MVar :: Access -> Var col tc -> Member col tc
-
-deriving instance Eq (Member col tc)
-deriving instance Show (Member col tc)
+deriving instance Eq (Member a b)
+deriving instance Show (Member a b)
 
 
 data Access
@@ -78,134 +80,138 @@ data Access
   | Pri
   deriving(Eq, Show)
 
-data Func :: TypePhase -> * where
-  Func :: Name -> Lambda tc -> Func tc
-
-deriving instance Eq (Func tc)
-deriving instance Show (Func tc)
 
 data RetNotation
   = ImplicitRet
   | ExplicitRet
   deriving(Eq, Show)
 
-type LambdaU = Lambda 'UnTyped
-type LambdaC = Lambda 'Typed
-data Lambda :: TypePhase -> * where
-  Lambda :: Sig tc -> RetNotation -> Block tc -> Lambda tc
+type FuncU = Func 'A0 'B0
+type FuncC = Func 'A0 'B1
+data Func :: A -> B -> * where
 
-deriving instance Eq (Lambda tc)
-deriving instance Show (Lambda tc)
+  -- ImplicitRets are replaced by a return field on block during post-parsing
+  Func0 :: Sig b -> RetNotation -> Block 'A0 b -> Func 'A0 b
+  Func1 :: Sig b -> Block 'A1 b -> Func 'A1 b
 
-
-type SigU = Sig 'UnTyped
-type SigC = Sig 'Typed
-data Sig :: TypePhase -> * where
-  SigU :: Purity -> ParamsU -> Maybe TypeU -> Sig 'UnTyped
-  SigC :: Purity -> ParamsT -> TypeT -> Sig 'Typed
-
-deriving instance Eq (Sig tc)
-deriving instance Show (Sig tc)
+deriving instance Eq (Func a b)
+deriving instance Show (Func a b)
 
 
-type ParamsU = Params 'UnTyped
-type ParamsT = Params 'Typed
-type Params tp = [Param tp]
+type Sig0 = Sig 'B0
+type Sig2 = Sig 'B1
+data Sig :: B -> * where
+  Sig0 :: Purity -> Params0 -> Maybe Type0 -> Sig0
+  Sig2 :: Purity -> Params2 -> Type2 -> Sig2
 
-type ParamU = Param 'UnTyped
-type ParamT = Param 'Typed
-data Param :: TypePhase -> * where
-  Param :: Mut -> Type tp -> Name -> Param tp
+deriving instance Eq (Sig b)
+deriving instance Show (Sig b)
+
+-- In future Params could be alias for [Named MType]
+type Params0 = Params 'B0
+type Params2 = Params 'B1
+type Params b = [Param b]
+
+type Param0 = Param 'B0
+type Param2 = Param 'B1
+data Param :: B -> * where
+  Param :: Mut -> Type b -> Name -> Param b
   deriving(Eq, Show)
 
--- data Param
---   = Param Mut Type Name
---   deriving(Eq, Show)
 
-type BlockU = Block 'UnTyped
-type BlockC = Block 'Typed
-type Block tc = [Stmt tc]
+type Block0 = Block 'A0 'B0
+type Block1 = Block 'A1 'B0
+type Block2 = Block 'A1 'B1
+data Block :: A -> B -> * where
+  Block0 :: [Stmt 'A0 b] -> Block 'A0 b
+  Block1 :: [Stmt 'A1 b] -> Maybe (Expr 'A1 b) -> Block 'A1 b
 
--- TODO: some changes to consider
-  -- Either limit Stmts to apps and lone exprs only at the end of blocks,
-  -- or replace SExpr with SRet or SApp at some stage before code generation
-
-  -- Also consider bringing back Type and MType
-
-type StmtU = Stmt 'UnTyped
-type StmtC = Stmt 'Typed
-data Stmt :: TypePhase -> * where
-  SAssign :: LExpr tc -> Expr tc -> Stmt tc
-  SVar :: Var 'SList tc -> Stmt tc
-  SFunc :: Func tc -> Stmt tc
-  SIf :: IfBranch tc -> Stmt tc
-  SExpr :: Expr tc -> Stmt tc
-  SRet :: Expr tc -> Stmt tc
-
-deriving instance Eq (Stmt tc)
-deriving instance Show (Stmt tc)
+deriving instance Eq (Block a b)
+deriving instance Show (Block a b)
 
 
-data IfBranch :: TypePhase -> *  where
-  Iff :: CondBlock tc -> IfBranch tc
-  IfElse :: CondBlock tc -> Block tc -> IfBranch tc
-  IfElif :: CondBlock tc -> IfBranch tc -> IfBranch tc
+type Stmt0 = Stmt 'A0 'B0
+type Stmt1 = Stmt 'A1 'B0
+type Stmt2 = Stmt 'A1 'B1
+data Stmt :: A -> B -> * where
 
-deriving instance Eq (IfBranch tc)
-deriving instance Show (IfBranch tc)
+  SAssign :: LExpr a b -> Expr a b -> Stmt a b
+  SVar :: Named (Var a b) -> Stmt a b
+  -- SFunc :: Named (Func a b) -> Stmt a b
+  -- SIf :: IfBranch a b -> Stmt a b
 
-data CondBlock :: TypePhase -> * where
-  CondBlock :: Expr tc -> Block tc -> CondBlock tc
+  -- SExprs and SRets are replaced by SApps and ret field on block during post-parsing
+  SExpr :: Expr 'A0 b -> Stmt 'A0 b
+  SRet :: Expr 'A0 b -> Stmt 'A0 b
 
-deriving instance Eq (CondBlock tc)
-deriving instance Show (CondBlock tc)
+  SApp :: App 'A1 b -> Stmt 'A1 b
+
+deriving instance Eq (Stmt a b)
+deriving instance Show (Stmt a b)
 
 
-type VarLu = Var 'SList 'UnTyped
-type VarMu = Var 'SMap 'UnTyped
-type VarLc = Var 'SList 'Typed
-type VarMc = Var 'SMap 'Typed
-data Var :: Storage -> TypePhase -> * where
-  VarLu :: Mut -> Maybe TypeU -> Name -> ExprU -> VarLu
-  VarMu :: Mut -> Maybe TypeU -> ExprU -> VarMu
-  VarLc :: Mut -> TypeT -> Name -> ExprT -> VarLc
-  VarMc :: Mut -> TypeT -> ExprT -> VarMc
+data IfBranch :: A -> B -> *  where
+  Iff :: CondBlock a b -> IfBranch a b
+  IfElse :: CondBlock a b -> Block a b -> IfBranch a b
+  IfElif :: CondBlock a b -> IfBranch a b -> IfBranch a b
+
+deriving instance Eq (IfBranch a b)
+deriving instance Show (IfBranch a b)
+
+data CondBlock :: A -> B -> * where
+  CondBlock :: Expr a b -> Block a b -> CondBlock a b
+
+deriving instance Eq (CondBlock a b)
+deriving instance Show (CondBlock a b)
+
+
+data Var :: A -> B -> * where
+
+  Var0 :: Mut -> Maybe Type0 -> Expr a 'B0 -> Var a 'B0
+  Var2 :: Mut -> Type2 -> Expr a 'B1 -> Var a 'B1
 
 deriving instance Eq (Var f c)
 deriving instance Show (Var f c)
 
-type ExprU = Expr 'UnTyped
-type ExprT = Expr 'Typed
-data Expr :: TypePhase -> * where
-  ExprU :: ExprU' -> ExprU
-  ExprT :: TypeT -> ExprT' -> ExprT
+type Expr0 = Expr 'A0 'B0
+type Expr1 = Expr 'A1 'B0
+type Expr2 = Expr 'A1 'B1
+data Expr :: A -> B -> * where
 
-deriving instance Eq (Expr tc)
-deriving instance Show (Expr tc)
+  -- Each expression is annotated with a type after type-checking
+  Expr0 :: Expr' a 'B0 -> Expr a 'B0
+  Expr2 :: Type2 -> Expr2' -> Expr2
 
-type ExprU' = Expr' 'UnTyped
-type ExprT' = Expr' 'Typed
-data Expr' :: TypePhase -> * where
-  EApp :: App tc -> Expr' tc
-  ESelect :: Select tc -> Expr' tc
-  EName :: Name -> Expr' tc
+deriving instance Eq (Expr a b)
+deriving instance Show (Expr a b)
 
-  EIf :: Expr tc -> {- if -} Expr tc -> {- else -} Expr tc -> Expr' tc
-  ELambda :: Lambda tc -> Expr' tc
-  ECons :: Typename -> Args tc -> Expr' tc
+type Expr0' = Expr' 'A0 'B0
+type Expr1' = Expr' 'A1 'B0
+type Expr2' = Expr' 'A1 'B1
+data Expr' :: A -> B -> * where
 
-  EUnOp :: UnOp -> Expr tc -> Expr' tc
-  EBinOp :: BinOp -> Expr tc -> Expr tc -> Expr' tc
+  EApp :: App a b -> Expr' a b
+  ESelect :: Select a b -> Expr' a b
+  EName :: Name -> Expr' a b
+
+  -- If-expression of the form "a if b else c"
+  EIf :: Expr a b -> Expr a b -> Expr a b -> Expr' a b
+
+  -- ELambda :: Func a b -> Expr' a b
+  ECons :: Typename -> Args a b -> Expr' a b
+
+  -- EUnOp :: UnOp -> Expr a b -> Expr' a b
+  -- EBinOp :: BinOp -> Expr a b -> Expr a b -> Expr' a b
 
   -- Literals
-  EValBln :: Bool -> Expr' tc
-  EValChr :: Char -> Expr' tc
-  EValFlt :: Float -> Expr' tc
-  EValInt :: Int -> Expr' tc
-  EValStr :: String -> Expr' tc
+  EValBln :: Bool -> Expr' a b
+  EValChr :: Char -> Expr' a b
+  EValFlt :: Float -> Expr' a b
+  EValInt :: Int -> Expr' a b
+  EValStr :: String -> Expr' a b
 
-deriving instance Eq (Expr' tc)
-deriving instance Show (Expr' tc)
+deriving instance Eq (Expr' a b)
+deriving instance Show (Expr' a b)
 
 data UnOp
   = Not
@@ -228,49 +234,56 @@ data BinOp
   deriving(Eq, Ord, Show)
 
 
-type LExprU = LExpr 'UnTyped
-type LExprT = LExpr 'Typed
-data LExpr :: TypePhase -> * where
-  LExprU :: LExprU' -> LExprU
-  LExprT :: TypeT -> LExprT' -> LExprT
+type LExpr0 = LExpr 'A0 'B0
+type LExpr1 = LExpr 'A1 'B0
+type LExpr2 = LExpr 'A1 'B1
+data LExpr :: A -> B -> * where
 
-deriving instance Eq (LExpr tc)
-deriving instance Show (LExpr tc)
+  LExpr0 :: LExpr' a 'B0 -> LExpr a 'B0
+  LExpr2 :: Type2 -> LExpr2' -> LExpr2
+
+  -- LExprU :: LExprU' -> LExprU
+  -- LExprT :: Type2 -> LExprT' -> LExprT
+
+deriving instance Eq (LExpr a b)
+deriving instance Show (LExpr a b)
 
 -- LExpr are a subset of Expr that can appear on the left side of an assignment
-type LExprU' = LExpr' 'UnTyped
-type LExprT' = LExpr' 'Typed
-data LExpr' :: TypePhase -> * where
-  LApp :: App tc -> LExpr' tc
-  LSelect :: Select tc -> LExpr' tc
-  LName :: Name -> LExpr' tc
+type LExpr0' = LExpr' 'A0 'B0
+type LExpr1' = LExpr' 'A1 'B0
+type LExpr2' = LExpr' 'A1 'B1
+data LExpr' :: A -> B -> * where
+  LApp :: App a b -> LExpr' a b
+  LSelect :: Select a b -> LExpr' a b
+  LName :: Name -> LExpr' a b
 
-deriving instance Eq (LExpr' tc)
-deriving instance Show (LExpr' tc)
+deriving instance Eq (LExpr' a b)
+deriving instance Show (LExpr' a b)
 
-type AppU = App 'UnTyped
-type AppC = App 'Typed
-data App :: TypePhase -> * where
-  App :: Expr tc -> Args tc -> App tc
+type AppU = App 'A0 'B0
+type AppC = App 'A1 'B1
+data App :: A -> B -> * where
+  App :: Expr a b -> Args a b -> App a b
 
-deriving instance Eq (App tc)
-deriving instance Show (App tc)
-
-
-type ArgsU = Args 'UnTyped
-type ArgsC = Args 'Typed
-data Args :: TypePhase -> * where
-  Args :: Purity -> [Expr tc] -> Args tc
-
-deriving instance Eq (Args tc)
-deriving instance Show (Args tc)
+deriving instance Eq (App a b)
+deriving instance Show (App a b)
 
 
-data Select :: TypePhase -> * where
-  Select :: Expr tc -> Name -> Select tc
+type Args0 = Args 'A0 'B0
+type Args1 = Args 'A1 'B0
+type Args2 = Args 'A1 'B1
+data Args :: A -> B -> * where
+  Args :: Purity -> [Expr a b] -> Args a b
 
-deriving instance Eq (Select tc)
-deriving instance Show (Select tc)
+deriving instance Eq (Args a b)
+deriving instance Show (Args a b)
+
+
+data Select :: A -> B -> * where
+  Select :: Expr a b -> Name -> Select a b
+
+deriving instance Eq (Select a b)
+deriving instance Show (Select a b)
 
 type Name = String
 type Names = [Name]
@@ -279,38 +292,38 @@ type Names = [Name]
 data Kind
   = KNamespace
   | KType
-  | KExpr TypeT
+  | KExpr Type2
 
-type TypeU = Type 'UnTyped
-type TypeT = Type 'Typed
-data Type :: TypePhase -> * where
-  TUser :: Typename -> Type tp
+type Type0 = Type 'B0
+type Type2 = Type 'B1
+data Type :: B -> * where
+  TUser :: Typename -> Type b
 
   -- Neither caller nor callee care about left-most mutability of param and return types
-  TFunc :: Purity -> [Type tp] -> Type tp -> Type tp
+  TFunc :: Purity -> [Type b] -> Type b -> Type b
 
-  TTempRef :: Mut -> Type tp -> Type tp
-  TPersRef :: Mut -> Type tp -> Type tp
+  TTempRef :: Mut -> Type b -> Type b
+  TPersRef :: Mut -> Type b -> Type b
 
-  TOption :: Mut -> Type tp -> Type tp
-  TZeroPlus :: Mut -> Type tp -> Type tp
-  TOnePlus :: Mut -> Type tp -> Type tp
+  TOption :: Mut -> Type b -> Type b
+  TZeroPlus :: Mut -> Type b -> Type b
+  TOnePlus :: Mut -> Type b -> Type b
 
-  TBln :: Type tp
-  TChr :: Type tp
-  TFlt :: Type tp
-  TInt :: Type tp
-  TNat :: Type tp
-  TStr :: Type tp
+  TBln :: Type b
+  TChr :: Type b
+  TFlt :: Type b
+  TInt :: Type b
+  TNat :: Type b
+  TStr :: Type b
 
-  TNone :: Type tp
+  TNone :: Type b
 
   -- Type errors can only occur after the ast has been type checked
-  TError :: Error -> TypeT
+  TError :: Error -> Type2
 
-deriving instance Eq (Type tp)
-deriving instance Ord (Type tp)
-deriving instance Show (Type tp)
+deriving instance Eq (Type b)
+deriving instance Ord (Type b)
+deriving instance Show (Type b)
 
 type Typename = String
 
@@ -338,16 +351,16 @@ data Error
   | AmbiguousTypeName String
 
   -- Better conflict or mismatch?
-  | TypeConflict { typeRequired :: TypeT, typeFound :: TypeT }
+  | TypeConflict { typeRequired :: Type2, typeFound :: Type2 }
 
   -- Incompatible types? No common supertype?
-  | FailedToUnify (Set.Set TypeT)
+  | FailedToUnify (Set.Set Type2)
 
-  | NonApplicable TypeT
+  | NonApplicable Type2
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
   | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
 
-  | UndefinedOperator BinOp TypeT TypeT
+  | UndefinedOperator BinOp Type2 Type2
 
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
