@@ -12,25 +12,24 @@ import qualified Data.Set as Set
 import MultiMap
 
 
-data A -- Post-parse phase
-  = A0
-  | A1
-
-data B -- Type-checking phase
-  = B0
-  | B1
-
--- Finite number of steps friend!
-  -- Also, bring back MType!
-
 data Named a = Named Name a
   deriving(Eq, Show)
 
 type Table a = MultiMap Name a
 
-type Ast0 = [Named Unit0]
-type Ast1 = Table Unit1
-type Ast2 = Table Unit2
+-- Compilation phases
+
+data A -- Post-parse transform
+  = A0
+  | A1
+
+data B -- Type-check transform
+  = B0
+  | B1
+
+type Ast0 = [Named Unit0] -- Parse tree
+type Ast1 = Table Unit1   -- Ast
+type Ast2 = Table Unit2   -- Type-checked Ast
 
 type Unit0 = Unit 'A0 'B0
 type Unit1 = Unit 'A1 'B0
@@ -47,6 +46,8 @@ data Unit :: A -> B -> * where
 deriving instance Eq (Unit a b)
 deriving instance Show (Unit a b)
 
+-- Finite number of steps friend!
+  -- Also, bring back MType!
 
 type Class0 = Class 'A0 'B0
 type Class1 = Class 'A1 'B0
@@ -86,8 +87,10 @@ data RetNotation
   | ExplicitRet
   deriving(Eq, Show)
 
-type FuncU = Func 'A0 'B0
-type FuncC = Func 'A0 'B1
+type Func0 = Func 'A0 'B0
+type Func1 = Func 'A1 'B0
+type Func2 = Func 'A1 'B1
+
 data Func :: A -> B -> * where
 
   -- ImplicitRets are replaced by a return field on block during post-parsing
@@ -137,8 +140,8 @@ data Stmt :: A -> B -> * where
 
   SAssign :: LExpr a b -> Expr a b -> Stmt a b
   SVar :: Named (Var a b) -> Stmt a b
-  -- SFunc :: Named (Func a b) -> Stmt a b
-  -- SIf :: IfBranch a b -> Stmt a b
+  SFunc :: Named (Func a b) -> Stmt a b
+  SIf :: IfBranch a b -> Stmt a b
 
   -- SExprs and SRets are replaced by SApps and ret field on block during post-parsing
   SExpr :: Expr 'A0 b -> Stmt 'A0 b
@@ -164,7 +167,9 @@ data CondBlock :: A -> B -> * where
 deriving instance Eq (CondBlock a b)
 deriving instance Show (CondBlock a b)
 
-
+type Var0 = Var 'A0 'B0
+type Var1 = Var 'A1 'B0
+type Var2 = Var 'A1 'B1
 data Var :: A -> B -> * where
 
   Var0 :: Mut -> Maybe Type0 -> Expr a 'B0 -> Var a 'B0
@@ -197,11 +202,11 @@ data Expr' :: A -> B -> * where
   -- If-expression of the form "a if b else c"
   EIf :: Expr a b -> Expr a b -> Expr a b -> Expr' a b
 
-  -- ELambda :: Func a b -> Expr' a b
+  ELambda :: Func a b -> Expr' a b
   ECons :: Typename -> Args a b -> Expr' a b
 
-  -- EUnOp :: UnOp -> Expr a b -> Expr' a b
-  -- EBinOp :: BinOp -> Expr a b -> Expr a b -> Expr' a b
+  EUnOp :: UnOp -> Expr a b -> Expr' a b
+  EBinOp :: BinOp -> Expr a b -> Expr a b -> Expr' a b
 
   -- Literals
   EValBln :: Bool -> Expr' a b
@@ -260,8 +265,9 @@ data LExpr' :: A -> B -> * where
 deriving instance Eq (LExpr' a b)
 deriving instance Show (LExpr' a b)
 
-type AppU = App 'A0 'B0
-type AppC = App 'A1 'B1
+type App0 = App 'A0 'B0
+type App1 = App 'A1 'B0
+type App2 = App 'A1 'B1
 data App :: A -> B -> * where
   App :: Expr a b -> Args a b -> App a b
 
@@ -345,7 +351,11 @@ type Errors = [Error]
 
 data Error
 
-  = UnknownId String
+  = ImplicitRetWithoutFinalExpr
+  | MidBlockReturnStatement
+  | UselessExpression
+
+  | UnknownId String
 
   | UnknownTypeName String
   | AmbiguousTypeName String

@@ -4,7 +4,7 @@ module Parser where
 import Preface
 
 import Ast
-import AstBuilderU
+import Ast0Builder
 import ParseError
 import qualified Tokens as T
 }

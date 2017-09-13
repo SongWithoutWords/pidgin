@@ -22,8 +22,8 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Ast
-                     , AstBuilderT
-                     , AstBuilderU
+                     , Ast0Builder
+                     , Ast2Builder
                      , CodeGen
                      , FormatAst
                      , Lexer

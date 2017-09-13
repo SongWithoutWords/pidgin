@@ -8,7 +8,7 @@ import qualified LLVM.AST.Type as T
 import Ast
 import CodeGenM
 
-typeToLlvmType :: TypeT -> A.Type
+typeToLlvmType :: Type2 -> A.Type
 typeToLlvmType t = case t of
   TBln -> T.i1
   TChr -> T.i8
@@ -22,7 +22,7 @@ typeOfOperand :: A.Operand -> A.Type
 typeOfOperand op = case op of
   A.LocalReference typ _ -> typ
 
-addLocalBinding :: String -> TypeT -> CodeGenM ()
+addLocalBinding :: String -> Type2 -> CodeGenM ()
 addLocalBinding name typ = addBinding name
   $ A.LocalReference (typeToLlvmType typ) (nameToLlvmName name)
 

@@ -19,63 +19,66 @@ import CodeGenM
 import CodeGenUtil
 import MultiMap
 
-codeGen :: AstMc -> A.Module
+codeGen :: Ast2 -> A.Module
 codeGen ast = A.defaultModule
   { A.moduleName = "pidgin!"
   , A.moduleDefinitions = multiMapFoldWithKey genUnit ast
   }
 
-genUnit :: String -> UnitMc -> A.Definition
+genUnit :: String -> Unit2 -> A.Definition
 genUnit name unit = A.GlobalDefinition $ case unit of
 
-  -- It is quite stupid that this "ret notation" survives all the way to code gen
   -- Although I think purity could be discarded earlier in copilation, it may help
   -- with validating some optimizations
-  UFuncM (Lambda (SigC purity params retType) retNot block) -> G.functionDefaults
+  UFunc (Func1 (Sig2 purity params retType) block) -> G.functionDefaults
     { G.name = A.Name $ fromString name
     , G.parameters = let vaArgs = False in (genParams params, vaArgs)
     , G.returnType = typeToLlvmType retType
     , G.basicBlocks = genBlock params block
     }
 
-genParams :: ParamsT -> [G.Parameter]
+genParams :: Params2 -> [G.Parameter]
 genParams params = map genParam params
   where
-    genParam :: ParamT -> G.Parameter
+    genParam :: Param2 -> G.Parameter
     genParam (Param _ typ name) = G.Parameter (typeToLlvmType typ) (nameToLlvmName name) []
 
 -- Lets see what we can do the good old fashioned way first, may soon resort to monads
 
 -- I'll figure it out!
-genBlock :: ParamsT -> BlockC -> [G.BasicBlock] -- CodeGenM ()
+genBlock :: Params2 -> Block2 -> [G.BasicBlock]
 genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
 
-genBlock' :: ParamsT -> BlockC -> CodeGenM ()
-genBlock' params block = do
+genBlock' :: Params2 -> Block2 -> CodeGenM ()
+genBlock' params (Block1 stmts retExpr) = do
   entryBlockName <- addBlock "entry"
   setBlock entryBlockName
   mapM_ addParamBinding params
-  mapM_ genStmt block
+  mapM_ genStmt stmts
+
+  retOp <- mapM genExpr retExpr
+  setTerminator $ A.Do $ A.Ret retOp []
+
   where
     addParamBinding (Param _ typ name) = addLocalBinding name typ
 
-genStmt :: StmtC -> CodeGenM ()
+genStmt :: Stmt2 -> CodeGenM ()
 genStmt stmt = case stmt of
 
-  SVar (VarLc _ _ name e) -> do
+  SVar (Named name (Var2 _ _ e)) -> do
     oper <- genExpr e
     addBinding name oper
 
-  SRet e -> do
-    oper <- genExpr e
-    setTerminator $ A.Do $ A.Ret (Just oper) []
+  -- SRet e -> do
+  --   oper <- genExpr e
+  --   setTerminator $ A.Do $ A.Ret (Just oper) []
 
 -- returns a sequence of temporaries and the final instruction
-genExpr :: ExprT -> CodeGenM A.Operand
-genExpr (ExprT t e) = case e of
+genExpr :: Expr2 -> CodeGenM A.Operand
+genExpr (Expr2 t e) = case e of
 
-  EBinOp op a@(ExprT ta _) b@(ExprT tb _) -> let
-    genBinOp :: BinOp -> TypeT -> TypeT -> A.Operand -> A.Operand -> CodeGenM A.Operand
+  EBinOp op a@(Expr2 ta _) b@(Expr2 tb _) -> let
+    genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
     -- how does llvm handle operations between different sized ints? (not at all)
 
