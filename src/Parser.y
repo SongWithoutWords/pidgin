@@ -171,8 +171,8 @@ retType
   : "->" type   { $2 }
 
 block
-  : ind stmts ded { $2 }
-  | shallowStmt   { [$1] }
+  : ind stmts ded { Block0 $2 }
+  | shallowStmt   { Block0 [$1] }
 
 optStmts
   : {- none -}  { [] }
@@ -268,9 +268,6 @@ select
 litBln
   : true  { True }
   | false { False }
-
--- mType
-  -- : mut type { $1 & $2 }
 
 types
   : type            { [$1] }
