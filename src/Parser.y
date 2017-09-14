@@ -6,7 +6,9 @@ import Preface
 import Ast
 import Ast0Builder
 import ParseError
+import ParseUtil
 import qualified Tokens as T
+
 }
 
 %name parse
@@ -92,6 +94,7 @@ import qualified Tokens as T
 -- If performance becomes a concern will need to parse sequences another way
 -- (see Happy docs)
 
+
 root : unitsOrNone { $1 }
 
 indentedUnits
@@ -107,16 +110,16 @@ units
   | unit lineSep units  { $1 : $3}
 
 unit
-  : namespace       { $1 }
-  | class           { UClass $1 }
-  | function        { UFuncL $1 }
-  | var             { UVar $1 }
+  : namespace       { tupleToNamed UNamespace $1 }
+  | namedClass      { tupleToNamed UClass $1 } -- Named $ (fst $1) $ UClass $ snd $1 }
+  | namedFunc       { tupleToNamed UFunc $1 }
+  | var             { tupleToNamed UVar $1 }
 
 namespace
-  : tknNamespace name indentedUnits { UNamespaceL $2 $3 }
+  : tknNamespace name indentedUnits { ($2, $3 ) } -- Named $2 $ UNamespace0 $3 }
 
-class
-  : tknClass typename indentedMembers  { ClassL $2 $3 } 
+namedClass
+  : tknClass typename indentedMembers  { ($2, Class0 $3) } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -127,9 +130,9 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod class         { MClass $1 $2 }
-  | accessMod mut function  { MFuncL $1 $2 $3 }
-  | accessMod This lambda   { MCons $1 $3 }
+  : accessMod namedClass    { tupleToNamed (MClass $1) $2 }
+  | accessMod mut namedFunc { tupleToNamed (MFuncL $1 $2) $3 }
+  | accessMod This func     { Named "This" $ MCons $1 $3 }
   | accessMod var           { MVar $1 $2}
 
 accessMod
@@ -137,15 +140,15 @@ accessMod
   | pro   { Pro }
   | pri   { Pri }
 
-function
-  : name lambda { Func $1 $2 }
+namedFunc
+  : name func { ($1, Func $2) } -- Func $1 $2 }
 
-lambda
-  : signature "=>" block    { Lambda $1 ImplicitRet $3 }
-  | signature ":"  block    { Lambda $1 ExplicitRet $3 }
+func
+  : signature "=>" block    { Func $1 ImplicitRet $3 }
+  | signature ":"  block    { Func $1 ExplicitRet $3 }
 
 signature
-  : purityAndParams optionRetType { SigU (fst $1) (snd $1) $2}
+  : purityAndParams optionRetType { Sig0 (fst $1) (snd $1) $2}
 
 purityAndParams
   : "(" ")"                         { Pure & [] }
@@ -160,17 +163,6 @@ namedParams
 namedParam
   : mut type name { Param $1 $2 $3 }
 
-funcType
-  : type                   retType  { TFunc Pure [$1] $2 }
-  | purity                 retType  { TFunc $1 [] $ $2 }
-  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
-
-purityAndTypes
-  : {- none -}        { Pure & [] }
-  | types             { Pure & $1 }
-  | purity            { $1 & [] }
-  | purity "," types  { $1 & $3 }
-
 optionRetType
   : {- none -}  { Nothing }
   | retType     { Just $1 }
@@ -178,12 +170,88 @@ optionRetType
 retType
   : "->" type   { $2 }
 
-types
-  : type            { [$1] }
-  | type "," types  { $1 : $3 }
+block
+  : ind stmts ded { $2 }
+  | shallowStmt   { [$1] }
+
+optStmts
+  : {- none -}  { [] }
+  | stmts       { $1 }
+
+stmts
+  : stmt            { [$1] }
+  | stmt lineSep stmts  { $1 : $3 }
+
+stmt
+  : shallowStmt     { $1 }
+  | namedFunc       { tupleToNamed SFunc $1 }
+  | ifBranch        { SIf $1 }
+
+shallowStmt
+  : lexpr "=" expr  { SAssign $1 $3 }
+  | var             { SVar $1 }
+  | expr            { SExpr $1 }
+  | ret expr        { SRet $2 }
+
+ifBranch
+  : if condBlock                    { Iff $2 }
+  | if condBlock else block         { IfElse $2 $4 }
+  | if condBlock else ifBranch      { IfElif $2 $4 }
+
+condBlock
+  : expr then block { CondBlock $1 $3 }
+
+var
+  : mut maybeType name "=" expr { ($3, Var0 $1 $2 $5) } -- VarLu $1 $2 $3 $5 }
+
+exprs
+  : expr            { [$1]}
+  | expr "," exprs  { $1 : $3 }
+
+expr
+  : eIf    { Expr0 $1 }
+  | func   { Expr0 $ ELambda $1 }
+
+  | apply  { Expr0 $ EApp $1 }
+  | select { Expr0 $ ESelect $1 }
+  | name   { Expr0 $ EName $1 }
+  
+  | cons   { Expr0 $1 }
+
+  | op     { $1 }
+
+  | litBln { Expr0 $ EValBln $1 }
+  | litChr { Expr0 $ EValChr $1 }
+  | litFlt { Expr0 $ EValFlt $1 }
+  | litInt { Expr0 $ EValInt $1 }
+  | litStr { Expr0 $ EValStr $1 }
+
+eIf
+  : expr if expr else optEol expr { EIf $1 $3 $6 }
 
 cons
   : typename "(" args ")" { ECons $1 $3 }
+
+op
+  : "(" expr ")"            { $2 }
+
+  | "-" expr %prec prec_neg { eUnOp Neg $2 } -- ExprU $ ENegate $2 }
+
+  | expr "+" expr           { eBinOp Add $1 $3 } -- ExprU $ EAdd $1 $3 }
+  | expr "-" expr           { eBinOp Sub $1 $3 } -- ExprU $ ESub $1 $3 }
+  | expr "*" expr           { eBinOp Mul $1 $3 } -- ExprU $ EMul $1 $3 }
+  | expr "/" expr           { eBinOp Div $1 $3 } -- ExprU $ EDiv $1 $3 }
+  | expr ">" expr           { eBinOp Greater $1 $3 } -- ExprU $ EGreater $1 $3 }
+  | expr "<" expr           { eBinOp Lesser $1 $3 } -- ExprU $ ELesser $1 $3 }
+  | expr ">=" expr          { eBinOp GreaterEq $1 $3 } -- ExprU $ EGreaterEq $1 $3 }
+  | expr "<=" expr          { eBinOp LesserEq $1 $3 } -- ExprU $ ELesserEq $1 $3 } 
+
+  | expr name expr          { eBinOp (OpUser $2) $1 $3 }
+
+lexpr
+  : apply   { LExpr0 $ LApp $1 }
+  | select  { LExpr0 $ LSelect $1 } 
+  | name    { LExpr0 $ LName $1 }
 
 apply
   : expr "(" args ")" { App $1 $3 }
@@ -194,16 +262,19 @@ args
   | purity            { Args $1 [] }
   | purity "," exprs  { Args $1 $3 }
 
-exprs
-  : expr            { [$1]}
-  | expr "," exprs  { $1 : $3 }
+select
+  : expr "." name   { Select $1 $3 }
 
-purity
-  : "@"     { PRead }
-  | "~""@"  { PWrite }
+litBln
+  : true  { True }
+  | false { False }
 
 -- mType
   -- : mut type { $1 & $2 }
+
+types
+  : type            { [$1] }
+  | type "," types  { $1 : $3 }
 
 maybeType
   : "$"   { Nothing }
@@ -227,96 +298,28 @@ type
 
   | None      { TNone }
 
+funcType
+  : type                   retType  { TFunc Pure [$1] $2 }
+  | purity                 retType  { TFunc $1 [] $ $2 }
+  | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
+
+purityAndTypes
+  : {- none -}        { Pure & [] }
+  | types             { Pure & $1 }
+  | purity            { $1 & [] }
+  | purity "," types  { $1 & $3 }
+
+purity
+  : "@"     { PRead }
+  | "~""@"  { PWrite }
+
 mut
   : {- none -} { Imut }
   | "~"        { Mut }
 
-block
-  : ind stmts ded { $2 }
-  | shallowStmt   { [$1] }
-
-optStmts
-  : {- none -}  { [] }
-  | stmts       { $1 }
-
-stmts
-  : stmt            { [$1] }
-  | stmt lineSep stmts  { $1 : $3 }
-
-stmt
-  : shallowStmt     { $1 }
-  | function        { SFunc $1 }
-  | ifBranch        { SIf $1 }
-
-shallowStmt
-  : lexpr "=" expr  { SAssign $1 $3 }
-  | var             { SVar $1 }
-  | expr            { SExpr $1 }
-  | ret expr        { SRet $2 }
-
-ifBranch
-  : if condBlock                    { Iff $2 }
-  | if condBlock else block         { IfElse $2 $4 }
-  | if condBlock else ifBranch      { IfElif $2 $4 }
-
-condBlock
-  : expr then block { CondBlock $1 $3 }
-
-var
-  : mut maybeType name "=" expr { VarLu $1 $2 $3 $5 }
-
-expr
-  : eIf    { ExprU $1 }
-  | lambda { ExprU $ ELambda $1 }
-
-  | apply  { ExprU $ EApp $1 }
-  | select { ExprU $ ESelect $1 }
-  | name   { ExprU $ EName $1 }
-  
-  | cons   { ExprU $1 }
-
-  | op     { $1 }
-
-  | litBln { ExprU $ EValBln $1 }
-  | litChr { ExprU $ EValChr $1 }
-  | litFlt { ExprU $ EValFlt $1 }
-  | litInt { ExprU $ EValInt $1 }
-  | litStr { ExprU $ EValStr $1 }
-
-eIf
-  : expr if expr else optEol expr { EIf $1 $3 $6 }
-
 optEol
   : eol         {}
   | {- none -}  {}
-
-lexpr
-  : apply   { LExprU $ LApp $1 }
-  | select  { LExprU $ LSelect $1 } 
-  | name    { LExprU $ LName $1 }
-
-select
-  : expr "." name   { Select $1 $3 }
-
-op
-  : "(" expr ")"            { $2 }
-
-  | "-" expr %prec prec_neg { eUnOp Neg $2 } -- ExprU $ ENegate $2 }
-
-  | expr "+" expr           { eBinOp Add $1 $3 } -- ExprU $ EAdd $1 $3 }
-  | expr "-" expr           { eBinOp Sub $1 $3 } -- ExprU $ ESub $1 $3 }
-  | expr "*" expr           { eBinOp Mul $1 $3 } -- ExprU $ EMul $1 $3 }
-  | expr "/" expr           { eBinOp Div $1 $3 } -- ExprU $ EDiv $1 $3 }
-  | expr ">" expr           { eBinOp Greater $1 $3 } -- ExprU $ EGreater $1 $3 }
-  | expr "<" expr           { eBinOp Lesser $1 $3 } -- ExprU $ ELesser $1 $3 }
-  | expr ">=" expr          { eBinOp GreaterEq $1 $3 } -- ExprU $ EGreaterEq $1 $3 }
-  | expr "<=" expr          { eBinOp LesserEq $1 $3 } -- ExprU $ ELesserEq $1 $3 } 
-
-  | expr name expr          { eBinOp (OpUser $2) $1 $3 }
-
-litBln
-  : true  {True}
-  | false {False}
 
 lineSep
   : eol {}
