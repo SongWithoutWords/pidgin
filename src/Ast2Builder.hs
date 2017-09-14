@@ -4,11 +4,11 @@ module Ast2Builder where
 
 import Ast
 
-tApp :: Type2 -> Expr2 -> Args2 -> Expr2
-tApp t e args = Expr2 t $ EApp $ App e args
+eApp2 :: Type2 -> Expr2 -> Args2 -> Expr2
+eApp2 t e args = Expr2 t $ EApp $ App e args
 
-tName :: Type2 -> Name -> Expr2
-tName t name = Expr2 t $ EName name
+eName2 :: Type2 -> Name -> Expr2
+eName2 t name = Expr2 t $ EName name
 
 tIf :: Type2 -> Expr2 -> Expr2 -> Expr2 -> Expr2
 tIf t a condition b = Expr2 t $ EIf a condition b

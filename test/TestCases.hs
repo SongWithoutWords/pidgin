@@ -4,8 +4,8 @@ import TestCase
 import TestComposer
 
 import Ast
-import AstBuilderU
-import AstBuilderT
+import Ast0Builder
+import Ast2Builder
 import qualified Tokens as T
 
 
@@ -99,7 +99,7 @@ testCases =
   , name "def pi"
     <> source "$ pi = 3.14159265"
     <> tokens [ T.Dollar, T.Name "pi", T.Equal, T.LitFlt 3.14159265 ]
-    <> ast [ UVar $ VarLu Imut Nothing "pi" $ eValFlt 3.14159265 ]
+    <> ast [ Named "pi" $ UVar $ Var0 Imut Nothing $ eValFlt 3.14159265 ]
     <> typeErrors []
 
   , name "def pi, def e"
@@ -510,7 +510,7 @@ testCases =
           ( SigC Pure [] TInt) ImplicitRet
           [ SExpr $ tValInt 1]
         )
-      , ( "a", UVar $ VarMc Imut TInt $ tApp TInt (tName (TFunc Pure [] TInt) "one") $ Args Pure [])
+      , ( "a", UVar $ VarMc Imut TInt $ eApp2 TInt (tName (TFunc Pure [] TInt) "one") $ Args Pure [])
       ]
     <> typeErrors []
 
@@ -536,7 +536,7 @@ testCases =
           [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1 ]
         )
       , ( "a", UVar $ VarMc Imut TInt $
-          tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1] )
+          eApp2 TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1] )
       ]
     <> typeErrors []
 
@@ -552,8 +552,8 @@ testCases =
           [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1]
         )
       , ( "a", UVar $ VarMc Imut TInt $
-          tApp TInt (tName incType "inc") $ Args Pure
-            [tApp TInt (tName incType "inc") $ Args Pure [tValInt 1]]
+          eApp2 TInt (tName incType "inc") $ Args Pure
+            [eApp2 TInt (tName incType "inc") $ Args Pure [tValInt 1]]
         )
       ]
     <> typeErrors []
@@ -585,7 +585,7 @@ testCases =
           ( SigC Pure [Param Imut TInt "x"] TInt ) ImplicitRet
           [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1 ]
         )
-      , ("a", UVar $ VarMc Imut TInt $ tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1])
+      , ("a", UVar $ VarMc Imut TInt $ eApp2 TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1])
       ]
     <> typeErrors []
 
@@ -600,7 +600,7 @@ testCases =
           [ SExpr $ tBinOp TInt Add (tName TInt "x") $ tValInt 1 ]
         )
       , ("a", UVar $ VarMc Imut TInt
-          $ tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValStr "one"])
+          $ eApp2 TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValStr "one"])
       ]
     <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
 
@@ -620,7 +620,7 @@ testCases =
           ]
         )
       , ( "a", UVar $ VarMc Imut TInt
-          $ tApp TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1])
+          $ eApp2 TInt (tName (TFunc Pure [TInt] TInt) "inc") $ Args Pure [tValInt 1])
       ]
     <> typeErrors []
  ]

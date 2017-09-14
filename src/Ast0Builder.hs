@@ -2,6 +2,8 @@ module Ast0Builder where
 
 import Ast
 
+uVar :: 
+
 eApp :: Expr0 -> Args0 -> Expr0
 eApp e args = Expr0 $ EApp $ App e args
 

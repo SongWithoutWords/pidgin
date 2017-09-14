@@ -171,7 +171,7 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
     args' <- checkArgs args
 
     case typeOfExpr e' of
-      TError _ -> return $ tApp (TError Propagated) e' args'
+      TError _ -> return $ eApp2 (TError Propagated) e' args'
 
       TFunc purity paramTypes retType -> do
         let (Args argPurity argExprs) = args'
@@ -184,16 +184,16 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
         else
           zipWithM_ (<~) paramTypes argTypes
 
-        return $ tApp retType e' args'
+        return $ eApp2 retType e' args'
 
       _ -> do
         let err = NonApplicable $ typeOfExpr e'
         raise err
-        return $ tApp (TError err) e' args'
+        return $ eApp2 (TError err) e' args'
 
   EName name -> do
     t <- checkName name
-    return $ tName t name
+    return $ eName2 t name
 
   -- TODO: could I determine common root type, e.g. typeof(a if a.exists else none) == ?A
   EIf e1 ec e2 -> do
