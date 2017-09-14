@@ -169,19 +169,7 @@ optionRetType
 retType
   : "->" type   { $2 }
 
--- blockOrStmt
---   : optIndentedStmts { Block0 $1 }
---   | stmt             { Block0 [$1] }
-
--- blockOrShallow
---   : optIndentedStmts { Block0 $1 }
---   | shallowStmt      { Block0 [$1] }
-
--- block
-  -- : optIndentedStmts { Block0 $1 }
-
 block
-  -- : {- none -}    { Block0 [] }
   : lineSep       { Block0 [] }
   | shallowStmt   { Block0 [$1] }
   | ind stmts ded { Block0 $2 }
@@ -217,7 +205,6 @@ exprs
   | expr "," exprs  { $1 : $3 }
 
 expr
-
   : name   { Expr0 $ EName $1 }
   | select { Expr0 $ ESelect $1 }
   | apply  { Expr0 $ EApp $1 }
@@ -235,7 +222,6 @@ expr
   | litInt { Expr0 $ EValInt $1 }
   | litStr { Expr0 $ EValStr $1 }
 
-
 eIf
   : expr if expr else optEol expr { EIf $1 $3 $6 }
 
@@ -245,16 +231,16 @@ cons
 op
   : "(" expr ")"            { $2 }
 
-  | "-" expr %prec prec_neg { eUnOp Neg $2 } -- ExprU $ ENegate $2 }
+  | "-" expr %prec prec_neg { eUnOp Neg $2 }
 
-  | expr "+" expr           { eBinOp Add $1 $3 } -- ExprU $ EAdd $1 $3 }
-  | expr "-" expr           { eBinOp Sub $1 $3 } -- ExprU $ ESub $1 $3 }
-  | expr "*" expr           { eBinOp Mul $1 $3 } -- ExprU $ EMul $1 $3 }
-  | expr "/" expr           { eBinOp Div $1 $3 } -- ExprU $ EDiv $1 $3 }
-  | expr ">" expr           { eBinOp Greater $1 $3 } -- ExprU $ EGreater $1 $3 }
-  | expr "<" expr           { eBinOp Lesser $1 $3 } -- ExprU $ ELesser $1 $3 }
-  | expr ">=" expr          { eBinOp GreaterEq $1 $3 } -- ExprU $ EGreaterEq $1 $3 }
-  | expr "<=" expr          { eBinOp LesserEq $1 $3 } -- ExprU $ ELesserEq $1 $3 } 
+  | expr "+" expr           { eBinOp Add $1 $3 }
+  | expr "-" expr           { eBinOp Sub $1 $3 }
+  | expr "*" expr           { eBinOp Mul $1 $3 }
+  | expr "/" expr           { eBinOp Div $1 $3 }
+  | expr ">" expr           { eBinOp Greater $1 $3 }
+  | expr "<" expr           { eBinOp Lesser $1 $3 }
+  | expr ">=" expr          { eBinOp GreaterEq $1 $3 }
+  | expr "<=" expr          { eBinOp LesserEq $1 $3 }
 
   | expr name expr          { eBinOp (OpUser $2) $1 $3 }
 
