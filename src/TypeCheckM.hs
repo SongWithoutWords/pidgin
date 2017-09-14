@@ -106,7 +106,7 @@ popSearchName = do
 raise :: Error -> TypeCheckM s ()
 raise e = tell [e]
 
-foundError :: Error -> TypeCheckM s TypeT
+foundError :: Error -> TypeCheckM s Type2
 foundError err = do
   raise err
   return $ TError err

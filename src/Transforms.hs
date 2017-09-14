@@ -9,10 +9,11 @@ import System.IO.Unsafe
 import LLVM.AST as A
 
 import Ast
-import MultiMapAst
+-- import MultiMapAst
 
 import Lexer
 import Parser
+import PostParseAst
 import TypeCheck
 import CodeGen
 import LlvmUtil
@@ -20,8 +21,8 @@ import LlvmUtil
 (|>) :: (a -> b) -> (b -> c) -> (a -> c)
 f |> g = g . f
 
-lexParseCheck :: String -> (AstMc, Errors)
-lexParseCheck = scanTokens |> parse |> multiMapAst |> typeCheckAst
+lexParseCheck :: String -> (Ast2, Errors)
+lexParseCheck = scanTokens |> parse |> (fst . postParseAst) |> typeCheckAst
 
 lexParseCheckGen :: String -> A.Module
 lexParseCheckGen = (fst . lexParseCheck) |> codeGen

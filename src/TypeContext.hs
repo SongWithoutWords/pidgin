@@ -12,7 +12,7 @@ import MultiMap
 type LocalBindings = MultiMap Name Kind -- Really I might want to track values as well
 
 data Bindings
-  = GlobalBindings AstMc
+  = GlobalBindings Ast2
   | LocalBindings LocalBindings Bindings
 
 lookupKinds :: Bindings -> Name -> [Kind]
@@ -20,29 +20,30 @@ lookupKinds context name = case context of
   GlobalBindings ast -> astLookup ast name
   LocalBindings inner outer -> blockLookup name inner ++ lookupKinds outer name
   where
-    astLookup :: AstMc -> Name -> [Kind]
+    astLookup :: Ast2 -> Name -> [Kind]
     astLookup table n  = map kindOfUnit (multiLookup n table)
 
-    kindOfUnit :: UnitMc -> Kind
+    kindOfUnit :: Unit2 -> Kind
     kindOfUnit u = case u of
-      UNamespaceM _ -> KNamespace
+      UNamespace1 _ -> KNamespace
       UClass _ -> KType
 
-      UFuncM (Lambda (SigC purity params returnType) _ _) ->
+      UFunc (Func1 (Sig2 purity params returnType) _) ->
         KExpr (TFunc purity (map (\(Param _ t _) -> t) params) returnType)
 
-      UVar (VarMc _ typ _) -> KExpr typ
+      UVar (Var2 _ typ _) -> KExpr typ
 
     blockLookup :: Name -> LocalBindings -> [Kind]
     blockLookup n table = multiLookup n table
 
-initBlockBindings :: Bindings -> ParamsT -> Bindings
-initBlockBindings outerContext params = LocalBindings (initLocalBindingsFromParams params) outerContext
+initBlockBindings :: Bindings -> Params2 -> Bindings
+initBlockBindings outerContext params =
+  LocalBindings (initLocalBindingsFromParams params) outerContext
   where
-    initLocalBindingsFromParams :: ParamsT -> LocalBindings
+    initLocalBindingsFromParams :: Params2 -> LocalBindings
     initLocalBindingsFromParams = multiFromList . map paramToNameAndKind
 
-    paramToNameAndKind :: ParamT -> (Name, Kind)
+    paramToNameAndKind :: Param2 -> (Name, Kind)
 
     -- TODO: This raises a good question, how am I enforcing mutability?
     paramToNameAndKind (Param _ t n) = (n, KExpr t)

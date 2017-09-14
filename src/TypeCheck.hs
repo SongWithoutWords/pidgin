@@ -11,7 +11,7 @@ import Preface
 import Control.Monad
 
 import Ast
-import AstBuilderT
+import Ast2Builder
 import Debug
 import MultiMap
 import TypeCheckM
@@ -19,7 +19,7 @@ import TypeCheckUtil
 
 
 -- Knot tying implementation - it's awesome!
-typeCheckAst :: AstMu -> (AstMc, Errors)
+typeCheckAst :: Ast1 -> (Ast2, Errors)
 typeCheckAst ast = trace "typeCheckAst" $ runST $ do
   history <- newSTRef []
   rec result@(typedAst, _) <- runWriterT $ evalStateT
@@ -27,23 +27,23 @@ typeCheckAst ast = trace "typeCheckAst" $ runST $ do
         TypeContext (GlobalBindings typedAst) history
   return result
 
-checkUnitTable :: AstMu -> TypeCheckM s AstMc
+checkUnitTable :: Ast1 -> TypeCheckM s Ast2
 checkUnitTable unitTable = trace "checkUnitTable" $
   multiMapWithKeyM (\name unit -> typeCheckLazy $ checkUnit name unit) unitTable
 
-checkUnit :: Name -> UnitMu -> TypeCheckM s UnitMc
+checkUnit :: Name -> Unit1 -> TypeCheckM s Unit2
 checkUnit name unit = trace "checkUnit" $ do
   pushSearchName name
   res <- case unit of
-    UNamespaceM n -> UNamespaceM <$> checkUnitTable n
-    UFuncM l -> UFuncM <$> checkLambda l
+    UNamespace1 n -> UNamespace1 <$> checkUnitTable n
+    UFunc l -> UFunc <$> checkLambda l
     UVar v -> UVar <$> checkVar v
   popSearchName
   return res
 
 
-checkLambda :: LambdaU -> TypeCheckM s LambdaC
-checkLambda (Lambda (SigU purity params maybeRetType) returnStyle block) = do
+checkLambda :: Func1 -> TypeCheckM s Func2
+checkLambda (Func1 (Sig0 purity params maybeRetType) block) = do
 
   params' <- checkParams params
 
@@ -53,58 +53,53 @@ checkLambda (Lambda (SigU purity params maybeRetType) returnStyle block) = do
 
   let blockBindings = initBlockBindings bindings params'
 
-  (block', typesReturned) <- withBindings blockBindings $ checkBlock block returnStyle
+  block' <- withBindings blockBindings $ checkBlock block
 
-  let typesReturnedUnified = unifyTypes typesReturned
+  -- TODO: enforce/infer based on types returned
+  let typesReturnedUnified = undefined -- unifyTypes typesReturned
+
   returnType <- enforceOrInfer maybeRetType' typesReturnedUnified
-  return $ Lambda (SigC purity params' returnType) returnStyle block'
+  return $ Func1 (Sig2 purity params' returnType) block'
 
 -- Yields a type checked block and a list of returned types
-checkBlock :: [StmtU] -> RetNotation -> TypeCheckM s ([StmtC], [TypeT])
+checkBlock :: Block1 -> TypeCheckM s Block2 -- [Stmt1] -> TypeCheckM s ([Stmt2], [Type2])
 
-checkBlock [] _ = return ([], [])
+checkBlock = undefined -- TODO: Come up with a good way of doing this
 
-checkBlock [SExpr e] ImplicitRet = do
-  e' <- checkExpr e
-  return ([SExpr e'], [typeOfExpr e'])
+-- checkBlock [] _ = return ([], [])
 
-checkBlock (stmt:stmts) retStyle = do
-  (stmt', maybeRet) <- checkStmt stmt
-  (stmts', rets) <- checkBlock stmts retStyle
-  return (stmt':stmts', maybeRet ?: rets)
+-- checkBlock [SExpr e] ImplicitRet = do
+--   e' <- checkExpr e
+--   return ([SExpr e'], [typeOfExpr e'])
 
-checkStmt :: StmtU -> TypeCheckM s (StmtC, Maybe TypeT)
+-- checkBlock (stmt:stmts) retStyle = do
+--   (stmt', maybeRet) <- checkStmt stmt
+--   (stmts', rets) <- checkBlock stmts retStyle
+--   return (stmt':stmts', maybeRet ?: rets)
+
+checkStmt :: Stmt1 -> TypeCheckM s (Stmt2, Maybe Type2)
 checkStmt stmt = case stmt of
 
   -- TODO: will need to account for mutations in future
   SAssign lexpr expr -> undefined
 
-  SVar (VarLu mut typ name expr) -> do
+  SVar (Named name (Var0 mut typ expr)) -> do
     expr' <- checkExpr expr
     typ' <- checkOptionalType typ
 
     varType <- enforceOrInfer typ' $ typeOfExpr expr'
     modifyBindings $ addLocalBinding name $ KExpr $ typeOfExpr expr'
-    return (SVar $ VarLc mut varType name expr', Nothing)
+    return (SVar $ Named name $ Var2 mut varType expr', Nothing)
 
   SFunc f -> undefined
 
   SIf ifBranch -> undefined
 
-  -- TODO: detect useless expressions
-  SExpr e -> do
-    e' <- checkExpr e
-    -- (e', _) <- typeCheckExpr e
-    return (SExpr e', Nothing)
-
-  SRet e -> undefined
-
-
 
 -- TODO: Maintain a context within the block.
 
-checkVar :: VarMu -> TypeCheckM s VarMc
-checkVar (VarMu mut typ expr) = do
+checkVar :: Var1 -> TypeCheckM s Var2
+checkVar (Var0 mut typ expr) = do
   expr' <- checkExpr expr
 
   typ' <- checkOptionalType typ
@@ -112,10 +107,10 @@ checkVar (VarMu mut typ expr) = do
   -- It's good that the Haskell type checker catches cases like this.
   varType <- enforceOrInfer typ' $ typeOfExpr expr'
 
-  return $ VarMc mut varType expr'
+  return $ Var2 mut varType expr'
 
 
-checkType :: TypeU -> TypeCheckM s TypeT
+checkType :: Type0 -> TypeCheckM s Type2
 checkType typ =
   let
     checkAndRet f m t = do
@@ -153,23 +148,23 @@ checkType typ =
   TNone -> return TNone
 
 
-checkOptionalType :: Maybe TypeU -> TypeCheckM s (Maybe TypeT)
+checkOptionalType :: Maybe Type0 -> TypeCheckM s (Maybe Type2)
 checkOptionalType opt = case opt of
       Just t -> do
         t' <- checkType t
         return $ Just t'
       _ -> return $ Nothing
 
-checkParams :: ParamsU -> TypeCheckM s ParamsT
+checkParams :: Params0 -> TypeCheckM s Params2
 checkParams = mapM checkParam
 
-checkParam :: ParamU -> TypeCheckM s ParamT
+checkParam :: Param0 -> TypeCheckM s Param2
 checkParam (Param m t n) = do
   t' <- checkType t
   return $ Param m t' n
 
-checkExpr :: ExprU -> TypeCheckM s ExprT
-checkExpr (ExprU expr) = trace "typeCheckExpr" $ case expr of
+checkExpr :: Expr1 -> TypeCheckM s Expr2
+checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
 
   EApp (App e args) -> trace "checkApp" $ do
     e' <- checkExpr e
@@ -230,18 +225,18 @@ checkExpr (ExprU expr) = trace "typeCheckExpr" $ case expr of
           return $ tBinOp (TError err) op a b
 
 
-      checkBinOp :: BinOp -> ExprT -> ExprT -> TypeCheckM s ExprT
+      checkBinOp :: BinOp -> Expr2 -> Expr2 -> TypeCheckM s Expr2
 
-      checkBinOp op a@(ExprT (TError _) _) b =
+      checkBinOp op a@(Expr2 (TError _) _) b =
         return $ tBinOp (TError Propagated) op a b
 
-      checkBinOp op a b@(ExprT (TError _) _) =
+      checkBinOp op a b@(Expr2 (TError _) _) =
         return $ tBinOp (TError Propagated) op a b
 
-      checkBinOp op a@(ExprT TFlt _) b@(ExprT TFlt _) =
+      checkBinOp op a@(Expr2 TFlt _) b@(Expr2 TFlt _) =
         checkSymmetricalOp opIsScalar op TFlt a b
 
-      checkBinOp op a@(ExprT TInt _) b@(ExprT TInt _) =
+      checkBinOp op a@(Expr2 TInt _) b@(Expr2 TInt _) =
         checkSymmetricalOp opIsScalar op TInt a b
 
     in do
@@ -256,12 +251,12 @@ checkExpr (ExprU expr) = trace "typeCheckExpr" $ case expr of
   EValStr s -> return $ tValStr s
 
 
-checkArgs :: ArgsU -> TypeCheckM s ArgsC
+checkArgs :: Args1 -> TypeCheckM s Args2
 checkArgs (Args purity exprs) = do
   exprs' <- mapM checkExpr exprs
   return $ Args purity exprs'
 
-checkName :: Name -> TypeCheckM s TypeT
+checkName :: Name -> TypeCheckM s Type2
 checkName name = trace ("checkName " ++ name) $ do
   history <- getHistory
   traceM $ "searching for name " ++ name ++ " in " ++ show history
@@ -274,7 +269,7 @@ checkName name = trace ("checkName " ++ name) $ do
     bindings <- getBindings
     findTypeName' $ lookupKinds bindings name
     where
-      findTypeName' :: [Kind] -> TypeCheckM s TypeT
+      findTypeName' :: [Kind] -> TypeCheckM s Type2
       findTypeName' ks = trace "findTypeName'" $ case ks of
         [] -> do
           raise $ UnknownId name
