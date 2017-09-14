@@ -247,8 +247,6 @@ data LExpr :: A -> B -> * where
   LExpr0 :: LExpr' a 'B0 -> LExpr a 'B0
   LExpr2 :: Type2 -> LExpr2' -> LExpr2
 
-  -- LExprU :: LExprU' -> LExprU
-  -- LExprT :: Type2 -> LExprT' -> LExprT
 
 deriving instance Eq (LExpr a b)
 deriving instance Show (LExpr a b)
