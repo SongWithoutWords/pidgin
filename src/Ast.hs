@@ -15,6 +15,9 @@ import MultiMap
 data Named a = Named Name a
   deriving(Eq, Show)
 
+instance Functor Named where
+  fmap f (Named n a) = Named n $ f a
+
 type Table a = MultiMap Name a
 
 -- Compilation phases

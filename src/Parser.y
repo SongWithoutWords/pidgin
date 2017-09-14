@@ -6,7 +6,6 @@ import Preface
 import Ast
 import Ast0Builder
 import ParseError
-import ParseUtil
 import qualified Tokens as T
 
 }
@@ -97,29 +96,29 @@ import qualified Tokens as T
 
 root : unitsOrNone { $1 }
 
-indentedUnits
-  : {- none -}    { [] }
-  | ind units ded { $2 } 
-
 unitsOrNone
   : {- none -}    { [] }
-  | units         { $1 }
+  | namedUnits    { $1 }
 
-units
-  : unit            { [$1] }
-  | unit lineSep units  { $1 : $3}
+indentedUnits
+  : {- none -}         { [] }
+  | ind namedUnits ded { $2 } 
 
-unit
-  : namespace       { tupleToNamed UNamespace $1 }
-  | namedClass      { tupleToNamed UClass $1 } -- Named $ (fst $1) $ UClass $ snd $1 }
-  | namedFunc       { tupleToNamed UFunc $1 }
-  | var             { tupleToNamed UVar $1 }
+namedUnits
+  : namedUnit                    { [$1] }
+  | namedUnit lineSep namedUnits { $1 : $3}
+
+namedUnit
+  : namespace       { fmap UNamespace0 $1 }
+  | namedClass      { fmap UClass $1 }
+  | namedFunc       { fmap UFunc $1 }
+  | namedVar        { fmap UVar $1 }
 
 namespace
-  : tknNamespace name indentedUnits { ($2, $3 ) } -- Named $2 $ UNamespace0 $3 }
+  : tknNamespace name indentedUnits { Named $2 $3 }
 
 namedClass
-  : tknClass typename indentedMembers  { ($2, Class0 $3) } 
+  : tknClass typename indentedMembers  { Named $2 $ Class0 $3 } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -130,10 +129,10 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod namedClass    { tupleToNamed (MClass $1) $2 }
-  | accessMod mut namedFunc { tupleToNamed (MFuncL $1 $2) $3 }
+  : accessMod namedClass    { fmap (MClass $1) $2 }
+  | accessMod mut namedFunc { fmap (MFunc $1 $2) $3 }
   | accessMod This func     { Named "This" $ MCons $1 $3 }
-  | accessMod var           { MVar $1 $2}
+  | accessMod namedVar      { fmap (MVar $1) $2}
 
 accessMod
   : pub   { Pub }  
@@ -141,11 +140,11 @@ accessMod
   | pri   { Pri }
 
 namedFunc
-  : name func { ($1, Func $2) } -- Func $1 $2 }
+  : name func { Named $1 $2 }
 
 func
-  : signature "=>" block    { Func $1 ImplicitRet $3 }
-  | signature ":"  block    { Func $1 ExplicitRet $3 }
+  : signature "=>" block { Func0 $1 ImplicitRet $3 }
+  | signature ":"  block { Func0 $1 ExplicitRet $3 }
 
 signature
   : purityAndParams optionRetType { Sig0 (fst $1) (snd $1) $2}
@@ -170,13 +169,22 @@ optionRetType
 retType
   : "->" type   { $2 }
 
-block
-  : ind stmts ded { Block0 $2 }
-  | shallowStmt   { Block0 [$1] }
+-- blockOrStmt
+--   : optIndentedStmts { Block0 $1 }
+--   | stmt             { Block0 [$1] }
 
-optStmts
-  : {- none -}  { [] }
-  | stmts       { $1 }
+-- blockOrShallow
+--   : optIndentedStmts { Block0 $1 }
+--   | shallowStmt      { Block0 [$1] }
+
+-- block
+  -- : optIndentedStmts { Block0 $1 }
+
+block
+  -- : {- none -}    { Block0 [] }
+  : lineSep       { Block0 [] }
+  | shallowStmt   { Block0 [$1] }
+  | ind stmts ded { Block0 $2 }
 
 stmts
   : stmt            { [$1] }
@@ -184,39 +192,40 @@ stmts
 
 stmt
   : shallowStmt     { $1 }
-  | namedFunc       { tupleToNamed SFunc $1 }
+  | namedFunc       { SFunc $1 }
   | ifBranch        { SIf $1 }
 
 shallowStmt
-  : lexpr "=" expr  { SAssign $1 $3 }
-  | var             { SVar $1 }
-  | expr            { SExpr $1 }
+  : expr            { SExpr $1 }
+  | lexpr "=" expr  { SAssign $1 $3 }
+  | namedVar        { SVar $1 }
   | ret expr        { SRet $2 }
 
 ifBranch
-  : if condBlock                    { Iff $2 }
-  | if condBlock else block         { IfElse $2 $4 }
-  | if condBlock else ifBranch      { IfElif $2 $4 }
+  : if condBlock               { Iff $2 }
+  | if condBlock else block    { IfElse $2 $4 }
+  | if condBlock else ifBranch { IfElif $2 $4 }
 
 condBlock
-  : expr then block { CondBlock $1 $3 }
+  : expr ":" block                   { CondBlock $1 $3 }
 
-var
-  : mut maybeType name "=" expr { ($3, Var0 $1 $2 $5) } -- VarLu $1 $2 $3 $5 }
+namedVar
+  : mut maybeType name "=" expr { Named $3 $ Var0 $1 $2 $5 }
 
 exprs
   : expr            { [$1]}
   | expr "," exprs  { $1 : $3 }
 
 expr
-  : eIf    { Expr0 $1 }
-  | func   { Expr0 $ ELambda $1 }
 
-  | apply  { Expr0 $ EApp $1 }
+  : name   { Expr0 $ EName $1 }
   | select { Expr0 $ ESelect $1 }
-  | name   { Expr0 $ EName $1 }
-  
+  | apply  { Expr0 $ EApp $1 }
+
   | cons   { Expr0 $1 }
+
+  | eIf    { Expr0 $1 }
+  | func   { Expr0 $ ELambda $1 }
 
   | op     { $1 }
 
@@ -225,6 +234,7 @@ expr
   | litFlt { Expr0 $ EValFlt $1 }
   | litInt { Expr0 $ EValInt $1 }
   | litStr { Expr0 $ EValStr $1 }
+
 
 eIf
   : expr if expr else optEol expr { EIf $1 $3 $6 }
