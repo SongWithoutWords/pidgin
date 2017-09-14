@@ -18,10 +18,10 @@ source s = mempty {testSource = Just s}
 tokens :: Tokens -> TestCase
 tokens t = mempty {testTokens = Just t}
 
-ast :: AstLu -> TestCase
+ast :: Ast0 -> TestCase
 ast a = mempty {testAst = Just a}
 
-typedAst :: [(Name, UnitMc)] -> TestCase
+typedAst :: [(Name, Unit2)] -> TestCase
 typedAst pairs = mempty {testTypedAst = Just $ multiFromList pairs}
 
 typeErrors :: Errors -> TestCase

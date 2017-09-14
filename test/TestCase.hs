@@ -14,8 +14,8 @@ data TestCase = TestCase
   { testName :: Maybe String
   , testSource :: Maybe String
   , testTokens :: Maybe Tokens
-  , testAst :: Maybe AstLu
-  , testTypedAst :: Maybe AstMc
+  , testAst :: Maybe Ast0
+  , testTypedAst :: Maybe Ast2
   , testTypeErrors :: Maybe Errors }
   deriving(Eq, Show)
 
