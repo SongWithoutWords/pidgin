@@ -4,27 +4,27 @@ module Ast2Builder where
 
 import Ast
 
-eApp2 :: Type2 -> Expr2 -> Args2 -> Expr2
-eApp2 t e args = Expr2 t $ EApp $ App e args
+e2App :: Type2 -> Expr2 -> Args2 -> Expr2
+e2App t e args = Expr2 t $ EApp $ App e args
 
-eName2 :: Type2 -> Name -> Expr2
-eName2 t name = Expr2 t $ EName name
+e2Name :: Type2 -> Name -> Expr2
+e2Name t name = Expr2 t $ EName name
 
-tIf :: Type2 -> Expr2 -> Expr2 -> Expr2 -> Expr2
-tIf t a condition b = Expr2 t $ EIf a condition b
+e2If :: Type2 -> Expr2 -> Expr2 -> Expr2 -> Expr2
+e2If t a condition b = Expr2 t $ EIf a condition b
 
-tBinOp :: Type2 -> BinOp -> Expr2 -> Expr2 -> Expr2
-tBinOp t op a b = Expr2 t $ EBinOp op a b
+e2BinOp :: Type2 -> BinOp -> Expr2 -> Expr2 -> Expr2
+e2BinOp t op a b = Expr2 t $ EBinOp op a b
 
-tValBln :: Bool -> Expr2
-tValBln = Expr2 TBln . EValBln
+e2ValBln :: Bool -> Expr2
+e2ValBln = Expr2 TBln . EValBln
 
-tValFlt :: Float -> Expr2
-tValFlt = Expr2 TFlt . EValFlt
+e2ValFlt :: Float -> Expr2
+e2ValFlt = Expr2 TFlt . EValFlt
 
-tValInt :: Int -> Expr2
-tValInt = Expr2 TInt . EValInt
+e2ValInt :: Int -> Expr2
+e2ValInt = Expr2 TInt . EValInt
 
-tValStr :: String -> Expr2
-tValStr = Expr2 TStr . EValStr
+e2ValStr :: String -> Expr2
+e2ValStr = Expr2 TStr . EValStr
 

@@ -2,44 +2,48 @@ module Ast0Builder where
 
 import Ast
 
-uVar :: 
+namedU0Var :: Name -> Mut -> Maybe Type0 -> Expr0 -> Named Unit0
+namedU0Var n m t e = Named n $ UVar $ Var0 m t e
 
-eApp :: Expr0 -> Args0 -> Expr0
-eApp e args = Expr0 $ EApp $ App e args
+namedU0Func :: Name -> Sig0 -> RetNotation -> Block0 -> Named Unit0
+namedU0Func n s r b = Named n $ UFunc $ Func0 s r b
 
-eSelect :: Expr0 -> Name -> Expr0
-eSelect e name = Expr0 $ ESelect $ Select e name
+e0App :: Expr0 -> Args0 -> Expr0
+e0App e args = Expr0 $ EApp $ App e args
 
-eName :: Name -> Expr0
-eName = Expr0 . EName
+e0Select :: Expr0 -> Name -> Expr0
+e0Select e name = Expr0 $ ESelect $ Select e name
 
-eLambda :: Sig0 -> RetNotation -> Block0 -> Expr0
-eLambda sig retNot block = Expr0 $ ELambda $ Func0 sig retNot block
+e0Name :: Name -> Expr0
+e0Name = Expr0 . EName
 
-eCons :: Typename -> Args0 -> Expr0
-eCons typename args = Expr0 $ ECons typename args
+e0Lambda :: Sig0 -> RetNotation -> Block0 -> Expr0
+e0Lambda sig retNot block = Expr0 $ ELambda $ Func0 sig retNot block
 
-eIf :: Expr0 -> Expr0 -> Expr0 -> Expr0
-eIf a condition b = Expr0 $ EIf a condition b
+e0Cons :: Typename -> Args0 -> Expr0
+e0Cons typename args = Expr0 $ ECons typename args
 
-eUnOp :: UnOp -> Expr0 -> Expr0
-eUnOp op a = Expr0 $ EUnOp op a
+e0If :: Expr0 -> Expr0 -> Expr0 -> Expr0
+e0If a condition b = Expr0 $ EIf a condition b
 
-eBinOp :: BinOp -> Expr0 -> Expr0 -> Expr0
-eBinOp op a b = Expr0 $ EBinOp op a b
+e0UnOp :: UnOp -> Expr0 -> Expr0
+e0UnOp op a = Expr0 $ EUnOp op a
 
-eValBln :: Bool -> Expr0
-eValBln = Expr0 . EValBln
+e0BinOp :: BinOp -> Expr0 -> Expr0 -> Expr0
+e0BinOp op a b = Expr0 $ EBinOp op a b
 
-eValFlt :: Float -> Expr0
-eValFlt = Expr0 . EValFlt
+e0ValBln :: Bool -> Expr0
+e0ValBln = Expr0 . EValBln
 
-eValInt :: Int -> Expr0
-eValInt = Expr0 . EValInt
+e0ValFlt :: Float -> Expr0
+e0ValFlt = Expr0 . EValFlt
 
-eValStr :: String -> Expr0
-eValStr = Expr0 . EValStr
+e0ValInt :: Int -> Expr0
+e0ValInt = Expr0 . EValInt
 
-lApp :: Expr0 -> Args0 -> LExpr0
-lApp e args = LExpr0 $ LApp $ App e args
+e0ValStr :: String -> Expr0
+e0ValStr = Expr0 . EValStr
+
+l0App :: Expr0 -> Args0 -> LExpr0
+l0App e args = LExpr0 $ LApp $ App e args
 

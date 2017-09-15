@@ -7,7 +7,7 @@ import Lexer
 import Parser
 
 import Ast
-import MultiMapAst
+import PostParseAst
 import Tokens
 
 import TypeCheck
@@ -55,7 +55,7 @@ typeInferenceTest :: TestCase -> Maybe TestTree
 typeInferenceTest t = tryTestEq
   (displayName t)
   (testTypedAst t)
-  (fst . typeCheckAst . multiMapAst <$> astInput t)
+  (fst . typeCheckAst . fst . postParseAst <$> astInput t)
 
 typeCheckTests :: TestTree
 typeCheckTests = testGroup "type checker" $ mapMaybe typeCheckTest testCases
@@ -64,7 +64,7 @@ typeCheckTest :: TestCase -> Maybe TestTree
 typeCheckTest t = tryTestEq
   (displayName t)
   (testTypeErrors t)
-  (snd . typeCheckAst . multiMapAst <$> astInput t)
+  (snd . typeCheckAst . fst . postParseAst <$> astInput t)
 
 -- TODO: replace tryTestEq :: String -> Maybe a -> Maybe a -> Maybe TestTree
 --          with tryTestEq :: TestCase -> (TestCase -> Maybe a) -> (TestCase -> Maybe a) -> Maybe TestTree
@@ -76,7 +76,7 @@ displayName t = fromMaybe "" $ testName t `orElse` testSource t
 tokenInput :: TestCase -> Maybe Tokens
 tokenInput t = testTokens t `orElse` (scanTokens <$> testSource t)
 
-astInput :: TestCase -> Maybe AstLu
+astInput :: TestCase -> Maybe Ast0
 astInput t = testAst t `orElse` (parse <$> tokenInput t)
 
 testEq :: (Eq a, Show a) => String -> a -> a -> TestTree

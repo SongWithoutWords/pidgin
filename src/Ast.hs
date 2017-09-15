@@ -129,7 +129,7 @@ type Block0 = Block 'A0 'B0
 type Block1 = Block 'A1 'B0
 type Block2 = Block 'A1 'B1
 data Block :: A -> B -> * where
-  Block0 :: [Stmt 'A0 b] -> Block 'A0 b
+  Block0 :: [Stmt 'A0 'B0] -> Block 'A0 'B0
   Block1 :: [Stmt 'A1 b] -> Maybe (Expr 'A1 b) -> Block 'A1 b
 
 deriving instance Eq (Block a b)

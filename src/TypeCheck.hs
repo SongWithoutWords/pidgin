@@ -171,7 +171,7 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
     args' <- checkArgs args
 
     case typeOfExpr e' of
-      TError _ -> return $ eApp2 (TError Propagated) e' args'
+      TError _ -> return $ e2App (TError Propagated) e' args'
 
       TFunc purity paramTypes retType -> do
         let (Args argPurity argExprs) = args'
@@ -184,16 +184,16 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
         else
           zipWithM_ (<~) paramTypes argTypes
 
-        return $ eApp2 retType e' args'
+        return $ e2App retType e' args'
 
       _ -> do
         let err = NonApplicable $ typeOfExpr e'
         raise err
-        return $ eApp2 (TError err) e' args'
+        return $ e2App (TError err) e' args'
 
   EName name -> do
     t <- checkName name
-    return $ eName2 t name
+    return $ e2Name t name
 
   -- TODO: could I determine common root type, e.g. typeof(a if a.exists else none) == ?A
   EIf e1 ec e2 -> do
@@ -204,7 +204,7 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
     typeOfExpr e1' <~ typeOfExpr e2'
     TBln <~ typeOfExpr ec'
 
-    return $ tIf (typeOfExpr e1') e1' ec' e2'
+    return $ e2If (typeOfExpr e1') e1' ec' e2'
 
 
   EBinOp operator e1 e2 ->
@@ -218,20 +218,20 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
 
       checkSymmetricalOp isDefined op typ a b =
         if isDefined op
-        then return $ tBinOp typ op a b
+        then return $ e2BinOp typ op a b
         else do
           let err = UndefinedOperator op typ typ
           raise err
-          return $ tBinOp (TError err) op a b
+          return $ e2BinOp (TError err) op a b
 
 
       checkBinOp :: BinOp -> Expr2 -> Expr2 -> TypeCheckM s Expr2
 
       checkBinOp op a@(Expr2 (TError _) _) b =
-        return $ tBinOp (TError Propagated) op a b
+        return $ e2BinOp (TError Propagated) op a b
 
       checkBinOp op a b@(Expr2 (TError _) _) =
-        return $ tBinOp (TError Propagated) op a b
+        return $ e2BinOp (TError Propagated) op a b
 
       checkBinOp op a@(Expr2 TFlt _) b@(Expr2 TFlt _) =
         checkSymmetricalOp opIsScalar op TFlt a b
@@ -245,10 +245,10 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
       checkBinOp operator e1' e2'
 
 
-  EValBln b -> return $ tValBln b
-  EValFlt f -> return $ tValFlt f
-  EValInt i -> return $ tValInt i
-  EValStr s -> return $ tValStr s
+  EValBln b -> return $ e2ValBln b
+  EValFlt f -> return $ e2ValFlt f
+  EValInt i -> return $ e2ValInt i
+  EValStr s -> return $ e2ValStr s
 
 
 checkArgs :: Args1 -> TypeCheckM s Args2

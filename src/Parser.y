@@ -231,18 +231,18 @@ cons
 op
   : "(" expr ")"            { $2 }
 
-  | "-" expr %prec prec_neg { eUnOp Neg $2 }
+  | "-" expr %prec prec_neg { e0UnOp Neg $2 }
 
-  | expr "+" expr           { eBinOp Add $1 $3 }
-  | expr "-" expr           { eBinOp Sub $1 $3 }
-  | expr "*" expr           { eBinOp Mul $1 $3 }
-  | expr "/" expr           { eBinOp Div $1 $3 }
-  | expr ">" expr           { eBinOp Greater $1 $3 }
-  | expr "<" expr           { eBinOp Lesser $1 $3 }
-  | expr ">=" expr          { eBinOp GreaterEq $1 $3 }
-  | expr "<=" expr          { eBinOp LesserEq $1 $3 }
+  | expr "+" expr           { e0BinOp Add $1 $3 }
+  | expr "-" expr           { e0BinOp Sub $1 $3 }
+  | expr "*" expr           { e0BinOp Mul $1 $3 }
+  | expr "/" expr           { e0BinOp Div $1 $3 }
+  | expr ">" expr           { e0BinOp Greater $1 $3 }
+  | expr "<" expr           { e0BinOp Lesser $1 $3 }
+  | expr ">=" expr          { e0BinOp GreaterEq $1 $3 }
+  | expr "<=" expr          { e0BinOp LesserEq $1 $3 }
 
-  | expr name expr          { eBinOp (OpUser $2) $1 $3 }
+  | expr name expr          { e0BinOp (OpUser $2) $1 $3 }
 
 lexpr
   : apply   { LExpr0 $ LApp $1 }
