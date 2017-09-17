@@ -28,7 +28,7 @@ codeGen ast = A.defaultModule
 genUnit :: String -> Unit2 -> A.Definition
 genUnit name unit = A.GlobalDefinition $ case unit of
 
-  -- Although I think purity could be discarded earlier in copilation, it may help
+  -- Although I think purity could be discarded earlier in compilation, it may help
   -- with validating some optimizations
   UFunc (Func1 (Sig2 purity params retType) block) -> G.functionDefaults
     { G.name = A.Name $ fromString name
@@ -43,9 +43,6 @@ genParams params = map genParam params
     genParam :: Param2 -> G.Parameter
     genParam (Param _ typ name) = G.Parameter (typeToLlvmType typ) (nameToLlvmName name) []
 
--- Lets see what we can do the good old fashioned way first, may soon resort to monads
-
--- I'll figure it out!
 genBlock :: Params2 -> Block2 -> [G.BasicBlock]
 genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
 
@@ -69,13 +66,12 @@ genStmt stmt = case stmt of
     oper <- genExpr e
     addBinding name oper
 
-  -- SRet e -> do
-  --   oper <- genExpr e
-  --   setTerminator $ A.Do $ A.Ret (Just oper) []
 
--- returns a sequence of temporaries and the final instruction
+-- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr2 -> CodeGenM A.Operand
 genExpr (Expr2 t e) = case e of
+
+  EName n -> return $ A.LocalReference (typeToLlvmType t) (nameToLlvmName n)
 
   EBinOp op a@(Expr2 ta _) b@(Expr2 tb _) -> let
     genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand
