@@ -2,6 +2,7 @@ module Transforms
   ( lexParseCheck
   , lexParseCheckGen
   , pidginToLlvmIr
+  , evalMainOfPidgin
   ) where
 
 import System.IO.Unsafe
@@ -27,6 +28,9 @@ lexParseCheck = scanTokens |> parse |> (fst . postParseAst) |> typeCheckAst
 lexParseCheckGen :: String -> A.Module
 lexParseCheckGen = (fst . lexParseCheck) |> codeGen
 
-pidginToLlvmIr :: String -> IO String
-pidginToLlvmIr src = llvmAstToAsm $ lexParseCheckGen src
+translateToLlvmIr :: String -> IO String
+translateToLlvmIr = llvmAstToAsm . lexParseCheckGen
+
+evalMain :: String -> IO (Maybe Int)
+evalMain = execMainOfLlvmAst . lexParseCheckGen
 
