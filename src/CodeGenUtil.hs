@@ -18,12 +18,14 @@ typeToLlvmType t = case t of
 nameToLlvmName :: Name -> A.Name
 nameToLlvmName = fromString
 
+localReference :: Name -> Type2 -> A.Operand
+localReference name typ = A.LocalReference (typeToLlvmType typ) (nameToLlvmName name)
+
 typeOfOperand :: A.Operand -> A.Type
 typeOfOperand op = case op of
   A.LocalReference typ _ -> typ
 
 addLocalBinding :: String -> Type2 -> CodeGenM ()
-addLocalBinding name typ = addBinding name
-  $ A.LocalReference (typeToLlvmType typ) (nameToLlvmName name)
+addLocalBinding name typ = addBinding name $ localReference name typ
 
 
