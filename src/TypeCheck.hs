@@ -5,8 +5,6 @@
 
 module TypeCheck(typeCheckAst) where
 
--- import Data.Maybe
-
 import Preface
 import Control.Monad
 
@@ -53,31 +51,22 @@ checkLambda (Func1 (Sig0 purity params maybeRetType) block) = do
 
   let blockBindings = initBlockBindings bindings params'
 
-  block' <- withBindings blockBindings $ checkBlock block
+  block'@(Block1 _ maybeRetExpr) <- withBindings blockBindings $ checkBlock block
 
-  -- TODO: enforce/infer based on types returned
-  let typesReturnedUnified = undefined -- unifyTypes typesReturned
+  -- TODO: Support returns from sub-blocks
+  let typesReturnedUnified = case maybeRetExpr of Nothing -> TNone; Just e -> typeOfExpr e
 
   returnType <- enforceOrInfer maybeRetType' typesReturnedUnified
   return $ Func1 (Sig2 purity params' returnType) block'
 
--- Yields a type checked block and a list of returned types
-checkBlock :: Block1 -> TypeCheckM s Block2 -- [Stmt1] -> TypeCheckM s ([Stmt2], [Type2])
+checkBlock :: Block1 -> TypeCheckM s Block2
 
-checkBlock = undefined -- TODO: Come up with a good way of doing this
+checkBlock (Block1 stmts maybeRetExpr) = do
+  stmts' <- traverse checkStmt stmts
+  maybeRetExpr' <- traverse checkExpr maybeRetExpr
+  return $ Block1 stmts' maybeRetExpr'
 
--- checkBlock [] _ = return ([], [])
-
--- checkBlock [SExpr e] ImplicitRet = do
---   e' <- checkExpr e
---   return ([SExpr e'], [typeOfExpr e'])
-
--- checkBlock (stmt:stmts) retStyle = do
---   (stmt', maybeRet) <- checkStmt stmt
---   (stmts', rets) <- checkBlock stmts retStyle
---   return (stmt':stmts', maybeRet ?: rets)
-
-checkStmt :: Stmt1 -> TypeCheckM s (Stmt2, Maybe Type2)
+checkStmt :: Stmt1 -> TypeCheckM s Stmt2
 checkStmt stmt = case stmt of
 
   -- TODO: will need to account for mutations in future
@@ -89,7 +78,7 @@ checkStmt stmt = case stmt of
 
     varType <- enforceOrInfer typ' $ typeOfExpr expr'
     modifyBindings $ addLocalBinding name $ KExpr $ typeOfExpr expr'
-    return (SVar $ Named name $ Var2 mut varType expr', Nothing)
+    return $ SVar $ Named name $ Var2 mut varType expr' -- , Nothing)
 
   SFunc f -> undefined
 
@@ -149,11 +138,8 @@ checkType typ =
 
 
 checkOptionalType :: Maybe Type0 -> TypeCheckM s (Maybe Type2)
-checkOptionalType opt = case opt of
-      Just t -> do
-        t' <- checkType t
-        return $ Just t'
-      _ -> return $ Nothing
+checkOptionalType = traverse checkType
+
 
 checkParams :: Params0 -> TypeCheckM s Params2
 checkParams = mapM checkParam
