@@ -103,13 +103,20 @@ mapExpr' expr = case expr of
     return $ Expr0 $ EApp app'
     mapApp app >>= return . EApp
 
-  -- EName n -> return $ EName n
+  EName n -> return $ EName n
 
-  EIf a c b -> do
-    a' <- mapExpr a
-    c' <- mapExpr c
-    b' <- mapExpr b
-    return $ EIf a' c' b'
+  EIf e1 ec e2 -> do
+    e1' <- mapExpr e1
+    ec' <- mapExpr ec
+    e2' <- mapExpr e2
+    return $ EIf e1' ec' e2'
+
+  EBinOp op e1 e2 -> do
+    e1' <- mapExpr e1
+    e2' <- mapExpr e2
+    return $ EBinOp op e1' e2'
+
+  EVal v -> return $ EVal v
 
 mapApp :: App0 -> ErrorM App1
 mapApp (App e (Args purity args)) = do
