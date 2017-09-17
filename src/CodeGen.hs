@@ -3,13 +3,10 @@
 
 module CodeGen(codeGen) where
 
--- import CodeGenM
-
--- import qualified Data.ByteString.Char8 as C8
--- import qualified Data.ByteString.Short as S
 import Data.String
 
 import qualified LLVM.AST as A
+import qualified LLVM.AST.Constant as C
 import qualified LLVM.AST.Global as G
 import qualified LLVM.AST.Type as T
 
@@ -71,15 +68,16 @@ genStmt stmt = case stmt of
 genExpr :: Expr2 -> CodeGenM A.Operand
 genExpr (Expr2 t e) = case e of
 
-  EName n -> return $ A.LocalReference (typeToLlvmType t) (nameToLlvmName n)
+  EApp (App e args) -> error "CodeGen.EApp undefined"
+
+  -- TODO: What about global variables?
+  EName n -> return $ localReference n t
+
 
   EBinOp op a@(Expr2 ta _) b@(Expr2 tb _) -> let
     genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
-    -- how does llvm handle operations between different sized ints? (not at all)
-
     genBinOp Add TInt TInt = add 32
-
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 
     in do
@@ -87,5 +85,7 @@ genExpr (Expr2 t e) = case e of
       b' <- genExpr b
       genBinOp op ta tb a' b'
 
-
+  EVal v -> case v of
+    VBln b -> return $ A.ConstantOperand $ C.Int 1 $ case b of True -> 1; False -> 0
+    VInt i -> return $ A.ConstantOperand $ C.Int 32 $ toInteger i
 
