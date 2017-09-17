@@ -358,7 +358,7 @@ testCases =
     <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
 
   , source "Int a = true"
-    <> typedAst [("a", UVar $ Var2 Imut TInt $ Expr2 TBln $ EValBln True)]
+    <> typedAst [("a", UVar $ Var2 Imut TInt $ e2ValBln True)]
     <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TBln}]
 
   , source "$ a = b"
@@ -412,7 +412,7 @@ testCases =
   , source "$ a = 1; $ b = b + a"
 
     <> let bType = TError $ recursiveDefinition ["b"]
-       in typedAst [ ("a", UVar $ Var2 Imut TInt $ Expr2 TInt $ EValInt 1)
+       in typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 1)
                   , ("b", UVar $ Var2 Imut (TError Propagated) $ Expr2 (TError Propagated)
                       $ EBinOp Add
                         (Expr2 (TError $ recursiveDefinition ["b"]) $ EName "b")

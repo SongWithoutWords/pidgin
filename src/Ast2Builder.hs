@@ -17,14 +17,14 @@ e2BinOp :: Type2 -> BinOp -> Expr2 -> Expr2 -> Expr2
 e2BinOp t op a b = Expr2 t $ EBinOp op a b
 
 e2ValBln :: Bool -> Expr2
-e2ValBln = Expr2 TBln . EValBln
+e2ValBln = Expr2 TBln . EVal . VBln
 
 e2ValFlt :: Float -> Expr2
-e2ValFlt = Expr2 TFlt . EValFlt
+e2ValFlt = Expr2 TFlt . EVal . VFlt
 
 e2ValInt :: Int -> Expr2
-e2ValInt = Expr2 TInt . EValInt
+e2ValInt = Expr2 TInt . EVal . VInt
 
 e2ValStr :: String -> Expr2
-e2ValStr = Expr2 TStr . EValStr
+e2ValStr = Expr2 TStr . EVal . VStr
 

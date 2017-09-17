@@ -245,10 +245,10 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
       checkBinOp operator e1' e2'
 
 
-  EValBln b -> return $ e2ValBln b
-  EValFlt f -> return $ e2ValFlt f
-  EValInt i -> return $ e2ValInt i
-  EValStr s -> return $ e2ValStr s
+  EVal (VBln b) -> return $ e2ValBln b
+  EVal (VFlt f) -> return $ e2ValFlt f
+  EVal (VInt i) -> return $ e2ValInt i
+  EVal (VStr s) -> return $ e2ValStr s
 
 
 checkArgs :: Args1 -> TypeCheckM s Args2

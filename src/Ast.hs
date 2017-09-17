@@ -208,18 +208,23 @@ data Expr' :: A -> B -> * where
   ELambda :: Func a b -> Expr' a b
   ECons :: Typename -> Args a b -> Expr' a b
 
+  -- Should be replaced by EApp?
   EUnOp :: UnOp -> Expr a b -> Expr' a b
   EBinOp :: BinOp -> Expr a b -> Expr a b -> Expr' a b
 
-  -- Literals
-  EValBln :: Bool -> Expr' a b
-  EValChr :: Char -> Expr' a b
-  EValFlt :: Float -> Expr' a b
-  EValInt :: Int -> Expr' a b
-  EValStr :: String -> Expr' a b
+  EVal :: Value -> Expr' a b
+
 
 deriving instance Eq (Expr' a b)
 deriving instance Show (Expr' a b)
+
+data Value
+  = VBln Bool
+  | VChr Char
+  | VFlt Float
+  | VInt Int
+  | VStr String
+  deriving(Eq, Show)
 
 data UnOp
   = Not

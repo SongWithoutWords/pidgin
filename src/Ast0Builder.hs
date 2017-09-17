@@ -33,16 +33,19 @@ e0BinOp :: BinOp -> Expr0 -> Expr0 -> Expr0
 e0BinOp op a b = Expr0 $ EBinOp op a b
 
 e0ValBln :: Bool -> Expr0
-e0ValBln = Expr0 . EValBln
+e0ValBln = Expr0 . EVal . VBln
+
+e0ValChr :: Char -> Expr0
+e0ValChr = Expr0 . EVal . VChr
 
 e0ValFlt :: Float -> Expr0
-e0ValFlt = Expr0 . EValFlt
+e0ValFlt = Expr0 . EVal . VFlt
 
 e0ValInt :: Int -> Expr0
-e0ValInt = Expr0 . EValInt
+e0ValInt = Expr0 . EVal . VInt
 
 e0ValStr :: String -> Expr0
-e0ValStr = Expr0 . EValStr
+e0ValStr = Expr0 . EVal . VStr
 
 l0App :: Expr0 -> Args0 -> LExpr0
 l0App e args = LExpr0 $ LApp $ App e args

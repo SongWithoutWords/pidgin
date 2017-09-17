@@ -216,11 +216,11 @@ expr
 
   | op     { $1 }
 
-  | litBln { Expr0 $ EValBln $1 }
-  | litChr { Expr0 $ EValChr $1 }
-  | litFlt { Expr0 $ EValFlt $1 }
-  | litInt { Expr0 $ EValInt $1 }
-  | litStr { Expr0 $ EValStr $1 }
+  | litBln { e0ValBln $1 }
+  | litChr { e0ValChr $1 }
+  | litFlt { e0ValFlt $1 }
+  | litInt { e0ValInt $1 }
+  | litStr { e0ValStr $1 }
 
 eIf
   : expr if expr else optEol expr { EIf $1 $3 $6 }
