@@ -77,7 +77,7 @@ mapBlock retNotation (Block0 stmts) = do
       s' <- mapStmt s
       mapBlock' rn rest $ s' : xs
 
-    mapBlock' _ _ _ = error "All cases should have been accounted for"   
+    mapBlock' _ _ _ = error "All cases should have been accounted for"
 
     mapStmt :: Stmt0 -> ErrorM Stmt1
     mapStmt s = case s of
@@ -93,9 +93,27 @@ mapVar :: Var0 -> ErrorM Var1
 mapVar (Var0 mut typ expr) = mapExpr expr >>= return . Var0 mut typ
 
 mapExpr :: Expr0 -> ErrorM Expr1
-mapExpr = undefined
+mapExpr (Expr0 e) = mapExpr' e >>= return . Expr0
+
+mapExpr' :: Expr0' -> ErrorM Expr1'
+mapExpr' expr = case expr of
+
+  EApp app -> do
+    app' <- mapApp app
+    return $ Expr0 $ EApp app'
+    mapApp app >>= return . EApp
+
+  -- EName n -> return $ EName n
+
+  EIf a c b -> do
+    a' <- mapExpr a
+    c' <- mapExpr c
+    b' <- mapExpr b
+    return $ EIf a' c' b'
 
 mapApp :: App0 -> ErrorM App1
-mapApp = undefined
-
+mapApp (App e (Args purity args)) = do
+    e' <- mapExpr e
+    args' <- mapM mapExpr args
+    return $ App e' $ Args purity args'
 
