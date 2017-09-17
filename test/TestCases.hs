@@ -210,7 +210,7 @@ testCases =
       <> source
       "drawWidget(~@, Nat width, Nat height):\n\
       \    $ w = Widget(width, height)\n\
-      \    if w.exists then\n\
+      \    if w.exists:\n\
       \        w.draw(~@)"
 
       <> tokens
@@ -223,7 +223,7 @@ testCases =
           , T.Dollar, T.Name "w", T.Equal
             , T.Typename "Widget", T.LParen, T.Name "width", T.Comma, T.Name "height", T.RParen
           , T.Eol
-          , T.If, T.Name "w", T.Dot, T.Name "exists", T.Then
+          , T.If, T.Name "w", T.Dot, T.Name "exists", T.Colon
           , T.Indent
             , T.Name "w", T.Dot, T.Name "draw", T.LParen, T.Tilde, T.At, T.RParen
           , T.Dedent
