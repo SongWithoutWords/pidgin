@@ -1,13 +1,18 @@
 * todos
 ** Parsing/Ast
 *** TODO Should I parse operators as functions generally, possibly even expressions?
-*** TODO Conversion of ast parameters to phantom-type toggles for more fine-grained control
+*** DONE Conversion of ast parameters to phantom-type toggles for more fine-grained control
+    CLOSED: [2017-09-17 Sun 15:18]
 ** Type checking
 ** Code generation
-*** TODO Eliminate implicit rets before code generation, possibly during post parse
-**** TODO Make the change in the ast
-***** TODO Optional ret at the end of each block, eliminate useless expressions as well
-**** TODO Make the necessary changes so that it runs and compiles
+*** DONE Eliminate implicit rets before code generation, possibly during post parse
+    CLOSED: [2017-09-17 Sun 15:19]
+**** DONE Make the change in the ast
+     CLOSED: [2017-09-17 Sun 15:19]
+***** DONE Optional ret at the end of each block, eliminate useless expressions as well
+      CLOSED: [2017-09-17 Sun 15:19]
+**** DONE Make the necessary changes so that it runs and compiles
+     CLOSED: [2017-09-17 Sun 15:19]
 ** Misc
 *** TODO Delete old makefile
      
