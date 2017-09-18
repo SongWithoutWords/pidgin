@@ -3,7 +3,9 @@
 
 module CodeGen(codeGen) where
 
+import qualified Data.Map as M
 import Data.String
+import Control.Monad.State(gets)
 
 import qualified LLVM.AST as A
 import qualified LLVM.AST.Constant as C
@@ -14,6 +16,7 @@ import Ast
 import CodeGenInstructions
 import CodeGenM
 import CodeGenUtil
+import Debug
 import MultiMap
 
 codeGen :: Ast2 -> A.Module
@@ -66,13 +69,25 @@ genStmt stmt = case stmt of
 
 -- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr2 -> CodeGenM A.Operand
-genExpr (Expr2 t e) = case e of
+genExpr (Expr2 t expr) = case expr of
 
-  EApp (App e args) -> error "CodeGen.EApp undefined"
+  EApp (App e (Args _ args)) -> do
 
-  -- TODO: What about global variables?
-  EName n -> return $ localReference n t
+    let retType = case t of
+          TFunc _ _ ret -> ret
+          _ -> error "CodeGen received EApp with non applicable type"
 
+    let retType' = typeToLlvmType $ traceAppend "typeOf " retType
+
+    e' <- genExpr e
+    args' <- traverse genExpr args
+    call (typeToLlvmType retType) e' args'
+
+  EName n -> do
+    locals <- gets bindings
+    return $ if M.member n locals
+      then localReference n t
+      else globalReference n t
 
   EBinOp op a@(Expr2 ta _) b@(Expr2 tb _) -> let
     genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand

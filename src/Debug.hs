@@ -3,8 +3,7 @@ module Debug where
 import qualified Debug.Trace as Trace
 
 debug :: Bool
--- debug = True
-debug = False
+debug = True
 
 trace :: String -> a -> a
 trace s a = if debug then Trace.trace s a else a

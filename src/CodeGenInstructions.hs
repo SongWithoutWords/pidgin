@@ -3,20 +3,24 @@ module CodeGenInstructions
   , fadd
   , sub
   , fsub
+  , call
   ) where
 
 import qualified Data.Word as W
 
 import qualified LLVM.AST as A
+import qualified LLVM.AST.CallingConvention as CallingConvention
 import qualified LLVM.AST.Type as T
 
 import CodeGenM
 
-type Instruction = A.Operand -> A.Operand -> CodeGenM A.Operand
-type Instruction' a = a -> A.Operand -> A.Operand -> CodeGenM A.Operand
+type BinaryInstruction = A.Operand -> A.Operand -> CodeGenM A.Operand
+type BinaryInstruction' a = a -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
 
-type IntInstruction = Instruction' W.Word32
+-- Integral instructions
+--------------------------------------------------------------------------------
+type IntInstruction = BinaryInstruction' W.Word32
 
 type IntInstructionCons =
   Bool ->
@@ -39,8 +43,16 @@ add width = intInstruction A.Add width
 sub :: IntInstruction
 sub width = intInstruction A.Sub width
 
+-- and :: InstructionType
+-- and t a b = instruction t $ A.And a b []
 
-type FltInstruction = Instruction' T.FloatingPointType
+-- or :: InstructionType
+-- or t a b = instruction t $ A.Or a b []
+
+
+-- Floating point instructions
+--------------------------------------------------------------------------------
+type FltInstruction = BinaryInstruction' T.FloatingPointType
 
 type FltInstructionCons =
   A.FastMathFlags ->
@@ -49,7 +61,7 @@ type FltInstructionCons =
   A.InstructionMetadata ->
   A.Instruction
 
-fltInstruction :: T.FloatingPointType -> FltInstructionCons -> Instruction
+fltInstruction :: T.FloatingPointType -> FltInstructionCons -> BinaryInstruction
 fltInstruction fpType instr a b =
   instruction (T.FloatingPointType fpType) $ instr fastMathFlags a b []
   where
@@ -61,20 +73,21 @@ fadd fpType = fltInstruction fpType A.FAdd
 fsub :: FltInstruction
 fsub fpType = fltInstruction fpType A.FSub
 
--- fadd :: FloatingPointInstruction --InstructionType T.FloatingPointType
--- fadd t a b = instruction (T.FloatingPointType t) $ A.FAdd fastMathFlags a b []
 
--- sub :: InstructionType W.Word32
--- sub n a b = instruction (T.IntegerType n) $ A.Sub nsw nuw a b []
+-- Control flow instructions
+--------------------------------------------------------------------------------
+call :: T.Type -> A.Operand -> [A.Operand] -> CodeGenM A.Operand
+call typ op args = instruction typ $ A.Call
+  { A.tailCallKind = Nothing
+  , A.callingConvention = CallingConvention.C
+  , A.returnAttributes = []
+  , A.function = Right op -- Left would be inline assembly
+  , A.arguments = map (\a -> (a, [])) args
+  , A.functionAttributes = []
+  , A.metadata = []
+  }
 
--- fsub :: InstructionType
--- fsub t a b = instruction t $ A.Sub
 
--- -- fsub :: A.Type -> A.Operand -> 
-
--- and :: InstructionType
--- and t a b = instruction t $ A.And a b []
-
--- or :: InstructionType
--- or t a b = instruction t $ A.Or a b []
-
+-- Effects
+-- call :: LAst.Operand -> [LAst.Operand] -> Codegen LAst.Operand
+-- call fn args = instr $ LAst.Call Nothing CallingConvention.C [] (Right fn) (toArgs args) [] []
