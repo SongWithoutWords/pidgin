@@ -76,8 +76,6 @@ genExpr (Expr2 t expr) = case expr of
           TFunc _ _ ret -> ret
           _ -> error "CodeGen received EApp with non applicable type"
 
-    let retType' = typeToLlvmType $ traceAppend "typeOf " retType
-
     e' <- genExpr e
     args' <- traverse genExpr args
     call (typeToLlvmType retType) e' args'
