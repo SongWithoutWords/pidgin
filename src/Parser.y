@@ -150,10 +150,10 @@ signature
   : purityAndParams optionRetType { Sig0 (fst $1) (snd $1) $2}
 
 purityAndParams
-  : "(" ")"                         { Pure & [] }
-  | "(" namedParams ")"             { Pure & $2 }
-  | "(" purity ")"                  { $2 & [] }
-  | "(" purity "," namedParams ")"  { $2 & $4 }
+  : "(" ")"                         { (Pure, []) }
+  | "(" namedParams ")"             { (Pure, $2) }
+  | "(" purity ")"                  { ($2, []) }
+  | "(" purity "," namedParams ")"  { ($2, $4) }
 
 namedParams
   : namedParam                 { [$1] }
@@ -297,10 +297,10 @@ funcType
   | "(" purityAndTypes ")" retType  { TFunc (fst $2) (snd $2) $4 }
 
 purityAndTypes
-  : {- none -}        { Pure & [] }
-  | types             { Pure & $1 }
-  | purity            { $1 & [] }
-  | purity "," types  { $1 & $3 }
+  : {- none -}        { (Pure, []) }
+  | types             { (Pure, $1) }
+  | purity            { ($1, []) }
+  | purity "," types  { ($1, $3) }
 
 purity
   : "@"     { PRead }
