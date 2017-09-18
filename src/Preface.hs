@@ -1,22 +1,23 @@
+{-# language MultiParamTypeClasses #-}
 {-# language TypeOperators #-}
 
 module Preface where
 
 -- Might like to change this operator to ×
-type a & b = (a, b)
+-- type a & b = (a, b)
 
-infixr 0 &
-(&) :: a -> b -> (a, b)
-(&) x y = (x, y)
+-- infixr 0 &
+-- (&) :: a -> b -> (a, b)
+-- (&) x y = (x, y)
 
 identity :: a -> a
 identity x = x
 
-orElse :: Maybe a -> Maybe a -> Maybe a
-orElse x@Just{} _ = x
+orElse :: Maybe a -> a -> a
+orElse (Just x) _ = x
 orElse Nothing y = y
 
-(??) :: Maybe a -> Maybe a -> Maybe a
+(??) :: Maybe a -> a -> a
 (??) = orElse
 
 consMaybe :: Maybe a -> [a] -> [a]

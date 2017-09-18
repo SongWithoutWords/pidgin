@@ -1,10 +1,17 @@
 module Transforms
-  ( scanTokens
-  , parse
-  , lexParseCheck
-  , lexParseCheckGen
-  , translateToLlvmIr
-  , evalMain
+  ( module Lexer
+  , module Parser
+  , module Transforms
+  --   scanTokens
+  -- , parse
+  -- , parseTreeFromSource
+  -- , astFromSource
+  -- , lexParseCheck
+  -- , typedAstFromSource
+  -- , typeErrorsFromSource
+  -- , llvmModuleFromSource
+  -- , llvmIrFromSource
+  -- , evalMainOfSource
   ) where
 
 import System.IO.Unsafe
@@ -21,18 +28,40 @@ import TypeCheck
 import CodeGen
 import LlvmUtil
 
-(|>) :: (a -> b) -> (b -> c) -> (a -> c)
-f |> g = g . f
+
+
+-- TODO: Would be really great to wrap all of these transforms in a nice error monad
+
+parseTreeFromSource :: SourceCode -> Ast0
+parseTreeFromSource = parse . scanTokens
+
+astFromSource :: SourceCode -> Ast1
+astFromSource = fst . postParseAst . parseTreeFromSource
+
+astFromParseTree :: Ast0 -> Ast1
+astFromParseTree = fst . postParseAst
 
 lexParseCheck :: SourceCode -> (Ast2, Errors)
-lexParseCheck = scanTokens |> parse |> (fst . postParseAst) |> typeCheckAst
+lexParseCheck = typeCheckAst . astFromSource
 
-lexParseCheckGen :: SourceCode -> A.Module
-lexParseCheckGen = (fst . lexParseCheck) |> codeGen
+typedAstFromSource :: SourceCode -> Ast2
+typedAstFromSource = fst . lexParseCheck
 
-translateToLlvmIr :: SourceCode -> IO String
-translateToLlvmIr = llvmAstToAsm . lexParseCheckGen
+typeErrorsFromSource :: SourceCode -> Errors
+typeErrorsFromSource = snd . lexParseCheck
 
-evalMain :: SourceCode -> IO (Maybe Int)
-evalMain = execMainOfLlvmAst . lexParseCheckGen
+typedAstFromParseTree :: Ast0 -> Ast2
+typedAstFromParseTree = fst . typeCheckAst . astFromParseTree
+
+typeErrorsFromParseTree :: Ast0 -> Errors
+typeErrorsFromParseTree = snd . typeCheckAst . astFromParseTree
+
+llvmModuleFromSource :: SourceCode -> A.Module
+llvmModuleFromSource = codeGen . typedAstFromSource
+
+llvmIrFromSource :: SourceCode -> IO String
+llvmIrFromSource = llvmAstToAsm . llvmModuleFromSource
+
+returnValFromSource :: SourceCode -> IO (Maybe Int)
+returnValFromSource = execMainOfLlvmAst . llvmModuleFromSource
 

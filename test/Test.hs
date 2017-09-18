@@ -1,90 +1,104 @@
-import Preface
+module Tests where
+
+import Control.Applicative((<|>))
+import Data.Maybe
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Lexer
-import Parser
+import Preface
 
 import Ast
-import PostParseAst
+import Source
+import Transforms
 import Tokens
 
-import TypeCheck
+-- import TypeCheck
 import TestCases
 
 import TestCase()
 
-import Data.Maybe
-
-main :: IO ()
-main = defaultMain tests
-
 testTimeout_μs = 10000
 
-tests :: TestTree
-tests = localOption (mkTimeout testTimeout_μs) $ testGroup "tests"
-  [ lexerTests
-  , parserTests
-  , typeInferenceTests
-  , typeCheckTests
-  ]
+main :: IO ()
+main = do
+  tests' <- tests
+  defaultMain tests'
+
+tests :: IO TestTree
+tests = do
+  returnValTests' <- returnValTests
+  return $ localOption (mkTimeout testTimeout_μs) $ testGroup "tests"
+    [ lexerTests
+    , parserTests
+    , typedAstTests
+    , typeErrorTests
+    , returnValTests'
+    ]
+
 
 lexerTests :: TestTree
 lexerTests = testGroup "lexer" $ mapMaybe lexTest testCases
 
 lexTest :: TestCase -> Maybe TestTree
-lexTest t = tryTestEq
-  (displayName t)
-  (testTokens t)
-  (scanTokens <$> testSource t)
+lexTest = tryTestEq testTokens (\t -> scanTokens <$> testSource t)
 
 parserTests :: TestTree
 parserTests = testGroup "parser" $ mapMaybe parserTest testCases
 
 parserTest :: TestCase -> Maybe TestTree
-parserTest t = tryTestEq
-  (displayName t)
-  (testAst t)
-  (parse <$> tokenInput t)
+parserTest = tryTestEq testAst (\t -> parse <$> tokenInput t)
 
-typeInferenceTests :: TestTree
-typeInferenceTests = testGroup "type inference" $ mapMaybe typeInferenceTest testCases
+typedAstTests :: TestTree
+typedAstTests = testGroup "typed ast" $ mapMaybe typedAstTest testCases
 
-typeInferenceTest :: TestCase -> Maybe TestTree
-typeInferenceTest t = tryTestEq
-  (displayName t)
-  (testTypedAst t)
-  (fst . typeCheckAst . fst . postParseAst <$> astInput t)
+typedAstTest :: TestCase -> Maybe TestTree
+typedAstTest = tryTestEq testTypedAst (\t -> typedAstFromParseTree <$> astInput t)
 
-typeCheckTests :: TestTree
-typeCheckTests = testGroup "type checker" $ mapMaybe typeCheckTest testCases
+typeErrorTests :: TestTree
+typeErrorTests = testGroup "type errors" $ mapMaybe typeErrorTest testCases
 
-typeCheckTest :: TestCase -> Maybe TestTree
-typeCheckTest t = tryTestEq
-  (displayName t)
-  (testTypeErrors t)
-  (snd . typeCheckAst . fst . postParseAst <$> astInput t)
+typeErrorTest :: TestCase -> Maybe TestTree
+typeErrorTest = tryTestEq testTypeErrors (\t -> typeErrorsFromParseTree <$> astInput t)
 
--- TODO: replace tryTestEq :: String -> Maybe a -> Maybe a -> Maybe TestTree
---          with tryTestEq :: TestCase -> (TestCase -> Maybe a) -> (TestCase -> Maybe a) -> Maybe TestTree
--- or better yet tryTestEq :: (TestCase -> Maybe a) -> (TestCase -> Maybe a) -> TestCase -> Maybe TestTree (point-free)
+returnValTests :: IO TestTree
+returnValTests = do
+  tests <- sequence $ traverse returnValTest testCases
+  return $ testGroup "type errors" (mapMaybe tests)
 
-displayName :: TestCase -> String
-displayName t = fromMaybe "" $ testName t `orElse` testSource t
+returnValTest :: TestCase -> IO (Maybe TestTree)
+returnValTest t = do
+  maybeActual <- returnValFromSource <$> testSource t
+  return $ tryTestEq' maybeActual (testReturnVal t)
+
 
 tokenInput :: TestCase -> Maybe Tokens
-tokenInput t = testTokens t `orElse` (scanTokens <$> testSource t)
+tokenInput t = testTokens t <|> (scanTokens <$> testSource t)
 
 astInput :: TestCase -> Maybe Ast0
-astInput t = testAst t `orElse` (parse <$> tokenInput t)
+astInput t = testAst t <|> (parse <$> tokenInput t)
+
+
+tryTestEq :: (Eq a, Show a)
+  => (TestCase -> Maybe a)
+  -> (TestCase -> Maybe a)
+  -> TestCase
+  -> Maybe TestTree
+tryTestEq getActual getExpected testCase =
+  tryTestEq' (getActual testCase) (getExpected testCase) testCase
+
+tryTestEq' :: (Eq a, Show a) => Maybe a -> Maybe a -> TestCase -> Maybe TestTree
+tryTestEq' actual expected testCase = do
+  actual' <- actual
+  expected' <- expected
+  let name = displayName testCase
+  return $ testEq name actual' expected'
 
 testEq :: (Eq a, Show a) => String -> a -> a -> TestTree
 testEq name actual expected = testCase name $ actual @=? expected
 
-tryTestEq :: (Eq a, Show a) => String -> Maybe a -> Maybe a -> Maybe TestTree
-tryTestEq name optActual optExpected = do
-  expected <- optExpected
-  actual <- optActual
-  return $ testEq name actual expected
+displayName :: TestCase -> String
+displayName t = testName t ?? (case testSource t of
+  (Just (SourceCode s)) -> s
+  _ -> "")
 
