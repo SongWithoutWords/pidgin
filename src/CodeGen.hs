@@ -16,7 +16,6 @@ import Ast
 import CodeGenInstructions
 import CodeGenM
 import CodeGenUtil
-import Debug
 import MultiMap
 
 codeGen :: Ast2 -> A.Module
