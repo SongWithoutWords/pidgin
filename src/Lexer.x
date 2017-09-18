@@ -3,6 +3,7 @@
 
 module Lexer (scanTokens) where
 import qualified Tokens as T
+import Source
 }
 
 %wrapper "monadUserState"
@@ -231,8 +232,8 @@ lexError pos msg = "Lexical error, line " ++ showLineNumber pos ++ ": " ++ msg
 runAlexScan :: String -> Either ParseError AlexUserState
 runAlexScan s = runAlex s $ alexMonadScan >> getUserState
 
-scanTokens :: String -> [Token]
-scanTokens s = case runAlexScan s of
+scanTokens :: SourceCode -> [Token]
+scanTokens (SourceCode s) = case runAlexScan s of
   (Right state) -> tokens state ++ replicate (indentDepth state) T.Dedent
   (Left parseError) -> error $ parseError
 }

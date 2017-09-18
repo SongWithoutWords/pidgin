@@ -33,6 +33,7 @@ library
                      , Parser
                      , PostParseAst
                      , Preface
+                     , Source
                      , Tokens 
                      , Transforms
                      , TypeCheck

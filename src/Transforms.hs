@@ -1,5 +1,7 @@
 module Transforms
-  ( lexParseCheck
+  ( scanTokens
+  , parse
+  , lexParseCheck
   , lexParseCheckGen
   , translateToLlvmIr
   , evalMain
@@ -10,7 +12,7 @@ import System.IO.Unsafe
 import LLVM.AST as A
 
 import Ast
--- import MultiMapAst
+import Source
 
 import Lexer
 import Parser
@@ -22,15 +24,15 @@ import LlvmUtil
 (|>) :: (a -> b) -> (b -> c) -> (a -> c)
 f |> g = g . f
 
-lexParseCheck :: String -> (Ast2, Errors)
+lexParseCheck :: SourceCode -> (Ast2, Errors)
 lexParseCheck = scanTokens |> parse |> (fst . postParseAst) |> typeCheckAst
 
-lexParseCheckGen :: String -> A.Module
+lexParseCheckGen :: SourceCode -> A.Module
 lexParseCheckGen = (fst . lexParseCheck) |> codeGen
 
-translateToLlvmIr :: String -> IO String
+translateToLlvmIr :: SourceCode -> IO String
 translateToLlvmIr = llvmAstToAsm . lexParseCheckGen
 
-evalMain :: String -> IO (Maybe Int)
+evalMain :: SourceCode -> IO (Maybe Int)
 evalMain = execMainOfLlvmAst . lexParseCheckGen
 
