@@ -1,8 +1,8 @@
 module Transforms
   ( lexParseCheck
   , lexParseCheckGen
-  , pidginToLlvmIr
-  , evalMainOfPidgin
+  , translateToLlvmIr
+  , evalMain
   ) where
 
 import System.IO.Unsafe
