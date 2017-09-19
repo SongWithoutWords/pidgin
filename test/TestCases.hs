@@ -608,6 +608,12 @@ testCases =
 
 
   -- Evaluation tests
+  , name "double 8"
+    <> source
+      "double(Int i) => 2 * i\n\
+      \main() => double(8)"
+    <> returnVal 16
+
   , name "inc 7"
     <> source
       "inc(Int n) => n + 1\n\
