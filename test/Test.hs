@@ -1,10 +1,10 @@
-module Tests where
+-- module Tests where
 
 import Control.Applicative((<|>))
 import Data.Maybe
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import qualified Test.Tasty as T
+import qualified Test.Tasty.HUnit as H
 
 import Preface
 
@@ -21,56 +21,54 @@ import TestCase()
 testTimeout_μs = 10000
 
 main :: IO ()
-main = do
-  tests' <- tests
-  defaultMain tests'
+main = T.defaultMain tests
 
-tests :: IO TestTree
-tests = do
-  returnValTests' <- returnValTests
-  return $ localOption (mkTimeout testTimeout_μs) $ testGroup "tests"
+tests :: T.TestTree
+tests = T.localOption (T.mkTimeout testTimeout_μs) $ T.testGroup "tests"
     [ lexerTests
     , parserTests
     , typedAstTests
     , typeErrorTests
-    , returnValTests'
+    , returnValTests
     ]
 
+lexerTests :: T.TestTree
+lexerTests = T.testGroup "lexer" $ mapMaybe lexTest testCases
 
-lexerTests :: TestTree
-lexerTests = testGroup "lexer" $ mapMaybe lexTest testCases
-
-lexTest :: TestCase -> Maybe TestTree
+lexTest :: TestCase -> Maybe T.TestTree
 lexTest = tryTestEq testTokens (\t -> scanTokens <$> testSource t)
 
-parserTests :: TestTree
-parserTests = testGroup "parser" $ mapMaybe parserTest testCases
+parserTests :: T.TestTree
+parserTests = T.testGroup "parser" $ mapMaybe parserTest testCases
 
-parserTest :: TestCase -> Maybe TestTree
+parserTest :: TestCase -> Maybe T.TestTree
 parserTest = tryTestEq testAst (\t -> parse <$> tokenInput t)
 
-typedAstTests :: TestTree
-typedAstTests = testGroup "typed ast" $ mapMaybe typedAstTest testCases
+typedAstTests :: T.TestTree
+typedAstTests = T.testGroup "typed ast" $ mapMaybe typedAstTest testCases
 
-typedAstTest :: TestCase -> Maybe TestTree
+typedAstTest :: TestCase -> Maybe T.TestTree
 typedAstTest = tryTestEq testTypedAst (\t -> typedAstFromParseTree <$> astInput t)
 
-typeErrorTests :: TestTree
-typeErrorTests = testGroup "type errors" $ mapMaybe typeErrorTest testCases
+typeErrorTests :: T.TestTree
+typeErrorTests = T.testGroup "type errors" $ mapMaybe typeErrorTest testCases
 
-typeErrorTest :: TestCase -> Maybe TestTree
+typeErrorTest :: TestCase -> Maybe T.TestTree
 typeErrorTest = tryTestEq testTypeErrors (\t -> typeErrorsFromParseTree <$> astInput t)
 
-returnValTests :: IO TestTree
-returnValTests = do
-  tests <- sequence $ traverse returnValTest testCases
-  return $ testGroup "type errors" (mapMaybe tests)
+returnValTests :: T.TestTree
+returnValTests = T.testGroup "return values" $ mapMaybe returnValTest testCases
 
-returnValTest :: TestCase -> IO (Maybe TestTree)
+returnValTest :: TestCase -> Maybe T.TestTree
 returnValTest t = do
-  maybeActual <- returnValFromSource <$> testSource t
-  return $ tryTestEq' maybeActual (testReturnVal t)
-
+  expected <- testReturnVal t
+  source <- testSource t
+  let name = displayName t
+  return $ H.testCase name $ do
+    result <- returnValFromSource source
+    case result of
+      Nothing -> putStrLn "No return value"
+      Just actual -> actual H.@=? expected
 
 tokenInput :: TestCase -> Maybe Tokens
 tokenInput t = testTokens t <|> (scanTokens <$> testSource t)
@@ -83,22 +81,23 @@ tryTestEq :: (Eq a, Show a)
   => (TestCase -> Maybe a)
   -> (TestCase -> Maybe a)
   -> TestCase
-  -> Maybe TestTree
+  -> Maybe T.TestTree
 tryTestEq getActual getExpected testCase =
   tryTestEq' (getActual testCase) (getExpected testCase) testCase
 
-tryTestEq' :: (Eq a, Show a) => Maybe a -> Maybe a -> TestCase -> Maybe TestTree
+tryTestEq' :: (Eq a, Show a) => Maybe a -> Maybe a -> TestCase -> Maybe T.TestTree
 tryTestEq' actual expected testCase = do
   actual' <- actual
   expected' <- expected
-  let name = displayName testCase
-  return $ testEq name actual' expected'
+  return $ testEq actual' expected' testCase
 
-testEq :: (Eq a, Show a) => String -> a -> a -> TestTree
-testEq name actual expected = testCase name $ actual @=? expected
+testEq :: (Eq a, Show a) => a -> a -> TestCase -> T.TestTree
+testEq actual expected testCase =
+  let name = displayName testCase
+  in H.testCase name $ actual H.@=? expected
 
 displayName :: TestCase -> String
-displayName t = testName t ?? (case testSource t of
-  (Just (SourceCode s)) -> s
-  _ -> "")
+displayName t = testName t ?? case testSource t of
+  Just (SourceCode s) -> s
+  _ -> ""
 

@@ -42,9 +42,7 @@ execMainOfLlvmAst astMod = withModuleFromAst astMod $ \context lmod ->
       case main of
         Just f -> do
           res <- execFunction f
-          putStrLn $ "Evaluated to: " ++ show res
           return $ Just res
         Nothing -> do
-          putStrLn "No main function"
           return Nothing
 
