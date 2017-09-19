@@ -92,6 +92,7 @@ genExpr (Expr2 t expr) = case expr of
     genBinOp Add TInt TInt = iadd 32
     genBinOp Sub TInt TInt = isub 32
     genBinOp Mul TInt TInt = imul 32
+    genBinOp Div TInt TInt = sdiv 32
 
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 
