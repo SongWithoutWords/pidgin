@@ -605,5 +605,33 @@ testCases =
           $ e2App TInt (e2Name (TFunc Pure [TInt] TInt) "inc") $ Args Pure [e2ValInt 1])
       ]
     <> typeErrors []
+
+
+  -- Evaluation tests
+  , name "inc 7"
+    <> source
+      "inc(Int n) => n + 1\n\
+      \main() => inc(7)"
+    <> returnVal 8
+
+  , name "square 6"
+    <> source
+      "sqr(Int n) => n * n\n\
+      \main() => sqr(6)"
+    <> returnVal 36
+
+  , name "sum to 5"
+    <> source
+      "sumTo(Int n) => n * (n + 1) / 2\
+      \main() => sumTo(5)"
+    <> returnVal 15
+
+  , name "factorial 4"
+    <> source
+      "fact(Int n) => 1 if n <= 1 else n + fact(n - 1)\
+      \main() => fact(5)"
+    <> returnVal 120
+
+
  ]
 
