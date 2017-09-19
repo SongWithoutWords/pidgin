@@ -634,9 +634,21 @@ testCases =
 
   , name "factorial 4"
     <> source
-      "fact(Int n) => 1 if n <= 1 else n + fact(n - 1)\n\
+      "fact(Int i) => 1 if i <= 1 else i + fact(i - 1)\n\
       \main() => fact(5)"
     <> returnVal 120
+
+  , name "mod 7 23"
+    <> source
+      "mod7(Int i) => i % 7\n\
+      \main() => mod7(23)"
+    <> returnVal 2
+
+  , name "mod 7 -3"
+    <> source
+      "mod7(Int i) => i % 7\n\
+      \main() => mod7(-3)"
+    <> returnVal 4
 
 
  ]
