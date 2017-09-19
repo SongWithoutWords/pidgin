@@ -616,25 +616,25 @@ testCases =
 
   , name "inc 7"
     <> source
-      "inc(Int n) => n + 1\n\
+      "inc(Int i) => i + 1\n\
       \main() => inc(7)"
     <> returnVal 8
 
   , name "square 6"
     <> source
-      "sqr(Int n) => n * n\n\
+      "sqr(Int i) => i * i\n\
       \main() => sqr(6)"
     <> returnVal 36
 
   , name "sum to 5"
     <> source
-      "sumTo(Int n) => n * (n + 1) / 2\
+      "sumTo(Int i) => i * (i + 1) / 2\n\
       \main() => sumTo(5)"
     <> returnVal 15
 
   , name "factorial 4"
     <> source
-      "fact(Int n) => 1 if n <= 1 else n + fact(n - 1)\
+      "fact(Int n) => 1 if n <= 1 else n + fact(n - 1)\n\
       \main() => fact(5)"
     <> returnVal 120
 
