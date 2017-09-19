@@ -1,7 +1,8 @@
 module CodeGenInstructions
-  ( add
+  ( iadd
+  , isub
+  , imul
   , fadd
-  , sub
   , fsub
   , call
   ) where
@@ -37,11 +38,14 @@ intInstruction instr width a b =
     nsw = False -- no signed wrap: if true signed wraps produce poison values
     nuw = False -- no unsigned wrap: if true signed wraps produce poison values
 
-add :: IntInstruction
-add width = intInstruction A.Add width
+iadd :: IntInstruction
+iadd width = intInstruction A.Add width
 
-sub :: IntInstruction
-sub width = intInstruction A.Sub width
+isub :: IntInstruction
+isub width = intInstruction A.Sub width
+
+imul :: IntInstruction
+imul width = intInstruction A.Mul width
 
 -- and :: InstructionType
 -- and t a b = instruction t $ A.And a b []

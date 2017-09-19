@@ -89,7 +89,10 @@ genExpr (Expr2 t expr) = case expr of
   EBinOp op a@(Expr2 ta _) b@(Expr2 tb _) -> let
     genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
-    genBinOp Add TInt TInt = add 32
+    genBinOp Add TInt TInt = iadd 32
+    genBinOp Sub TInt TInt = isub 32
+    genBinOp Mul TInt TInt = imul 32
+
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 
     in do
