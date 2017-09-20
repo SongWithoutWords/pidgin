@@ -608,6 +608,12 @@ testCases =
 
 
   -- Evaluation tests
+
+  , name "negative value"
+    <> source
+      "main() => -1 "
+    <> returnVal (-1)
+
   , name "double 8"
     <> source
       "double(Int i) => 2 * i\n\
