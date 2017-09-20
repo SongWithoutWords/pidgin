@@ -645,21 +645,36 @@ testCases =
     <> returnVal 120
 
   -- Modulus operator tests
-  , name "0 mod 2"
-    <> source "main() => 0 % 2"
+  , source "main() => 0 % 2"
     <> returnVal 0
 
-  , name "5 mod 5"
-    <> source "main() => 5 % 5"
+  , source "main() => 5 % 5"
     <> returnVal 0
 
-  , name "23 mod 7"
-    <> source "main() => 23 % 7"
+  , source "main() => 23 % 7"
     <> returnVal 2
 
-  , name "-3 mod 7"
-    <> source "main() => -3 % 7"
+  , source "main() => -3 % 7"
     <> returnVal 4
+
+  -- Comparison operator tests
+  , source "main() => 7 > 4"
+    <> returnVal 1
+
+  , source "main() => 4 > 7"
+    <> returnVal 0
+
+  , source "main() => -1 < 6"
+    <> returnVal 1
+
+  , source "main() => 6 < -1"
+    <> returnVal 0
+
+  , source "main() => 0 == 0"
+    <> returnVal 1
+
+  , source "main() => 3 == 4"
+    <> returnVal 0
 
  ]
 

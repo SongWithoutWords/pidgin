@@ -4,6 +4,9 @@ module CodeGenInstructions
   , imul
   , sdiv
   , srem
+  , igreater
+  , ilesser
+  , iequal
   , fadd
   , fsub
   , call
@@ -13,6 +16,7 @@ import qualified Data.Word as W
 
 import qualified LLVM.AST as A
 import qualified LLVM.AST.CallingConvention as CallingConvention
+import qualified LLVM.AST.IntegerPredicate as IPred
 import qualified LLVM.AST.Type as T
 
 import CodeGenM
@@ -54,6 +58,15 @@ sdiv width a b = instruction (T.IntegerType width) $ A.SDiv False a b []
 
 srem :: IntInstruction
 srem width a b = instruction (T.IntegerType width) $ A.SRem a b []
+
+igreater :: IntInstruction
+igreater width a b = instruction (T.IntegerType width) $ A.ICmp IPred.SGT a b []
+
+ilesser :: IntInstruction
+ilesser width a b = instruction (T.IntegerType width) $ A.ICmp IPred.SLT a b []
+
+iequal :: IntInstruction
+iequal width a b = instruction (T.IntegerType width) $ A.ICmp IPred.EQ a b []
 
 
 

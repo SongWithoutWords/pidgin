@@ -116,6 +116,10 @@ genExpr (Expr2 t expr) = case expr of
           aRemBPlusB <- iadd intWidth aRemB b
           srem intWidth aRemBPlusB b
 
+    genBinOp Greater TInt TInt = igreater intWidth
+    genBinOp Lesser TInt TInt = ilesser intWidth
+    genBinOp Equal TInt TInt = iequal intWidth
+
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 
     in do
