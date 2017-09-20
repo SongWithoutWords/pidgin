@@ -68,7 +68,7 @@ returnValTest t = do
     result <- returnValFromSource source
     case result of
       Nothing -> putStrLn "No return value"
-      Just actual -> actual H.@=? expected
+      Just actual -> expected H.@=? actual
 
 tokenInput :: TestCase -> Maybe Tokens
 tokenInput t = testTokens t <|> (scanTokens <$> testSource t)
