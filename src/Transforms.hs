@@ -2,16 +2,6 @@ module Transforms
   ( module Lexer
   , module Parser
   , module Transforms
-  --   scanTokens
-  -- , parse
-  -- , parseTreeFromSource
-  -- , astFromSource
-  -- , lexParseCheck
-  -- , typedAstFromSource
-  -- , typeErrorsFromSource
-  -- , llvmModuleFromSource
-  -- , llvmIrFromSource
-  -- , evalMainOfSource
   ) where
 
 import System.IO.Unsafe
