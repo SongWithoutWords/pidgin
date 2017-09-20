@@ -644,18 +644,22 @@ testCases =
       \main() => fact(5)"
     <> returnVal 120
 
-  , name "mod 7 23"
-    <> source
-      "mod7(Int i) => i % 7\n\
-      \main() => mod7(23)"
+  -- Modulus operator tests
+  , name "0 mod 2"
+    <> source "main() => 0 % 2"
+    <> returnVal 0
+
+  , name "5 mod 5"
+    <> source "main() => 5 % 5"
+    <> returnVal 0
+
+  , name "23 mod 7"
+    <> source "main() => 23 % 7"
     <> returnVal 2
 
-  , name "mod 7 -3"
-    <> source
-      "mod7(Int i) => i % 7\n\
-      \main() => mod7(-3)"
+  , name "-3 mod 7"
+    <> source "main() => -3 % 7"
     <> returnVal 4
-
 
  ]
 
