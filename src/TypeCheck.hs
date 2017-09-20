@@ -192,6 +192,13 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
 
     return $ e2If (typeOfExpr e1') e1' ec' e2'
 
+  EUnOp operator e ->
+    let
+      checkUnOp :: UnOp -> Expr2 -> TypeCheckM s Expr2
+      checkUnOp Neg a@(Expr2 TInt _) = return $ e2UnOp TInt Neg a
+    in do
+      e' <- checkExpr e
+      checkUnOp operator e'
 
   EBinOp operator e1 e2 ->
     let

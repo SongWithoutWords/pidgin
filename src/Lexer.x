@@ -73,6 +73,7 @@ pri                      { appendTokenAction T.Pri }
 "@"                      { appendTokenAction T.At }
 "#"                      { appendTokenAction T.Hash }
 "$"                      { appendTokenAction T.Dollar }
+"%"                      { appendTokenAction T.Percent }
 "^"                      { appendTokenAction T.Caret }
 "&"                      { appendTokenAction T.Ampersand }
 "*"                      { appendTokenAction T.Star }

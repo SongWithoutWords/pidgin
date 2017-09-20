@@ -13,6 +13,9 @@ e2Name t name = Expr2 t $ EName name
 e2If :: Type2 -> Expr2 -> Expr2 -> Expr2 -> Expr2
 e2If t a condition b = Expr2 t $ EIf a condition b
 
+e2UnOp :: Type2 -> UnOp -> Expr2 -> Expr2
+e2UnOp t op a = Expr2 t $ EUnOp op a
+
 e2BinOp :: Type2 -> BinOp -> Expr2 -> Expr2 -> Expr2
 e2BinOp t op a b = Expr2 t $ EBinOp op a b
 

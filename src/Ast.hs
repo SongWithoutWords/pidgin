@@ -238,6 +238,7 @@ data BinOp
   | Sub
   | Mul
   | Div
+  | Mod
   | Greater
   | Lesser
   | GreaterEq

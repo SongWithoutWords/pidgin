@@ -39,6 +39,7 @@ data Token
   | At
   | Hash
   | Dollar
+  | Percent
   | Caret
   | Ampersand
   | Star

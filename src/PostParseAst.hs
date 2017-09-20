@@ -98,10 +98,7 @@ mapExpr (Expr0 e) = mapExpr' e >>= return . Expr0
 mapExpr' :: Expr0' -> ErrorM Expr1'
 mapExpr' expr = case expr of
 
-  EApp app -> do
-    app' <- mapApp app
-    return $ Expr0 $ EApp app'
-    mapApp app >>= return . EApp
+  EApp app -> mapApp app >>= return . EApp
 
   EName n -> return $ EName n
 
@@ -110,6 +107,10 @@ mapExpr' expr = case expr of
     ec' <- mapExpr ec
     e2' <- mapExpr e2
     return $ EIf e1' ec' e2'
+
+  EUnOp op e -> do
+    e' <- mapExpr e
+    return $ EUnOp op e'
 
   EBinOp op e1 e2 -> do
     e1' <- mapExpr e1

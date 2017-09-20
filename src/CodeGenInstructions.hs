@@ -3,6 +3,7 @@ module CodeGenInstructions
   , isub
   , imul
   , sdiv
+  , srem
   , fadd
   , fsub
   , call
@@ -50,6 +51,11 @@ imul width = intInstruction A.Mul width
 
 sdiv :: IntInstruction
 sdiv width a b = instruction (T.IntegerType width) $ A.SDiv False a b []
+
+srem :: IntInstruction
+srem width a b = instruction (T.IntegerType width) $ A.SRem a b []
+
+
 
 
 -- and :: InstructionType

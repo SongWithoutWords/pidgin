@@ -15,7 +15,7 @@ typeToLlvmType t = trace ("typeToLlvmType " ++ show t) $ case t of
   TBln -> T.i1
   TChr -> T.i8
   TFlt -> T.float
-  TInt -> T.i32
+  TInt -> T.i64
   TNone -> T.void
 
 nameToLlvmName :: Name -> A.Name

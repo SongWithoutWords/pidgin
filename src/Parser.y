@@ -51,6 +51,7 @@ import qualified Tokens as T
   "@"           { T.At }
   "#"           { T.Hash }
   "$"           { T.Dollar }
+  "%"           { T.Percent }
   "^"           { T.Caret }
   "&"           { T.Ampersand }
   "*"           { T.Star }
@@ -85,7 +86,7 @@ import qualified Tokens as T
   typename      { T.Typename $$ }
 
 %right "+" "-" 
-%right "*" "/"
+%right "*" "/" "%"
 %right prec_neg
 
 %%
@@ -237,6 +238,7 @@ op
   | expr "-" expr           { e0BinOp Sub $1 $3 }
   | expr "*" expr           { e0BinOp Mul $1 $3 }
   | expr "/" expr           { e0BinOp Div $1 $3 }
+  | expr "%" expr           { e0BinOp Mod $1 $3 }
   | expr ">" expr           { e0BinOp Greater $1 $3 }
   | expr "<" expr           { e0BinOp Lesser $1 $3 }
   | expr ">=" expr          { e0BinOp GreaterEq $1 $3 }

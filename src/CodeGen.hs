@@ -65,6 +65,7 @@ genStmt stmt = case stmt of
     oper <- genExpr e
     addBinding name oper
 
+intWidth = 64
 
 -- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr2 -> CodeGenM A.Operand
@@ -86,22 +87,43 @@ genExpr (Expr2 t expr) = case expr of
       then localReference n t
       else globalReference n t
 
-  EBinOp op a@(Expr2 ta _) b@(Expr2 tb _) -> let
+  EUnOp op a@(Expr2 ta _) -> let
+
+    genUnOp :: UnOp -> Type2 -> A.Operand -> CodeGenM A.Operand
+
+    genUnOp Neg TInt = imul intWidth (A.ConstantOperand $ C.Int intWidth (-1))
+
+    in do
+      a' <- genExpr a
+      genUnOp op ta a'
+
+
+  EBinOp op e1@(Expr2 t1 _) e2@(Expr2 t2 _) -> let
+
     genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
-    genBinOp Add TInt TInt = iadd 32
-    genBinOp Sub TInt TInt = isub 32
-    genBinOp Mul TInt TInt = imul 32
-    genBinOp Div TInt TInt = sdiv 32
+    genBinOp Add TInt TInt = iadd intWidth
+    genBinOp Sub TInt TInt = isub intWidth
+    genBinOp Mul TInt TInt = imul intWidth
+    genBinOp Div TInt TInt = sdiv intWidth
+
+    genBinOp Mod TInt TInt = genMod
+      where
+        genMod a b = do
+          -- Mathematically correct modulus, a mod b,
+          -- implemented as ((a rem b) + b) rem b
+          aRemB <- srem intWidth a b
+          aRemBPlusB <- iadd intWidth aRemB b
+          srem intWidth aRemBPlusB b
 
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 
     in do
-      a' <- genExpr a
-      b' <- genExpr b
-      genBinOp op ta tb a' b'
+      e1' <- genExpr e1
+      e2' <- genExpr e2
+      genBinOp op t1 t2 e1' e2'
 
   EVal v -> case v of
     VBln b -> return $ A.ConstantOperand $ C.Int 1 $ case b of True -> 1; False -> 0
-    VInt i -> return $ A.ConstantOperand $ C.Int 32 $ toInteger i
+    VInt i -> return $ A.ConstantOperand $ C.Int intWidth $ toInteger i
 
