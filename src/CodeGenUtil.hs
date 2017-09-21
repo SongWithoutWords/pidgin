@@ -1,4 +1,7 @@
-module CodeGenUtil where
+module CodeGenUtil
+  ( module CodeGenUtil
+  , fromString
+  ) where
 
 import Data.String
 
@@ -18,15 +21,15 @@ typeToLlvmType t = trace ("typeToLlvmType " ++ show t) $ case t of
   TInt -> T.i64
   TNone -> T.void
 
-nameToLlvmName :: Name -> A.Name
-nameToLlvmName = fromString
+-- nameToLlvmName :: Name -> A.Name
+-- nameToLlvmName = fromString
 
 localReference :: Name -> Type2 -> A.Operand
-localReference name typ = A.LocalReference (typeToLlvmType typ) (nameToLlvmName name)
+localReference name typ = A.LocalReference (typeToLlvmType typ) (fromString name)
 
 globalReference :: Name -> Type2 -> A.Operand
 globalReference name typ =
-  A.ConstantOperand $ C.GlobalReference (typeToLlvmType typ) (nameToLlvmName name)
+  A.ConstantOperand $ C.GlobalReference (typeToLlvmType typ) (fromString name)
 
 typeOfOperand :: A.Operand -> A.Type
 typeOfOperand op = case op of

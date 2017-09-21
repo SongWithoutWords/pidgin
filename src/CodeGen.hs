@@ -40,7 +40,7 @@ genParams :: Params2 -> [G.Parameter]
 genParams params = map genParam params
   where
     genParam :: Param2 -> G.Parameter
-    genParam (Param _ typ name) = G.Parameter (typeToLlvmType typ) (nameToLlvmName name) []
+    genParam (Param _ typ name) = G.Parameter (typeToLlvmType typ) (fromString name) []
 
 genBlock :: Params2 -> Block2 -> [G.BasicBlock]
 genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
@@ -69,11 +69,11 @@ intWidth = 64
 
 -- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr2 -> CodeGenM A.Operand
-genExpr (Expr2 t expr) = case expr of
+genExpr (Expr2 typ expr) = case expr of
 
   EApp (App e (Args _ args)) -> do
 
-    let retType = case t of
+    let retType = case typ of
           TFunc _ _ ret -> ret
           _ -> error "CodeGen received EApp with non applicable type"
 
@@ -84,8 +84,27 @@ genExpr (Expr2 t expr) = case expr of
   EName n -> do
     locals <- gets bindings
     return $ if M.member n locals
-      then localReference n t
-      else globalReference n t
+      then localReference n typ
+      else globalReference n typ
+
+  EIf e1 ec e2 -> do
+    ifTrue <- addBlock "if.true"
+    ifFalse <- addBlock "if.false"
+    ifEnd <- addBlock "if.end"
+
+    cond <- genExpr ec
+    condBr cond ifTrue ifFalse
+
+    setBlock ifTrue
+    e1' <- genExpr e1
+    br ifEnd
+
+    setBlock ifFalse
+    e2' <- genExpr e2
+    br ifEnd
+
+    setBlock ifEnd
+    phi (typeToLlvmType typ) [(e1', ifTrue), (e2', ifFalse)]
 
   EUnOp op a@(Expr2 ta _) -> let
 
@@ -116,9 +135,9 @@ genExpr (Expr2 t expr) = case expr of
           aRemBPlusB <- iadd intWidth aRemB b
           srem intWidth aRemBPlusB b
 
-    genBinOp Greater TInt TInt = igreater intWidth
-    genBinOp Lesser TInt TInt = ilesser intWidth
-    genBinOp Equal TInt TInt = iequal intWidth
+    genBinOp Greater TInt TInt = igreater
+    genBinOp Lesser TInt TInt = ilesser
+    genBinOp Equal TInt TInt = iequal
 
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 

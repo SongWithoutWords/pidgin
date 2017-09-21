@@ -9,7 +9,10 @@ module CodeGenInstructions
   , iequal
   , fadd
   , fsub
+  , phi
   , call
+  , br
+  , condBr
   ) where
 
 import qualified Data.Word as W
@@ -20,14 +23,14 @@ import qualified LLVM.AST.IntegerPredicate as IPred
 import qualified LLVM.AST.Type as T
 
 import CodeGenM
+import CodeGenUtil
 
 type BinaryInstruction = A.Operand -> A.Operand -> CodeGenM A.Operand
-type BinaryInstruction' a = a -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
 
 -- Integral instructions
 --------------------------------------------------------------------------------
-type IntInstruction = BinaryInstruction' W.Word32
+type IntInstruction = W.Word32 -> BinaryInstruction
 
 type IntInstructionCons =
   Bool ->
@@ -59,16 +62,25 @@ sdiv width a b = instruction (T.IntegerType width) $ A.SDiv False a b []
 srem :: IntInstruction
 srem width a b = instruction (T.IntegerType width) $ A.SRem a b []
 
-igreater :: IntInstruction
-igreater width a b = instruction (T.IntegerType width) $ A.ICmp IPred.SGT a b []
+igreater :: BinaryInstruction
+igreater a b = instruction T.i1 $ A.ICmp IPred.SGT a b []
 
-ilesser :: IntInstruction
-ilesser width a b = instruction (T.IntegerType width) $ A.ICmp IPred.SLT a b []
+ilesser :: BinaryInstruction
+ilesser a b = instruction T.i1 $ A.ICmp IPred.SLT a b []
 
-iequal :: IntInstruction
-iequal width a b = instruction (T.IntegerType width) $ A.ICmp IPred.EQ a b []
+iequal :: BinaryInstruction
+iequal a b = instruction T.i1 $ A.ICmp IPred.EQ a b []
 
+condBr :: A.Operand -> A.Name -> A.Name -> CodeGenM () -- A.Operand
+condBr cond trueLabel falseLabel = setTerminator $ A.Do $
+  A.CondBr cond trueLabel falseLabel []
+  -- undefined --op name name metadata
 
+br :: A.Name -> CodeGenM ()
+br label = setTerminator $ A.Do $ A.Br label []
+
+phi :: A.Type -> [(A.Operand, A.Name)] -> CodeGenM A.Operand
+phi t pairs = instruction t $ A.Phi t pairs []
 
 
 -- and :: InstructionType
@@ -80,7 +92,7 @@ iequal width a b = instruction (T.IntegerType width) $ A.ICmp IPred.EQ a b []
 
 -- Floating point instructions
 --------------------------------------------------------------------------------
-type FltInstruction = BinaryInstruction' T.FloatingPointType
+type FltInstruction = T.FloatingPointType -> BinaryInstruction
 
 type FltInstructionCons =
   A.FastMathFlags ->
