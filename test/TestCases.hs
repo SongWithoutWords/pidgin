@@ -640,7 +640,7 @@ testCases =
 
   , name "factorial 4"
     <> source
-      "fact(Int i) => 1 if i <= 1 else i + fact(i - 1)\n\
+      "fact(Int i) -> Int => 1 if i <= 1 else i * fact(i - 1)\n\
       \main() => fact(5)"
     <> returnVal 120
 
@@ -663,6 +663,12 @@ testCases =
 
   , source "main() => 4 > 7"
     <> returnVal 0
+
+  , source "main() => 4 > -7"
+    <> returnVal 1
+
+  , source "main() => 1 < 6"
+    <> returnVal 1
 
   , source "main() => -1 < 6"
     <> returnVal 1
