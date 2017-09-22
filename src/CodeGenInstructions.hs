@@ -6,6 +6,8 @@ module CodeGenInstructions
   , srem
   , igreater
   , ilesser
+  , igreaterEq
+  , ilesserEq
   , iequal
   , fadd
   , fsub
@@ -23,7 +25,6 @@ import qualified LLVM.AST.IntegerPredicate as IPred
 import qualified LLVM.AST.Type as T
 
 import CodeGenM
-import CodeGenUtil
 
 type BinaryInstruction = A.Operand -> A.Operand -> CodeGenM A.Operand
 
@@ -67,6 +68,12 @@ igreater a b = instruction T.i1 $ A.ICmp IPred.SGT a b []
 
 ilesser :: BinaryInstruction
 ilesser a b = instruction T.i1 $ A.ICmp IPred.SLT a b []
+
+igreaterEq :: BinaryInstruction
+igreaterEq a b = instruction T.i1 $ A.ICmp IPred.SGE a b []
+
+ilesserEq :: BinaryInstruction
+ilesserEq a b = instruction T.i1 $ A.ICmp IPred.SLE a b []
 
 iequal :: BinaryInstruction
 iequal a b = instruction T.i1 $ A.ICmp IPred.EQ a b []

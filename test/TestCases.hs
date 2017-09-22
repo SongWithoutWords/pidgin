@@ -658,24 +658,72 @@ testCases =
     <> returnVal 4
 
   -- Comparison operator tests
-  , source "main() => 7 > 4"
+
+    -- Greater
+  , source "main() => 2 > 1"
     <> returnVal 1
 
-  , source "main() => 4 > 7"
+  , source "main() => 1 > 2"
     <> returnVal 0
 
-  , source "main() => 4 > -7"
+  , source "main() => 1 > -2"
     <> returnVal 1
 
-  , source "main() => 1 < 6"
-    <> returnVal 1
-
-  , source "main() => -1 < 6"
-    <> returnVal 1
-
-  , source "main() => 6 < -1"
+  , source "main() => -2 > 1"
     <> returnVal 0
 
+    -- Lesser
+  , source "main() => 1 < 2"
+    <> returnVal 1
+
+  , source "main() => 2 < 1"
+    <> returnVal 0
+
+  , source "main() => -2 < 1"
+    <> returnVal 1
+
+  , source "main() => 1 < -2"
+    <> returnVal 0
+
+    -- Greater-equal
+  , source "main() => 2 >= 1"
+    <> returnVal 1
+
+  , source "main() => 1 >= 2"
+    <> returnVal 0
+
+  , source "main() => 1 >= -2"
+    <> returnVal 1
+
+  , source "main() => -2 >= 1"
+    <> returnVal 0
+
+  , source "main() => 1 >= 1"
+    <> returnVal 1
+
+  , source "main() => -2 >= -2"
+    <> returnVal 1
+
+    -- Lesser
+  , source "main() => 1 <= 2"
+    <> returnVal 1
+
+  , source "main() => 2 <= 1"
+    <> returnVal 0
+
+  , source "main() => -2 <= 1"
+    <> returnVal 1
+
+  , source "main() => 1 <= -2"
+    <> returnVal 0
+
+  , source "main() => 1 <= 1"
+    <> returnVal 1
+
+  , source "main() => -2 <= -2"
+    <> returnVal 1
+
+    -- Equal
   , source "main() => 0 == 0"
     <> returnVal 1
 
