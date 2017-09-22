@@ -30,5 +30,5 @@ typeErrors :: Errors -> TestCase
 typeErrors e = mempty {testTypeErrors = Just e}
 
 returnVal :: Int -> TestCase
-returnVal i = mempty {testReturnVal = Just i}
+returnVal i = mempty {testReturnVal = Just i, testTypeErrors = Just []}
 
