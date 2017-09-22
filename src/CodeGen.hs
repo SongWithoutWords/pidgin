@@ -144,6 +144,9 @@ genExpr (Expr2 typ expr) = case expr of
 
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 
+    genBinOp oper ta tb = error $
+      "genBinOp " ++ show oper ++ " " ++ show ta ++ " " ++ show tb
+
     in do
       e1' <- genExpr e1
       e2' <- genExpr e2

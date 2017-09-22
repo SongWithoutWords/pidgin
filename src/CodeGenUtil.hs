@@ -11,15 +11,22 @@ import qualified LLVM.AST.Type as T
 
 import Ast
 import CodeGenM
-import Debug
 
 typeToLlvmType :: Type2 -> A.Type
-typeToLlvmType t = trace ("typeToLlvmType " ++ show t) $ case t of
+typeToLlvmType t = case t of
+
+  TFunc _ paramTypes ret -> T.FunctionType
+    { T.resultType = typeToLlvmType ret
+    , T.argumentTypes = map typeToLlvmType paramTypes
+    , T.isVarArg = False
+    }
+
   TBln -> T.i1
   TChr -> T.i8
   TFlt -> T.float
   TInt -> T.i64
   TNone -> T.void
+  _ -> error $ "typeToLlvmType " ++ show t
 
 -- nameToLlvmName :: Name -> A.Name
 -- nameToLlvmName = fromString
