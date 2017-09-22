@@ -730,6 +730,12 @@ testCases =
   , source "main() => 3 == 4"
     <> returnVal 0
 
+  , source "main() => 0 != 0"
+    <> returnVal 0
+
+  , source "main() => 3 != 4"
+    <> returnVal 1
+
   -- If expressions
   , source "main() => 3 if 1 < 2 else 7"
     <> returnVal 3

@@ -9,6 +9,7 @@ module CodeGenInstructions
   , igreaterEq
   , ilesserEq
   , iequal
+  , inotEqual
   , fadd
   , fsub
   , phi
@@ -77,6 +78,9 @@ ilesserEq a b = instruction T.i1 $ A.ICmp IPred.SLE a b []
 
 iequal :: BinaryInstruction
 iequal a b = instruction T.i1 $ A.ICmp IPred.EQ a b []
+
+inotEqual :: BinaryInstruction
+inotEqual a b = instruction T.i1 $ A.ICmp IPred.NE a b []
 
 condBr :: A.Operand -> A.Name -> A.Name -> CodeGenM () -- A.Operand
 condBr cond trueLabel falseLabel = setTerminator $ A.Do $

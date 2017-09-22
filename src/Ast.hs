@@ -244,6 +244,7 @@ data BinOp
   | GreaterEq
   | LesserEq
   | Equal
+  | NotEqual
   | OpUser String
   deriving(Eq, Ord, Show)
 

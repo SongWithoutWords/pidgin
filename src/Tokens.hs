@@ -61,6 +61,8 @@ data Token
   | Greater
   | LesserEq
   | GreaterEq
+  | EqualEqual
+  | NotEqual
 
   | ThinArrow
   | FatArrow

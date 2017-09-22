@@ -141,6 +141,7 @@ genExpr (Expr2 typ expr) = case expr of
     genBinOp LesserEq TInt TInt = ilesserEq
 
     genBinOp Equal TInt TInt = iequal
+    genBinOp NotEqual TInt TInt = inotEqual
 
     genBinOp Add TFlt TFlt = fadd T.FloatFP
 

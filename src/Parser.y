@@ -73,6 +73,8 @@ import qualified Tokens as T
   ">"           { T.Greater }
   "<="          { T.LesserEq }
   ">="          { T.GreaterEq}
+  "=="          { T.EqualEqual }
+  "!="          { T.NotEqual }
 
   "->"          { T.ThinArrow }
   "=>"          { T.FatArrow }
@@ -243,6 +245,8 @@ op
   | expr "<" expr           { e0BinOp Lesser $1 $3 }
   | expr ">=" expr          { e0BinOp GreaterEq $1 $3 }
   | expr "<=" expr          { e0BinOp LesserEq $1 $3 }
+  | expr "==" expr          { e0BinOp Equal $1 $3 }
+  | expr "!=" expr          { e0BinOp NotEqual $1 $3 }
 
   | expr name expr          { e0BinOp (OpUser $2) $1 $3 }
 

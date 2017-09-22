@@ -95,6 +95,8 @@ pri                      { appendTokenAction T.Pri }
 ">"                      { appendTokenAction T.Greater }
 "<="                     { appendTokenAction T.LesserEq }
 ">="                     { appendTokenAction T.GreaterEq }
+"=="                     { appendTokenAction T.EqualEqual }
+"!="                     { appendTokenAction T.NotEqual }
 
 "->"                     { appendTokenAction T.ThinArrow }
 "=>"                     { appendTokenAction T.FatArrow }
