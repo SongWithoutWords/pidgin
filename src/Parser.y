@@ -241,12 +241,13 @@ op
   | expr "*" expr           { e0BinOp Mul $1 $3 }
   | expr "/" expr           { e0BinOp Div $1 $3 }
   | expr "%" expr           { e0BinOp Mod $1 $3 }
-  | expr ">" expr           { e0BinOp Greater $1 $3 }
-  | expr "<" expr           { e0BinOp Lesser $1 $3 }
-  | expr ">=" expr          { e0BinOp GreaterEq $1 $3 }
-  | expr "<=" expr          { e0BinOp LesserEq $1 $3 }
-  | expr "==" expr          { e0BinOp Equal $1 $3 }
-  | expr "!=" expr          { e0BinOp NotEqual $1 $3 }
+
+  | expr ">" expr           { e0BinOp (Cmp Greater) $1 $3 }
+  | expr "<" expr           { e0BinOp (Cmp Lesser) $1 $3 }
+  | expr ">=" expr          { e0BinOp (Cmp GreaterEq) $1 $3 }
+  | expr "<=" expr          { e0BinOp (Cmp LesserEq) $1 $3 }
+  | expr "==" expr          { e0BinOp (Cmp Equal) $1 $3 }
+  | expr "!=" expr          { e0BinOp (Cmp NotEqual) $1 $3 }
 
   | expr name expr          { e0BinOp (OpUser $2) $1 $3 }
 

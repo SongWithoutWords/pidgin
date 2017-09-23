@@ -239,15 +239,18 @@ data BinOp
   | Mul
   | Div
   | Mod
-  | Greater
+  | Cmp Comparison
+  | OpUser String
+  deriving(Eq, Ord, Show)
+
+data Comparison
+  = Greater
   | Lesser
   | GreaterEq
   | LesserEq
   | Equal
   | NotEqual
-  | OpUser String
   deriving(Eq, Ord, Show)
-
 
 type LExpr0 = LExpr 'A0 'B0
 type LExpr1 = LExpr 'A1 'B0

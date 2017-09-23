@@ -192,51 +192,33 @@ checkExpr (Expr0 expr) = trace "typeCheckExpr" $ case expr of
 
     return $ e2If (typeOfExpr e1') e1' ec' e2'
 
-  EUnOp operator e ->
-    let
-      checkUnOp :: UnOp -> Expr2 -> TypeCheckM s Expr2
-      checkUnOp Neg a@(Expr2 TInt _) = return $ e2UnOp TInt Neg a
+  EUnOp operator e -> let
+      checkUnOp :: UnOp -> Type2 -> TypeCheckM s Type2
+      checkUnOp Neg TInt = pure TInt
     in do
-      e' <- checkExpr e
-      checkUnOp operator e'
+      e'@(Expr2 t _) <- checkExpr e
+      tRes <- checkUnOp operator t
+      pure $ e2UnOp tRes operator e'
 
-  EBinOp operator e1 e2 ->
-    let
-      opIsScalar :: BinOp -> Bool
-      opIsScalar And = False
-      opIsScalar Or = False
-      opIsScalar _ = True
+  EBinOp operator e1 e2 -> let
 
-      opIsBoolean = not . opIsScalar
+      checkBinOp :: BinOp -> Type2 -> Type2 -> TypeCheckM s Type2
+      checkBinOp _ (TError _) _ = pure $ TError Propagated
+      checkBinOp _ _ (TError _) = pure $ TError Propagated
 
-      checkSymmetricalOp isDefined op typ a b =
-        if isDefined op
-        then return $ e2BinOp typ op a b
-        else do
-          let err = UndefinedOperator op typ typ
-          raise err
-          return $ e2BinOp (TError err) op a b
+      checkBinOp Add TInt TInt = pure TInt
+      checkBinOp Sub TInt TInt = pure TInt
+      checkBinOp Mul TInt TInt = pure TInt
+      checkBinOp Div TInt TInt = pure TInt
+      checkBinOp Mod TInt TInt = pure TInt
 
-
-      checkBinOp :: BinOp -> Expr2 -> Expr2 -> TypeCheckM s Expr2
-
-      checkBinOp op a@(Expr2 (TError _) _) b =
-        return $ e2BinOp (TError Propagated) op a b
-
-      checkBinOp op a b@(Expr2 (TError _) _) =
-        return $ e2BinOp (TError Propagated) op a b
-
-      checkBinOp op a@(Expr2 TFlt _) b@(Expr2 TFlt _) =
-        checkSymmetricalOp opIsScalar op TFlt a b
-
-      checkBinOp op a@(Expr2 TInt _) b@(Expr2 TInt _) =
-        checkSymmetricalOp opIsScalar op TInt a b
+      checkBinOp (Cmp _) TInt TInt = pure TBln
 
     in do
-      e1' <- checkExpr e1
-      e2' <- checkExpr e2
-      checkBinOp operator e1' e2'
-
+      e1'@(Expr2 t1 _) <- checkExpr e1
+      e2'@(Expr2 t2 _) <- checkExpr e2
+      t <- checkBinOp operator t1 t2
+      pure $ e2BinOp t operator e1' e2'
 
   EVal (VBln b) -> return $ e2ValBln b
   EVal (VFlt f) -> return $ e2ValFlt f

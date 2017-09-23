@@ -164,7 +164,7 @@ testCases =
         [ SExpr
           $ e0If
             (e0ValInt 1)
-            (e0BinOp LesserEq (e0Name "n") (e0ValInt 0))
+            (e0BinOp (Cmp LesserEq) (e0Name "n") (e0ValInt 0))
             (e0BinOp Mul
                 (e0Name "n")
                 $ e0App (e0Name "factorial") $ Args Pure [e0BinOp Sub (e0Name "n") (e0ValInt 1)]
