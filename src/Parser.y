@@ -87,6 +87,7 @@ import qualified Tokens as T
   name          { T.Name $$ }
   typename      { T.Typename $$ }
 
+%right "<" ">" "<=" ">=" "==" "!="
 %right "+" "-" 
 %right "*" "/" "%"
 %right prec_neg
