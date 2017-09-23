@@ -39,6 +39,7 @@ library
                      , TypeCheck
 
   other-modules:       Debug
+                     , Cycle
                      , CodeGenInstructions
                      , CodeGenM
                      , CodeGenUtil
