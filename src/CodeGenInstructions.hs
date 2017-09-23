@@ -1,21 +1,5 @@
 module CodeGenInstructions
-  ( iadd
-  , isub
-  , imul
-  , sdiv
-  , srem
-  , igreater
-  , ilesser
-  , igreaterEq
-  , ilesserEq
-  , iequal
-  , inotEqual
-  , fadd
-  , fsub
-  , phi
-  , call
-  , br
-  , condBr
+  ( module CodeGenInstructions
   ) where
 
 import qualified Data.Word as W
@@ -32,37 +16,47 @@ type BinaryInstruction = A.Operand -> A.Operand -> CodeGenM A.Operand
 
 -- Integral instructions
 --------------------------------------------------------------------------------
-type IntInstruction = W.Word32 -> BinaryInstruction
+iadd :: W.Word32 -> BinaryInstruction
+iadd width a b = instruction (T.IntegerType width) $ A.Add
+  { A.nsw = False
+  , A.nuw = False
+  , A.operand0 = a
+  , A.operand1 = b
+  , A.metadata = []
+  }
 
-type IntInstructionCons =
-  Bool ->
-  Bool ->
-  A.Operand ->
-  A.Operand ->
-  A.InstructionMetadata ->
-  A.Instruction
+isub :: W.Word32 -> BinaryInstruction
+isub width a b = instruction (T.IntegerType width) $ A.Sub
+  { A.nsw = False -- no signed wrap around
+  , A.nuw = False -- no unsigned wrap around
+  , A.operand0 = a
+  , A.operand1 = b
+  , A.metadata = []
+  }
 
-intInstruction :: IntInstructionCons -> IntInstruction
-intInstruction instr width a b =
-  instruction (T.IntegerType width) $ instr nsw nuw a b []
-  where
-    nsw = False -- no signed wrap: if true signed wraps produce poison values
-    nuw = False -- no unsigned wrap: if true signed wraps produce poison values
+imul :: W.Word32 -> BinaryInstruction
+imul width a b = instruction (T.IntegerType width) $ A.Mul
+  { A.nsw = False
+  , A.nuw = False
+  , A.operand0 = a
+  , A.operand1 = b
+  , A.metadata = []
+  }
 
-iadd :: IntInstruction
-iadd width = intInstruction A.Add width
+sdiv :: W.Word32 -> BinaryInstruction
+sdiv width a b = instruction (T.IntegerType width) $ A.SDiv
+  { A.exact = False
+  , A.operand0 = a
+  , A.operand1 = b
+  , A.metadata = []
+  }
 
-isub :: IntInstruction
-isub width = intInstruction A.Sub width
-
-imul :: IntInstruction
-imul width = intInstruction A.Mul width
-
-sdiv :: IntInstruction
-sdiv width a b = instruction (T.IntegerType width) $ A.SDiv False a b []
-
-srem :: IntInstruction
-srem width a b = instruction (T.IntegerType width) $ A.SRem a b []
+srem :: W.Word32 -> BinaryInstruction
+srem width a b = instruction (T.IntegerType width) $ A.SRem
+  { A.operand0 = a
+  , A.operand1 = b
+  , A.metadata = []
+  }
 
 igreater :: BinaryInstruction
 igreater a b = instruction T.i1 $ A.ICmp IPred.SGT a b []
@@ -95,10 +89,10 @@ phi t pairs = instruction t $ A.Phi t pairs []
 
 
 -- and :: InstructionType
--- and t a b = instruction t $ A.And a b []
+and t a b = instruction t $ A.And a b []
 
 -- or :: InstructionType
--- or t a b = instruction t $ A.Or a b []
+or t a b = instruction t $ A.Or a b []
 
 
 -- Floating point instructions
@@ -138,7 +132,3 @@ call typ op args = instruction typ $ A.Call
   , A.metadata = []
   }
 
-
--- Effects
--- call :: LAst.Operand -> [LAst.Operand] -> Codegen LAst.Operand
--- call fn args = instr $ LAst.Call Nothing CallingConvention.C [] (Right fn) (toArgs args) [] []
