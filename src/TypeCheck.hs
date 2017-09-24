@@ -28,7 +28,7 @@ typeCheckAst ast = trace "typeCheckAst" $ runST $ do
 
 checkUnitTable :: Ast1 -> TypeCheckM s Ast2
 checkUnitTable unitTable = trace "checkUnitTable" $
-  multiMapWithKeyM (\name unit -> typeCheckLazy $ checkUnit name unit) unitTable
+  multiMapWithKeyM (typeCheckLazy .: checkUnit) unitTable
 
 checkUnit :: Name -> Unit1 -> TypeCheckM s Unit2
 checkUnit name unit = trace "checkUnit" $ do

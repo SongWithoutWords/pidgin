@@ -27,6 +27,11 @@ consMaybe Nothing xs = xs
 (?:) :: Maybe a -> [a] -> [a]
 (?:) = consMaybe
 
+-- Function composition with two inputs
+(.:) :: (a -> b) -> (x -> y -> a) -> x -> y -> b
+(.:) f g x y = f $ g x y
+
+
 takeWhileInclusive :: (a -> Bool) -> [a] -> [a]
 takeWhileInclusive _ [] = []
 takeWhileInclusive p (x:xs) = x : if p x
