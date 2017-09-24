@@ -35,14 +35,14 @@ checkUnit name unit = trace "checkUnit" $ do
   pushSearchName name
   res <- case unit of
     UNamespace1 n -> UNamespace1 <$> checkUnitTable n
-    UFunc l -> UFunc <$> checkLambda l
+    UFunc l -> UFunc <$> checkFunc l
     UVar v -> UVar <$> checkVar v
   popSearchName
   return res
 
 
-checkLambda :: Func1 -> TypeCheckM s Func2
-checkLambda (Func1 (Sig0 purity params maybeRetType) block) = do
+checkFunc :: Func1 -> TypeCheckM s Func2
+checkFunc (Func1 (Sig0 purity params maybeRetType) block) = do
 
   params' <- checkParams params
 
