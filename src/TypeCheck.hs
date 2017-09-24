@@ -10,6 +10,7 @@ import Control.Monad
 
 import Ast
 import Ast2Builder
+import Cycle
 import Debug
 import MultiMap
 import TypeCheckM
@@ -252,10 +253,10 @@ checkName name = trace ("checkName " ++ name) $ do
         [KExpr t] -> case t of
 
           TError err -> case err of
-            RecursiveDefinition cycle -> do
+            RecursiveDefinition cycle@(Cycle names) -> do
               history <- getHistory
               let sourceName = head history
-              if elem sourceName cycle
+              if elem sourceName names
                 then return $ TError $ RecursiveDefinition cycle
                 else return $ TError Propagated
             _ -> return $ TError Propagated

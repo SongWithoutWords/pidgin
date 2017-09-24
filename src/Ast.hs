@@ -9,8 +9,8 @@ module Ast
 
 import qualified Data.Set as Set
 
+import Cycle
 import MultiMap
-
 
 data Named a = Named Name a
   deriving(Eq, Show)
@@ -386,7 +386,7 @@ data Error
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
 
-  | RecursiveDefinition (Set.Set Name)
+  | RecursiveDefinition (Cycle Name)
 
   | NeedExprFoundType
   | NeedExprFoundNamespace
@@ -395,7 +395,7 @@ data Error
 
   deriving(Eq, Ord, Show)
 
-recursiveDefinition :: [String] -> Error
-recursiveDefinition = RecursiveDefinition . Set.fromList
+recursiveDefinition :: [Name] -> Error
+recursiveDefinition = RecursiveDefinition . Cycle
 
 
