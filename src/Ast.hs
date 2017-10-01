@@ -14,6 +14,7 @@ import Cycle
 import MultiMap
 
 import Ast.Op
+import Ast.Phases
 
 data Named a = Named Name a
   deriving(Eq, Show)
@@ -24,14 +25,6 @@ instance Functor Named where
 type Table a = MultiMap Name a
 
 -- Compilation phases
-
-data A -- Post-parse transform
-  = A0
-  | A1
-
-data B -- Type-check transform
-  = B0
-  | B1
 
 type Ast0 = [Named Unit0] -- Parse tree
 type Ast1 = Table Unit1   -- Ast

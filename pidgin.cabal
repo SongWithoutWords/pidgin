@@ -39,6 +39,7 @@ library
                      , TypeCheck
 
   other-modules:       Ast.Op
+                     , Ast.Phases
                      , Debug
                      , Cycle
                      , CodeGenInstructions
