@@ -13,6 +13,8 @@ module Preface where
 identity :: a -> a
 identity x = x
 
+-- Maybes
+----------------------------------------------------------------
 orElse :: Maybe a -> a -> a
 orElse (Just x) _ = x
 orElse Nothing y = y
@@ -27,14 +29,33 @@ consMaybe Nothing xs = xs
 (?:) :: Maybe a -> [a] -> [a]
 (?:) = consMaybe
 
--- Function composition with two inputs
-(.:) :: (a -> b) -> (x -> y -> a) -> x -> y -> b
-(.:) f g x y = f $ g x y
+-- left-biased choice on maybes
+(<?>) :: Maybe a -> Maybe a -> Maybe a
+Just x <?> _ = Just x
+_ <?> Just y = Just y
+_ <?> _ = Nothing
+
+findMaybe :: (a -> Maybe b) -> [a] -> Maybe b
+findMaybe _ [] = Nothing
+findMaybe f (x:xs) = case f x of
+  Just y -> Just y
+  Nothing -> findMaybe f xs
 
 
+
+-- Collections
+----------------------------------------------------------------
 takeWhileInclusive :: (a -> Bool) -> [a] -> [a]
 takeWhileInclusive _ [] = []
 takeWhileInclusive p (x:xs) = x : if p x
   then takeWhileInclusive p xs
   else []
+
+-- Functions
+----------------------------------------------------------------
+
+-- Composition with two inputs
+(.:) :: (a -> b) -> (x -> y -> a) -> x -> y -> b
+(.:) f g x y = f $ g x y
+
 
