@@ -41,6 +41,7 @@ library
   other-modules:       Ast.Name
                      , Ast.Op
                      , Ast.Phases
+                     , Ast.Type
                      , Debug
                      , Cycle
                      , CodeGenInstructions
