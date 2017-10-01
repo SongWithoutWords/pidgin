@@ -5,12 +5,15 @@
 
 module Ast
   ( module Ast
+  , module Ast.Op
   ) where
 
 import qualified Data.Set as Set
 
 import Cycle
 import MultiMap
+
+import Ast.Op
 
 data Named a = Named Name a
   deriving(Eq, Show)
@@ -226,32 +229,6 @@ data Value
   | VStr String
   deriving(Eq, Show)
 
-data UnOp
-  = Not
-  | Neg
-  deriving(Eq, Show)
-
-data BinOp
-  = And
-  | Or
-  | Add
-  | Sub
-  | Mul
-  | Div
-  | Mod
-  | Cmp Comparison
-  | OpUser String
-  deriving(Eq, Ord, Show)
-
-data Comparison
-  = Greater
-  | Lesser
-  | GreaterEq
-  | LesserEq
-  | Equal
-  | NotEqual
-  deriving(Eq, Ord, Show)
-
 type LExpr0 = LExpr 'A0 'B0
 type LExpr1 = LExpr 'A1 'B0
 type LExpr2 = LExpr 'A1 'B1
@@ -259,7 +236,6 @@ data LExpr :: A -> B -> * where
 
   LExpr0 :: LExpr' a 'B0 -> LExpr a 'B0
   LExpr2 :: Type2 -> LExpr2' -> LExpr2
-
 
 deriving instance Eq (LExpr a b)
 deriving instance Show (LExpr a b)

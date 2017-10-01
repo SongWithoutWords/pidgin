@@ -38,7 +38,8 @@ library
                      , Transforms
                      , TypeCheck
 
-  other-modules:       Debug
+  other-modules:       Ast.Op
+                     , Debug
                      , Cycle
                      , CodeGenInstructions
                      , CodeGenM
