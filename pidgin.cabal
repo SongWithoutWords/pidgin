@@ -38,7 +38,8 @@ library
                      , Transforms
                      , TypeCheck
 
-  other-modules:       Ast.Op
+  other-modules:       Ast.Name
+                     , Ast.Op
                      , Ast.Phases
                      , Debug
                      , Cycle

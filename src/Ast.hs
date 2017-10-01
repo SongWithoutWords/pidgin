@@ -5,6 +5,7 @@
 
 module Ast
   ( module Ast
+  , module Ast.Name
   , module Ast.Op
   ) where
 
@@ -13,14 +14,9 @@ import qualified Data.Set as Set
 import Cycle
 import MultiMap
 
+import Ast.Name
 import Ast.Op
 import Ast.Phases
-
-data Named a = Named Name a
-  deriving(Eq, Show)
-
-instance Functor Named where
-  fmap f (Named n a) = Named n $ f a
 
 type Table a = MultiMap Name a
 
@@ -270,9 +266,6 @@ data Select :: A -> B -> * where
 
 deriving instance Eq (Select a b)
 deriving instance Show (Select a b)
-
-type Name = String
-type Names = [Name]
 
 
 data Kind
