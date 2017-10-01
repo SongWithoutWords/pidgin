@@ -19,6 +19,9 @@ multiInsert k v = M.insertWith (++) k [v]
 multiFromList :: Ord k => [(k, a)] -> M.Map k [a]
 multiFromList pairs = Prelude.foldl (\m (k, v) -> multiInsert k v m) (M.empty) pairs
 
+multiMapM :: (Monad m, Ord k)  => (a -> m b) -> M.Map k [a] -> m (M.Map k [b])
+multiMapM f m = sequence $ M.map (\xs -> mapM f xs) m
+
 multiMapWithKey :: (k -> a -> b) -> M.Map k [a] -> M.Map k [b]
 multiMapWithKey f = M.mapWithKey (\k xs -> Prelude.map (f k) xs)
 
