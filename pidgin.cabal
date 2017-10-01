@@ -54,8 +54,8 @@ library
                      , bytestring
                      , containers
                      , array
-                     , llvm-hs
-                     , llvm-hs-pure
+                     , llvm-hs >= 5.0.0
+                     , llvm-hs-pure >= 5.0.0
                      , monad-st
                      , mtl
                      , transformers
