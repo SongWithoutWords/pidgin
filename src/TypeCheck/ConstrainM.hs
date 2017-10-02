@@ -1,30 +1,51 @@
+{-# language GADTs #-}
 module TypeCheck.ConstrainM where
 
 import Control.Monad.RWS
+import qualified Data.Map as M
+
+import MultiMap
 
 import Ast
 
 import TypeCheck.Constraint
 
+type Scope = M.Map Name Kind
+type Scopes = [Scope]
+
 
 data ConstrainState = ConstrainState
-  { localBindings :: [(Name, Type2)]
+  { scopes :: Scopes
   , nextTypeId :: Word
   }
 
 initialState :: ConstrainState
 initialState = ConstrainState
-  { localBindings = []
+  { scopes = []
   , nextTypeId = 0
   }
 
 type ConstrainM a = RWS Ast2 [Constraint] ConstrainState a
 
-pushLocal :: Name -> Type2 -> ConstrainM ()
-pushLocal n t = modify $ \s -> s{localBindings = (n, t) : localBindings s}
 
-popLocal :: ConstrainM ()
-popLocal = modify $ \s -> s{localBindings = tail $ localBindings s}
+constrain :: Type2 -> Type2 -> ConstrainM ()
+constrain t1 t2 = tell [t1 := t2]
+
+
+pushScope :: Scope -> ConstrainM ()
+pushScope scope = modify $ \s -> s{scopes = scope : scopes s}
+
+pushNewScope :: ConstrainM ()
+pushNewScope = pushScope M.empty
+
+popScope :: ConstrainM ()
+popScope = modify $ \s -> s{scopes = tail $ scopes s}
+
+modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
+modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
+
+pushLocal :: Name -> Type2 -> ConstrainM ()
+pushLocal n t = modifyCurrentScope $ M.insert n (KExpr t)
 
 getNextTypeVar :: ConstrainM Type2
 getNextTypeVar = do
@@ -32,6 +53,26 @@ getNextTypeVar = do
   modify $ \s -> s{nextTypeId = (val + 1)}
   pure $ TVar val
 
-constrain :: Type2 -> Type2 -> ConstrainM ()
-constrain t1 t2 = tell [t1 := t2]
+lookupKinds :: Name -> ConstrainM [Kind]
+lookupKinds name = do
+  locals <- gets scopes
+  global <- ask
+  let
+    lookupKinds' :: Scopes -> [Kind]
+    lookupKinds' [] = map kindOfUnit $ multiLookup name global
+    lookupKinds' (l:ls) = case M.lookup name l of
+      Just k -> [k]
+      Nothing -> lookupKinds' ls
+
+    kindOfUnit :: Unit2 -> Kind
+    kindOfUnit u = case u of
+      UNamespace1 _ -> KNamespace
+      UClass _ -> KType
+
+      UFunc (Func1 (Sig2 purity params returnType) _) ->
+        KExpr (TFunc purity (map (\(Param _ t _) -> t) params) returnType)
+
+      UVar (Var2 _ typ _) -> KExpr typ
+
+  pure $ lookupKinds' locals
 
