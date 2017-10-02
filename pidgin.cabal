@@ -50,6 +50,8 @@ library
                      , TypeCheckM
                      , TypeCheckUtil
                      , TypeContext
+                     , TypeCheck.ConstraintGen
+                     , TypeCheck.Unify
 
   build-tools:         alex
                      , happy
