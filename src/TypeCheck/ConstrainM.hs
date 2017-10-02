@@ -6,15 +6,13 @@ module TypeCheck.ConstrainM
 import Control.Monad.RWS
 import qualified Data.Map as M
 
-import MultiMap
-
 import Ast
-
+import MultiMap
 import TypeCheck.Constraint
+
 
 type Scope = M.Map Name Kind
 type Scopes = [Scope]
-
 
 data ConstrainState = ConstrainState
   { scopes :: Scopes
