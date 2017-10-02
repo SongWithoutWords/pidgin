@@ -5,28 +5,49 @@ module TypeCheck.ConstraintGen
   , module TypeCheck.Constraint
   ) where
 
-
 import Ast
 import Preface
-
+import MultiMap
 import TypeCheck.Constraint
 import TypeCheck.ConstrainM
 
-import MultiMap
 
 constrainAst :: Ast1 -> (Ast2, [Constraint])
 constrainAst ast =
 
   -- tie the knot, in order to refer to typevars further ahead in the input
-  let result@(ast', _) = runConstrainM (checkAst ast) ast'
+  let result@(ast', _) = runConstrainM (checkUnits ast) ast'
   in result
 
 
-checkAst :: Ast1 -> ConstrainM Ast2
-checkAst = multiMapM checkUnit
+checkUnits :: Ast1 -> ConstrainM Ast2
+checkUnits = multiMapM checkUnit
 
 checkUnit :: Unit1 -> ConstrainM Unit2
-checkUnit = undefined
+checkUnit unit = case unit of
+  UNamespace1 n -> UNamespace1 <$> checkUnits n
+  UFunc l -> UFunc <$> checkFunc l
+  UVar v -> UVar <$> checkVar v
+
+checkFunc :: Func1 -> ConstrainM Func2
+checkFunc (Func1 (Sig0 pur params optRetType) (Block1 stmts optRetExpr)) = do
+    tRet <- getNextTypeVar
+
+    optRetType' <- traverse checkType optRetType
+    traverse (constrain tRet) optRetType'
+
+    params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
+    let tParams = (\(Param m t _) -> t) <$> params'
+    constrain tLam $ TFunc pur tParams tRet
+
+    pushNewScope
+    mapM (\(Param _ t n) -> pushLocal n t) params'
+    optRetExpr' <- traverse checkExpr optRetExpr
+    let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
+    constrain tRet tRetExpr
+    popScope
+
+    pure $ Func1 (Sig2 pur params' tRet) (Block1 [] optRetExpr')
 
 checkNamedExpr :: Named Expr1 -> ConstrainM (Named Expr2)
 checkNamedExpr = traverse checkExpr
@@ -49,30 +70,13 @@ checkExpr (Expr0 expression) = case expression of
     pure $ Expr2 t $ EName name
 
 
-  ELambda (Func1 (Sig0 pur params optRetType) (Block1 stmts optRetExpr)) -> do
+  ELambda f -> do
     tLam <- getNextTypeVar
-    tRet <- getNextTypeVar
+    -- Should extract out function type-ripping in ConstrainM
+    -- f'@(Func1 (Sig0 pur params )) <- checkFunc f
 
-    optRetType' <- traverse checkType optRetType
-    traverse (constrain tRet) optRetType'
-
-    params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
-
-    pushNewScope
-
-    mapM (\(Param _ t n) -> pushLocal n t) params'
-
-    optRetExpr' <- traverse checkExpr optRetExpr
-
-    popScope
-
-    let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
-    constrain tRet tRetExpr
-
-    let tParams = (\(Param m t _) -> t) <$> params'
-    constrain tLam $ TFunc pur tParams tRet
-
-    pure $ Expr2 tLam $ ELambda $ Func1 (Sig2 pur params' tRet) (Block1 [] optRetExpr')
+    -- pure $ Expr2 tLam $ ELambda $ Func1 (Sig2 pur params' tRet) (Block1 [] optRetExpr')
+    pure $ error "Finish the job"
 
 
   EApp (App expr (Args purity args)) -> do
