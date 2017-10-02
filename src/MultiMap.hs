@@ -16,6 +16,9 @@ multiLookup k m = case M.lookup k m of
 multiInsert :: Ord k => k -> a -> M.Map k [a] -> M.Map k [a]
 multiInsert k v = M.insertWith (++) k [v]
 
+multiEmpty :: M.Map k [a]
+multiEmpty = M.empty
+
 multiFromList :: Ord k => [(k, a)] -> M.Map k [a]
 multiFromList pairs = Prelude.foldl (\m (k, v) -> multiInsert k v m) (M.empty) pairs
 
