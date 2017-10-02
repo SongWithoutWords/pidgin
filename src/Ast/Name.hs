@@ -14,3 +14,11 @@ instance Foldable Named where
 
 instance Traversable Named where
   traverse f (Named n a) = Named n <$> f a
+
+lookupName :: Name -> [Named a] -> Maybe a
+lookupName _ [] = Nothing
+lookupName name (Named n x : rest) =
+  if n == name then Just x
+  else lookupName name rest
+
+
