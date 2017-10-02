@@ -1,5 +1,5 @@
 {-# language GADTs #-}
-module Substitution where
+module TypeCheck.Substitution where
 
 import qualified Data.Map as M
 
