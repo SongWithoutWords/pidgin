@@ -74,10 +74,10 @@ data Error
   | MidBlockReturnStatement
   | UselessExpression
 
-  | UnknownId String
+  | UnknownId Name
 
-  | UnknownTypeName String
-  | AmbiguousTypeName String
+  | UnknownTypeName Typename
+  | AmbiguousTypeName Typename
 
   -- Better conflict or mismatch?
   | TypeConflict { typeRequired :: Type2, typeFound :: Type2 }
