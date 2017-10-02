@@ -19,6 +19,7 @@ orElse :: Maybe a -> a -> a
 orElse (Just x) _ = x
 orElse Nothing y = y
 
+infixr 2 ??
 (??) :: Maybe a -> a -> a
 (??) = orElse
 
@@ -43,7 +44,7 @@ findMaybe f (x:xs) = case f x of
 
 listToMaybe :: [a] -> Maybe a
 listToMaybe [] = Nothing
-listToMaybe (x:xs) = Just x
+listToMaybe (x:_) = Just x
 
 
 
