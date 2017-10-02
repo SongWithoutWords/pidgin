@@ -1,15 +1,17 @@
 {-# language GADTs #-}
 
-module ConstraintGen
+module TypeCheck.ConstraintGen
   ( constrainAst
-  , module Constraint
+  , module TypeCheck.Constraint
   ) where
 
 import Control.Monad.RWS
 
 import Ast
-import Constraint
 import Preface
+
+import TypeCheck.Constraint
+import TypeCheck.ConstrainM
 
 import MultiMap
 

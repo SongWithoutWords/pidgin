@@ -50,6 +50,8 @@ library
                      , TypeCheckM
                      , TypeCheckUtil
                      , TypeContext
+                     , TypeCheck.ConstrainM
+                     , TypeCheck.Constraint
                      , TypeCheck.ConstraintGen
                      , TypeCheck.Unify
 

@@ -1,5 +1,5 @@
 
-module Unify
+module TypeCheck.Unify
   ( unifyConstraints
   , module Constraint
   , module Substitution
@@ -7,8 +7,8 @@ module Unify
 
 import Data.Map as M
 
-import Constraint
-import Substitution
+import TypeCheck.Constraint
+import TypeCheck.Substitution
 
 unifyConstraints :: [Constraint] -> Substitutions
 unifyConstraints [] = M.empty

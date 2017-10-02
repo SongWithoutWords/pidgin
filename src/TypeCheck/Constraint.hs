@@ -1,5 +1,5 @@
-module Constraint
-  ( module Constraint
+module TypeCheck.Constraint
+  ( module TypeCheck.Constraint
   , module Ast.Type
   ) where
 
