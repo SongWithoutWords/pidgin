@@ -18,20 +18,15 @@ constrainAst :: Ast1 -> (Ast2, [Constraint])
 constrainAst ast =
 
   -- tie the knot, in order to refer to typevars further ahead in the input
-  let (ast', _, constraints) = runRWS (checkAst ast) ast' initialState
-  in (ast', constraints)
+  let result@(ast', _) = runConstrainM (checkAst ast) ast'
+  in result
 
 
 checkAst :: Ast1 -> ConstrainM Ast2
 checkAst = multiMapM checkUnit
--- (Ast exprs expr) = do
-  -- exprs' <- traverse checkNamedExpr exprs
-  -- expr' <- checkExpr expr
-  -- pure $ Ast exprs' expr'
 
 checkUnit :: Unit1 -> ConstrainM Unit2
 checkUnit = undefined
--- checkUnit (Ast exprs expr) = do
 
 checkNamedExpr :: Named Expr1 -> ConstrainM (Named Expr2)
 checkNamedExpr = traverse checkExpr
@@ -40,14 +35,18 @@ checkExpr :: Expr1 -> ConstrainM Expr2
 checkExpr (Expr0 expression) = case expression of
 
   EName name -> do
-    locals <- gets localBindings
-    globals <- undefined -- ask
+    kinds <- lookupKinds name
+    let
+      t = case kinds of
+        [] -> TError $ UnknownId name
+        [KExpr t] -> case t of
+          TError _ -> TError Propagated
+          _ -> t
+        [KType] -> TError NeedExprFoundType
+        [KNamespace] -> TError NeedExprFoundNamespace
+        _ -> TError CompetingDefinitions
 
-    let local = lookup name locals
-    let global = listToMaybe $ multiLookup name globals
-    let typ = local <?> global ?? (TError $ UnknownId name)
-
-    pure $ Expr2 (local <?> global ?? typ) $ EName name
+    pure $ Expr2 t $ EName name
 
 
   ELambda (Func1 (Sig0 pur params optRetType) (Block1 stmts optRetExpr)) -> do
@@ -59,11 +58,13 @@ checkExpr (Expr0 expression) = case expression of
 
     params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
 
+    pushNewScope
+
     mapM (\(Param _ t n) -> pushLocal n t) params'
 
     optRetExpr' <- traverse checkExpr optRetExpr
 
-    mapM_ (\_ -> popLocal) params'
+    popScope
 
     let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
     constrain tRet tRetExpr
