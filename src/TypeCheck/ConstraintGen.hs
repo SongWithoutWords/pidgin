@@ -190,14 +190,12 @@ checkType typ =
       return $ f m t'
 
   in case typ of
-  TUser typeName -> error "Handle this case!"
-    -- do
-    -- bindings <- getBindings
-
-    -- case lookupKinds bindings typeName of
-    --   [] -> foundError $ UnknownTypeName typeName
-    --   [KType] -> return $ TUser typeName
-    --   _ -> foundError $ AmbiguousTypeName typeName
+  TUser typeName -> do
+    kinds <- lookupKinds typeName
+    case kinds of
+      [] -> foundError $ UnknownTypeName typeName
+      [KType] -> return $ TUser typeName
+      _ -> foundError $ AmbiguousTypeName typeName
 
   TFunc purity params ret -> do
     params' <- mapM checkType params
