@@ -41,6 +41,10 @@ findMaybe f (x:xs) = case f x of
   Just y -> Just y
   Nothing -> findMaybe f xs
 
+listToMaybe :: [a] -> Maybe a
+listToMaybe [] = Nothing
+listToMaybe (x:xs) = Just x
+
 
 
 -- Collections
