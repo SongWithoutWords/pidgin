@@ -1,5 +1,7 @@
 {-# language GADTs #-}
-module TypeCheck.ConstrainM where
+module TypeCheck.ConstrainM
+  ( module TypeCheck.ConstrainM
+  ) where
 
 import Control.Monad.RWS
 import qualified Data.Map as M
@@ -27,6 +29,10 @@ initialState = ConstrainState
 
 type ConstrainM a = RWS Ast2 [Constraint] ConstrainState a
 
+runConstrainM :: ConstrainM a -> Ast2 -> (a, [Constraint])
+runConstrainM constrainM ast =
+  let (x, _, constraints) = runRWS constrainM ast initialState
+  in (x, constraints)
 
 constrain :: Type2 -> Type2 -> ConstrainM ()
 constrain t1 t2 = tell [t1 := t2]
