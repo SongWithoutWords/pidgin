@@ -30,7 +30,7 @@ checkUnit unit = case unit of
   UVar v -> UVar <$> checkVar v
 
 checkFunc :: Func1 -> ConstrainM Func2
-checkFunc (Func1 (Sig0 pur params optRetType) (Block1 stmts optRetExpr)) = do
+checkFunc (Func1 (Sig0 pur params optRetType) block) = do
     tRet <- getNextTypeVar
 
     optRetType' <- traverse checkType optRetType
@@ -41,13 +41,48 @@ checkFunc (Func1 (Sig0 pur params optRetType) (Block1 stmts optRetExpr)) = do
     constrain tLam $ TFunc pur tParams tRet
 
     pushNewScope
+
     mapM (\(Param _ t n) -> pushLocal n t) params'
-    optRetExpr' <- traverse checkExpr optRetExpr
+    block'@(Block1 _ optRetExpr') <- checkBlock block
     let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
     constrain tRet tRetExpr
+
     popScope
 
-    pure $ Func1 (Sig2 pur params' tRet) (Block1 [] optRetExpr')
+    pure $ Func1 (Sig2 pur params' tRet) block'
+
+checkBlock :: Block1 -> ConstrainM Block2
+checkBlock (Block1 stmts maybeRetExpr) = do
+  stmts' <- traverse checkStmt stmts
+  maybeRetExpr' <- traverse checkExpr maybeRetExpr
+  return $ Block1 stmts' maybeRetExpr'
+
+checkStmt :: Stmt1 -> TypeCheckM s Stmt2
+checkStmt stmt = case stmt of
+
+  -- TODO: will need to account for mutations in future
+  SAssign lexpr expr -> undefined
+
+  SVar (Named name (Var0 mut typ expr)) -> do
+    expr' <- checkExpr expr
+    typ' <- checkOptionalType typ
+
+    varType <- enforceOrInfer typ' $ typeOfExpr expr'
+    modifyBindings $ addLocalBinding name $ KExpr $ typeOfExpr expr'
+    return $ SVar $ Named name $ Var2 mut varType expr' -- , Nothing)
+
+  SFunc f -> undefined
+
+  SIf ifBranch -> undefined
+
+
+checkVar :: Var1 -> TypeCheckM s Var2
+checkVar (Var0 mut maybeType expr) = do
+  tVar <- getNextTypeVar
+  expr' <- checkExpr expr
+  traverse (constrain tVar) (checkType <$> maybeType)
+  constrain tVar $ typeOfExpr expr'
+  return $ Var2 mut varType expr'
 
 checkNamedExpr :: Named Expr1 -> ConstrainM (Named Expr2)
 checkNamedExpr = traverse checkExpr
