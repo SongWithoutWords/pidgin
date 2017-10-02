@@ -53,6 +53,8 @@ library
                      , TypeCheck.ConstrainM
                      , TypeCheck.Constraint
                      , TypeCheck.ConstraintGen
+                     , TypeCheck.SubAst
+                     , TypeCheck.Substitution
                      , TypeCheck.Unify
 
   build-tools:         alex
