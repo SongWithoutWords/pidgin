@@ -42,7 +42,7 @@ checkFunc (Func1 (Sig0 pur params optRetType) block) = do
 
     pushNewScope
 
-    mapM (\(Param _ t n) -> pushLocal n t) params'
+    mapM (\(Param _ t n) -> addLocalBinding n t) params'
     block'@(Block1 _ optRetExpr') <- checkBlock block
     let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
     constrain tRet tRetExpr

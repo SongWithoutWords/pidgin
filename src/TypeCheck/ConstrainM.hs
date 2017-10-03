@@ -48,8 +48,8 @@ popScope = modify $ \s -> s{scopes = tail $ scopes s}
 modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
 modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 
-pushLocal :: Name -> Type2 -> ConstrainM ()
-pushLocal n t = modifyCurrentScope $ M.insert n (KExpr t)
+addLocalBinding :: Name -> Type2 -> ConstrainM ()
+addLocalBinding n t = modifyCurrentScope $ M.insert n (KExpr t)
 
 getNextTypeVar :: ConstrainM Type2
 getNextTypeVar = do
