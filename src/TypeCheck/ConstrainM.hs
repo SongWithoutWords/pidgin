@@ -9,6 +9,7 @@ import qualified Data.Map as M
 import Ast
 import MultiMap
 import TypeCheck.Constraint
+import TypeCheck.Util
 
 
 type Scope = M.Map Name Kind
@@ -72,10 +73,7 @@ lookupKinds name = do
     kindOfUnit u = case u of
       UNamespace1 _ -> KNamespace
       UClass _ -> KType
-
-      UFunc (Func1 (Sig2 purity params returnType) _) ->
-        KExpr (TFunc purity (map (\(Param _ t _) -> t) params) returnType)
-
+      UFunc f -> KExpr $ typeOfFunc f
       UVar (Var2 _ typ _) -> KExpr typ
 
   pure $ lookupKinds' locals
