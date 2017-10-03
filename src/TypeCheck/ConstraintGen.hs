@@ -26,7 +26,7 @@ checkUnits = multiMapM checkUnit
 checkUnit :: Unit1 -> ConstrainM Unit2
 checkUnit unit = case unit of
   UNamespace1 n -> UNamespace1 <$> checkUnits n
-  UFunc l -> UFunc <$> checkFunc l
+  UFunc f -> UFunc <$> checkFunc f
   UVar v -> UVar <$> checkVar v
 
 checkFunc :: Func1 -> ConstrainM Func2
@@ -57,7 +57,7 @@ checkBlock (Block1 stmts maybeRetExpr) = do
   maybeRetExpr' <- traverse checkExpr maybeRetExpr
   return $ Block1 stmts' maybeRetExpr'
 
-checkStmt :: Stmt1 -> TypeCheckM s Stmt2
+checkStmt :: Stmt1 -> ConstrainM Stmt2
 checkStmt stmt = case stmt of
 
   -- TODO: will need to account for mutations in future
@@ -76,7 +76,7 @@ checkStmt stmt = case stmt of
   SIf ifBranch -> undefined
 
 
-checkVar :: Var1 -> TypeCheckM s Var2
+checkVar :: Var1 -> ConstrainM Var2
 checkVar (Var0 mut maybeType expr) = do
   tVar <- getNextTypeVar
   expr' <- checkExpr expr
