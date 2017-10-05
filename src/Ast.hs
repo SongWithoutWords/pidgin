@@ -258,6 +258,9 @@ deriving instance Eq (Args a b)
 deriving instance Show (Args a b)
 
 
+type Select0 = Select 'A0 'B0
+type Select1 = Select 'A1 'B0
+type Select2 = Select 'A1 'B1
 data Select :: A -> B -> * where
   Select :: Expr a b -> Name -> Select a b
 
