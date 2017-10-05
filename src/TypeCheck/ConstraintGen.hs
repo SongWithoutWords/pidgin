@@ -189,9 +189,9 @@ checkType typ =
   TUser typeName -> do
     kinds <- lookupKinds typeName
     case kinds of
-      [] -> foundError $ UnknownTypeName typeName
+      [] -> pure $ TError $ UnknownTypeName typeName
       [KType] -> return $ TUser typeName
-      _ -> foundError $ AmbiguousTypeName typeName
+      _ -> pure $ TError $ AmbiguousTypeName typeName
 
   TFunc purity params ret -> do
     params' <- mapM checkType params
