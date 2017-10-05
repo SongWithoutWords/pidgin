@@ -4,8 +4,6 @@ module TypeCheck.SubAst
   ( subAst
   ) where
 
-import Control.Monad.Reader
-
 import Ast
 import MultiMap
 import TypeCheck.Substitution
