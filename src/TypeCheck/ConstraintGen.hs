@@ -75,12 +75,13 @@ checkStmt stmt = case stmt of
 
 
 checkVar :: Var1 -> ConstrainM Var2
-checkVar (Var0 mut maybeType expr) = do
+checkVar (Var0 mut optType expr) = do
   tVar <- getNextTypeVar
   expr' <- checkExpr expr
-  traverse (constrain tVar) (checkType <$> maybeType)
+  optType' <- traverse checkType optType
+  traverse (constrain tVar) optType'
   constrain tVar $ typeOfExpr expr'
-  return $ Var2 mut varType expr'
+  return $ Var2 mut tVar expr'
 
 checkNamedExpr :: Named Expr1 -> ConstrainM (Named Expr2)
 checkNamedExpr = traverse checkExpr
