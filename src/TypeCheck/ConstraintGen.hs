@@ -61,13 +61,10 @@ checkStmt stmt = case stmt of
   -- TODO: will need to account for mutations in future
   SAssign lexpr expr -> undefined
 
-  SVar (Named name (Var0 mut typ expr)) -> do
-    expr' <- checkExpr expr
-    typ' <- checkOptionalType typ
-
-    varType <- enforceOrInfer typ' $ typeOfExpr expr'
-    modifyBindings $ addLocalBinding name $ KExpr $ typeOfExpr expr'
-    return $ SVar $ Named name $ Var2 mut varType expr' -- , Nothing)
+  SVar (Named name var) -> do
+    var' <- checkVar var
+    addLocalBinding name $ typeOfVar var'
+    pure $ SVar $ Named name var'
 
   SFunc f -> undefined
 
