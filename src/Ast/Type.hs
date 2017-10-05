@@ -45,6 +45,8 @@ data Type :: B -> * where
 
   -- Type errors can only occur after the ast has been type checked
   TError :: Error -> Type2
+
+  -- A type-level meta-variable
   TVar :: Word -> Type2
 
 deriving instance Eq (Type b)
