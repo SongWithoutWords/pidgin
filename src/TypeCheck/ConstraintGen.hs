@@ -10,6 +10,7 @@ import Preface
 import MultiMap
 import TypeCheck.Constraint
 import TypeCheck.ConstrainM
+import TypeCheck.Util
 
 
 constrainAst :: Ast1 -> (Ast2, [Constraint])
@@ -37,9 +38,6 @@ checkFunc (Func1 (Sig0 pur params optRetType) block) = do
     traverse (constrain tRet) optRetType'
 
     params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
-    let tParams = (\(Param m t _) -> t) <$> params'
-    constrain tLam $ TFunc pur tParams tRet
-
     pushNewScope
 
     mapM (\(Param _ t n) -> addLocalBinding n t) params'
@@ -107,11 +105,9 @@ checkExpr (Expr0 expression) = case expression of
 
   ELambda f -> do
     tLam <- getNextTypeVar
-    -- Should extract out function type-ripping in ConstrainM
-    -- f'@(Func1 (Sig0 pur params )) <- checkFunc f
-
-    -- pure $ Expr2 tLam $ ELambda $ Func1 (Sig2 pur params' tRet) (Block1 [] optRetExpr')
-    pure $ error "Finish the job"
+    f' <- checkFunc f
+    constrain tLam $ typeOfFunc f'
+    pure $ Expr2 tLam $ ELambda f'
 
 
   EApp (App expr (Args purity args)) -> do
