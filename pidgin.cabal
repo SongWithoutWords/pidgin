@@ -37,6 +37,7 @@ library
                      , Tokens 
                      , Transforms
                      , TypeCheck
+                     , TypeCheck.Unify
 
   other-modules:       Ast.Name
                      , Ast.Op
@@ -55,7 +56,6 @@ library
                      , TypeCheck.ConstraintGen
                      , TypeCheck.SubAst
                      , TypeCheck.Substitution
-                     , TypeCheck.Unify
 
   build-tools:         alex
                      , happy

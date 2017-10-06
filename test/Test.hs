@@ -1,5 +1,3 @@
--- module Tests where
-
 import Control.Applicative((<|>))
 import Data.Maybe
 
@@ -13,10 +11,11 @@ import Source
 import Transforms
 import Tokens
 
--- import TypeCheck
 import TestCases
 
 import TestCase()
+
+import Test.TypeCheck.Unify
 
 testTimeout_μs = 10000
 
@@ -30,6 +29,7 @@ tests = T.localOption (T.mkTimeout testTimeout_μs) $ T.testGroup "tests"
     , typedAstTests
     , typeErrorTests
     , returnValTests
+    , unifyTests
     ]
 
 lexerTests :: T.TestTree
