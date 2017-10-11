@@ -171,10 +171,14 @@ checkExpr (Expr0 expression) = case expression of
 
       pure $ Expr2 tRes $ EBinOp op e1' e2'
 
-  EVal v -> case v of
-    b@VBln{} -> pure $ Expr2 TBln $ EVal b
-    i@VInt{} -> pure $ Expr2 TInt $ EVal i
-
+  EVal v -> pure $ Expr2 t $ EVal v
+    where
+      t = case v of
+        VBln _ -> TBln
+        VChr _ -> TChr
+        VFlt _ -> TFlt
+        VInt _ -> TInt
+        VStr _ -> TStr
 
 checkType :: Type0 -> ConstrainM Type2
 checkType typ =
