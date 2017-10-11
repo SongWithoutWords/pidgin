@@ -86,7 +86,7 @@ data Error
   | TypeConflict { typeRequired :: Type2, typeFound :: Type2 }
 
   -- Incompatible types? No common supertype?
-  | FailedToUnify (Set.Set Type2)
+  | FailedToUnify Type2 Type2
 
   | NonApplicable Type2
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
