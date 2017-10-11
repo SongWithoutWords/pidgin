@@ -1,4 +1,7 @@
-module ErrorM where
+module TypeCheck.ErrorM
+  ( module TypeCheck.ErrorM
+  , runWriter
+  ) where
 
 import Control.Monad.Writer
 
