@@ -127,8 +127,8 @@ checkExpr (Expr0 expression) = case expression of
     e2'@(Expr2 t2 _) <- checkExpr e2
     e3'@(Expr2 t3 _) <- checkExpr e3
 
-    constrain TBln t1
-    constrain tIf t2
+    constrain tIf t1
+    constrain TBln t2
     constrain tIf t3
 
     pure $ Expr2 tIf $ EIf e1' e2' e3'
