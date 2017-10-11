@@ -54,8 +54,10 @@ library
                      , TypeCheck.ConstrainM
                      , TypeCheck.Constraint
                      , TypeCheck.ConstraintGen
+                     , TypeCheck.ErrorM
                      , TypeCheck.SubAst
                      , TypeCheck.Substitution
+                     , TypeCheck.Util
 
   build-tools:         alex
                      , happy
