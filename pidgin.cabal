@@ -95,6 +95,7 @@ test-suite pidgin-test
   other-modules:       TestCase
                      , TestCases
                      , TestComposer
+                     , Test.TypeCheck.Unify
 
   build-depends:       base
                      , containers
