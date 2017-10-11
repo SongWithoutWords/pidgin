@@ -48,9 +48,6 @@ library
                      , CodeGenInstructions
                      , CodeGenM
                      , CodeGenUtil
-                     , TypeCheckM
-                     , TypeCheckUtil
-                     , TypeContext
                      , TypeCheck.ConstrainM
                      , TypeCheck.Constraint
                      , TypeCheck.ConstraintGen
