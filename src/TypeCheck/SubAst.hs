@@ -26,7 +26,7 @@ subFunc :: Sub Func2
 subFunc s (Func1 sig b) = Func1 (subSig s sig) (subBlock s b)
 
 subSig :: Sub Sig2
-subSig s (Sig2 pur params retType) = Sig2 pur (subParams s params) retType
+subSig s (Sig2 pur params retType) = Sig2 pur (subParams s params) (subType s retType)
 
 subParams :: Sub Params2
 subParams s ps = map subParam ps
