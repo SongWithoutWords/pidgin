@@ -20,7 +20,7 @@ subUnit s unit = case unit of
   UVar v -> UVar $ subVar s v
 
 subVar :: Sub Var2
-subVar s (Var2 m t e) = Var2 m (subType s t) e
+subVar s (Var2 m t e) = Var2 m (subType s t) (subExpr s e)
 
 subFunc :: Sub Func2
 subFunc s (Func1 sig b) = Func1 (subSig s sig) (subBlock s b)
