@@ -136,6 +136,16 @@ checkExpr (Expr0 expression) = case expression of
 
     pure $ Expr2 tIf $ EIf e1' e2' e3'
 
+  EUnOp op e -> let
+    checkUnOp :: UnOp -> Type2 -> Type2 -> ConstrainM ()
+    checkUnOp Neg tExpr tRes = do
+      mapM_ (constrain TInt) [tExpr, tRes]
+    in do
+      e'@(Expr2 t _) <- checkExpr e
+      tRes <- getNextTypeVar
+      checkUnOp op t tRes
+      pure $ Expr2 tRes $ EUnOp op e'
+
   EBinOp op e1 e2 -> let
 
     checkBinOp :: BinOp -> Type2 -> Type2 -> Type2 -> ConstrainM ()
