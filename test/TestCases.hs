@@ -355,11 +355,11 @@ testCases =
     <> typeErrors []
 
   , source "Bln a = 5"
-    <> typeErrors [FailedToUnify TBln TInt]
+    <> typeErrors [failedToUnify TBln TInt]
 
   , source "Int a = true"
     <> typedAst [("a", UVar $ Var2 Imut TInt $ e2ValBln True)]
-    <> typeErrors [FailedToUnify TInt TBln]
+    <> typeErrors [failedToUnify TInt TBln]
 
   , source "$ a = b"
     <> typedAst [("a", UVar $ Var2 Imut (TError $ UnknownId "b")
@@ -437,7 +437,7 @@ testCases =
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
-    <> typeErrors [FailedToUnify TBln TInt]
+    <> typeErrors [failedToUnify TBln TInt]
 
   , source "$ a = 5; $ b = a; $ c = b"
     <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 5)
@@ -449,13 +449,13 @@ testCases =
     <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 5)
                 , ("b", UVar $ Var2 Imut TInt $ e2Name TInt "a")
                 , ("c", UVar $ Var2 Imut TBln $ e2Name TInt "b")]
-    <> typeErrors [FailedToUnify TBln TInt]
+    <> typeErrors [failedToUnify TBln TInt]
 
   , source "Bln a = b; $ b = c; $ c = 5"
     <> typedAst [ ("a", UVar $ Var2 Imut TBln $ e2Name TInt "b")
                 , ("b", UVar $ Var2 Imut TInt $ e2Name TInt "c")
                 , ("c", UVar $ Var2 Imut TInt $ e2ValInt 5)]
-    <> typeErrors [FailedToUnify TBln TInt]
+    <> typeErrors [failedToUnify TBln TInt]
 
 
   -- TypeCheck operator tests
@@ -475,11 +475,11 @@ testCases =
 
   , source "$ a = 1 if \"true\" else 0"
     <> typedAst [("a", UVar $ Var2 Imut TInt $ e2If TInt (e2ValInt 1) (e2ValStr "true") (e2ValInt 0))]
-    <> typeErrors [FailedToUnify TBln TStr]
+    <> typeErrors [failedToUnify TBln TStr]
 
   , source "$ a = 1 if true else \"zero\""
     <> typedAst [("a", UVar $ Var2 Imut TInt $ e2If TInt (e2ValInt 1) (e2ValBln True) (e2ValStr "zero"))]
-    <> typeErrors [FailedToUnify TInt TStr]
+    <> typeErrors [failedToUnify TInt TStr]
 
 
   -- TypeCheck function tests
@@ -504,7 +504,7 @@ testCases =
   , name "one explicit, wrong return type"
     <> source
       "one() -> Int => \"one\""
-    <> typeErrors [FailedToUnify TInt TStr]
+    <> typeErrors [failedToUnify TInt TStr]
 
   , name "one implicit, wrong num args"
     <> source
@@ -546,7 +546,7 @@ testCases =
   , name "inc explicit, wrong return type"
     <> source
       "inc(Int x) -> Int => \"one\""
-    <> typeErrors [FailedToUnify TInt TStr]
+    <> typeErrors [failedToUnify TInt TStr]
 
   , name "inc explicit, wrong num args (a)"
     <> source
@@ -585,7 +585,7 @@ testCases =
       , ("a", UVar $ Var2 Imut TInt
           $ e2App TInt (e2Name (TFunc Pure [TInt] TInt) "inc") $ Args Pure [e2ValStr "one"])
       ]
-    <> typeErrors [FailedToUnify TInt TStr]
+    <> typeErrors [failedToUnify TInt TStr]
 
   , name "inc implicit, local var"
     <> source

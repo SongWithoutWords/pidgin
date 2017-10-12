@@ -8,7 +8,6 @@ module TypeCheck.Unify
   ) where
 
 import Data.Map as M
--- import Control.Monad(zipWithM)
 
 import TypeCheck.Constraint
 import TypeCheck.ErrorM
@@ -42,7 +41,7 @@ unifyConstraint (t1 := t2) = let
           paramConstraints <- constrainParamTypes aParams bParams
           unifyConstraints $ paramConstraints ++ [aRet := bRet]
 
-    | otherwise = raise (FailedToUnify a b) >> pure M.empty
+    | otherwise = raise (failedToUnify a b) >> pure M.empty
 
   in unify' t1 t2
 

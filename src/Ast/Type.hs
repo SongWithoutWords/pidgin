@@ -5,13 +5,15 @@
 
 module Ast.Type where
 
-import qualified Data.Set as Set
+-- import qualified Data.Set as Set
 
 import Cycle
 
 import Ast.Name
 import Ast.Op
 import Ast.Phases
+import Preface
+import Util.UnorderedPair
 
 
 data Kind
@@ -50,7 +52,7 @@ data Type :: B -> * where
   TVar :: Word -> Type2
 
 deriving instance Eq (Type b)
-deriving instance Ord (Type b)
+-- deriving instance Ord (Type b)
 deriving instance Show (Type b)
 
 type Typename = String
@@ -82,7 +84,7 @@ data Error
   | UnknownTypeName Typename
   | AmbiguousTypeName Typename
 
-  | FailedToUnify Type2 Type2
+  | FailedToUnify (UnorderedPair Type2)
 
   | NonApplicable Type2
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
@@ -100,7 +102,10 @@ data Error
 
   | Propagated
 
-  deriving(Eq, Ord, Show)
+  deriving(Eq, Show)
+
+failedToUnify :: Type2 -> Type2 -> Error
+failedToUnify = FailedToUnify .: UnorderedPair
 
 recursiveDefinition :: [Name] -> Error
 recursiveDefinition = RecursiveDefinition . Cycle

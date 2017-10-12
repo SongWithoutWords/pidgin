@@ -55,6 +55,7 @@ library
                      , TypeCheck.SubAst
                      , TypeCheck.Substitution
                      , TypeCheck.Util
+                     , Util.UnorderedPair
 
   build-tools:         alex
                      , happy
