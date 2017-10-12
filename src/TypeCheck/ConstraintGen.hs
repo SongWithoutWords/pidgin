@@ -153,6 +153,9 @@ checkExpr (Expr0 expression) = case expression of
     checkBinOp Div a b r = do
       mapM_ (constrain TInt) [a, b, r]
 
+    checkBinOp Mod a b r = do
+      mapM_ (constrain TInt) [a, b, r]
+
     -- Int -> Int -> Bln
     checkBinOp (Cmp _) a b r = do
       mapM_ (constrain TInt) [a, b]
