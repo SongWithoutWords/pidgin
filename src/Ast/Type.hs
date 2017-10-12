@@ -82,10 +82,6 @@ data Error
   | UnknownTypeName Typename
   | AmbiguousTypeName Typename
 
-  -- Better conflict or mismatch?
-  | TypeConflict { typeRequired :: Type2, typeFound :: Type2 }
-
-  -- Incompatible types? No common supertype?
   | FailedToUnify Type2 Type2
 
   | NonApplicable Type2

@@ -355,11 +355,11 @@ testCases =
     <> typeErrors []
 
   , source "Bln a = 5"
-    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
+    <> typeErrors [FailedToUnify TBln TInt]
 
   , source "Int a = true"
     <> typedAst [("a", UVar $ Var2 Imut TInt $ e2ValBln True)]
-    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TBln}]
+    <> typeErrors [FailedToUnify TInt TBln]
 
   , source "$ a = b"
     <> typedAst [("a", UVar $ Var2 Imut (TError $ UnknownId "b")
@@ -411,12 +411,11 @@ testCases =
 
   , source "$ a = 1; $ b = b + a"
 
-    <> let bType = TError $ recursiveDefinition ["b"]
-       in typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 1)
-                  , ("b", UVar $ Var2 Imut (TError Propagated) $ Expr2 (TError Propagated)
-                      $ EBinOp Add
-                        (Expr2 (TError $ recursiveDefinition ["b"]) $ EName "b")
-                        (Expr2 TInt $ EName "a"))]
+    <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 1)
+                , ("b", UVar $ Var2 Imut (TError Propagated) $ Expr2 (TError Propagated)
+                    $ EBinOp Add
+                      (Expr2 (TError $ recursiveDefinition ["b"]) $ EName "b")
+                      (Expr2 TInt $ EName "a"))]
 
     <> typeErrors [recursiveDefinition ["b"]]
 
@@ -438,7 +437,7 @@ testCases =
     <> typeErrors []
 
   , source "$ a = 5; Bln b = a"
-    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
+    <> typeErrors [FailedToUnify TBln TInt]
 
   , source "$ a = 5; $ b = a; $ c = b"
     <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 5)
@@ -450,13 +449,13 @@ testCases =
     <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 5)
                 , ("b", UVar $ Var2 Imut TInt $ e2Name TInt "a")
                 , ("c", UVar $ Var2 Imut TBln $ e2Name TInt "b")]
-    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
+    <> typeErrors [FailedToUnify TBln TInt]
 
   , source "Bln a = b; $ b = c; $ c = 5"
     <> typedAst [ ("a", UVar $ Var2 Imut TBln $ e2Name TInt "b")
                 , ("b", UVar $ Var2 Imut TInt $ e2Name TInt "c")
                 , ("c", UVar $ Var2 Imut TInt $ e2ValInt 5)]
-    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TInt}]
+    <> typeErrors [FailedToUnify TBln TInt]
 
 
   -- TypeCheck operator tests
@@ -476,11 +475,11 @@ testCases =
 
   , source "$ a = 1 if \"true\" else 0"
     <> typedAst [("a", UVar $ Var2 Imut TInt $ e2If TInt (e2ValInt 1) (e2ValStr "true") (e2ValInt 0))]
-    <> typeErrors [TypeConflict {typeRequired = TBln, typeFound = TStr}]
+    <> typeErrors [FailedToUnify TBln TStr]
 
   , source "$ a = 1 if true else \"zero\""
     <> typedAst [("a", UVar $ Var2 Imut TInt $ e2If TInt (e2ValInt 1) (e2ValBln True) (e2ValStr "zero"))]
-    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
+    <> typeErrors [FailedToUnify TInt TStr]
 
 
   -- TypeCheck function tests
@@ -505,7 +504,7 @@ testCases =
   , name "one explicit, wrong return type"
     <> source
       "one() -> Int => \"one\""
-    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
+    <> typeErrors [FailedToUnify TInt TStr]
 
   , name "one implicit, wrong num args"
     <> source
@@ -547,7 +546,7 @@ testCases =
   , name "inc explicit, wrong return type"
     <> source
       "inc(Int x) -> Int => \"one\""
-    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
+    <> typeErrors [FailedToUnify TInt TStr]
 
   , name "inc explicit, wrong num args (a)"
     <> source
@@ -586,7 +585,7 @@ testCases =
       , ("a", UVar $ Var2 Imut TInt
           $ e2App TInt (e2Name (TFunc Pure [TInt] TInt) "inc") $ Args Pure [e2ValStr "one"])
       ]
-    <> typeErrors [TypeConflict {typeRequired = TInt, typeFound = TStr}]
+    <> typeErrors [FailedToUnify TInt TStr]
 
   , name "inc implicit, local var"
     <> source
