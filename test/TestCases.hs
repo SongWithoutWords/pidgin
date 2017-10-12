@@ -643,6 +643,12 @@ testCases =
       \main() => fact(5)"
     <> returnVal 120
 
+  , name "fibonacci 7"
+    <> source
+      "fib(Int i) => 1 if i <= 1 else fib(i - 1) + fib(i - 2)\n\
+      \main() => fib(7)"
+    <> returnVal 21
+
   -- Modulus operator tests
   , source "main() => 0 % 2"
     <> returnVal 0
