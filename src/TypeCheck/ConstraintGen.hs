@@ -32,22 +32,22 @@ checkUnit unit = case unit of
 
 checkFunc :: Func1 -> ConstrainM Func2
 checkFunc (Func1 (Sig0 pur params optRetType) block) = do
-    tRet <- getNextTypeVar
+  tRet <- getNextTypeVar
 
-    optRetType' <- traverse checkType optRetType
-    traverse (constrain tRet) optRetType'
+  optRetType' <- traverse checkType optRetType
+  traverse (constrain tRet) optRetType'
 
-    params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
-    pushNewScope
+  params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
+  pushNewScope
 
-    mapM (\(Param _ t n) -> addLocalBinding n t) params'
-    block'@(Block1 _ optRetExpr') <- checkBlock block
-    let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
-    constrain tRet tRetExpr
+  mapM (\(Param _ t n) -> addLocalBinding n t) params'
+  block'@(Block1 _ optRetExpr') <- checkBlock block
+  let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
+  constrain tRet tRetExpr
 
-    popScope
+  popScope
 
-    pure $ Func1 (Sig2 pur params' tRet) block'
+  pure $ Func1 (Sig2 pur params' tRet) block'
 
 checkBlock :: Block1 -> ConstrainM Block2
 checkBlock (Block1 stmts maybeRetExpr) = do
