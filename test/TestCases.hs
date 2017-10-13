@@ -362,59 +362,53 @@ testCases =
     <> typeErrors [failedToUnify TInt TBln]
 
   , source "$ a = b"
-    <> typedAst [("a", UVar $ Var2 Imut (TError $ UnknownId "b")
-                   $ Expr2 (TError $ UnknownId "b") $ EName "b")]
+    <> typedAst [("a", UVar $ Var2 Imut TError
+                   $ Expr2 TError $ EName "b")]
     <> typeErrors [UnknownId "b"]
 
   -- TODO: a proper error type and error handling for recursive definitions
   , source "$ a = a"
-    <> typedAst [("a", UVar $ Var2 Imut (TError $ recursiveDefinition ["a"])
-                   $ Expr2 (TError $ recursiveDefinition ["a"]) $ EName "a")]
+    <> typedAst [ ("a", UVar $ Var2 Imut TError
+                $ Expr2 TError $ EName "a")]
 
     <> typeErrors [recursiveDefinition ["a"]]
 
   , source "$ a = b; $ b = a"
-    <> let recErr = TError $ recursiveDefinition ["a", "b"]
-       in typedAst [ ("a", UVar $ Var2 Imut recErr $ Expr2 recErr $ EName "b")
-                   , ("b", UVar $ Var2 Imut recErr $ Expr2 recErr $ EName "a")]
+    <> typedAst [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
+                , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "a")]
     <> typeErrors [recursiveDefinition ["a", "b"]]
 
 
   , source "$ a = b; $ b = b"
-    <> let recDef = recursiveDefinition ["b"]
-           bType = TError recDef
-       in typedAst
-          [ ("a", UVar $ Var2 Imut (TError Propagated) $ Expr2 (TError Propagated) $ EName "b")
-          , ("b", UVar $ Var2 Imut bType $ Expr2 bType $ EName "b")]
+    <> typedAst
+       [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
+       , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")]
 
     <> typeErrors [recursiveDefinition ["b"]]
 
 
   , source "$ a = b; $ b = c; $ c = a"
 
-    <> let cycleT = TError $ recursiveDefinition ["a", "b", "c"] in
-       typedAst [ ("a", UVar $ Var2 Imut cycleT $ Expr2 cycleT $ EName "b")
-                , ("b", UVar $ Var2 Imut cycleT $ Expr2 cycleT $ EName "c")
-                , ("c", UVar $ Var2 Imut cycleT $ Expr2 cycleT $ EName "a")]
+    <> typedAst [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
+                , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "c")
+                , ("c", UVar $ Var2 Imut TError $ Expr2 TError $ EName "a")]
 
     <> typeErrors [recursiveDefinition ["a", "b", "c"]]
 
 
   , source "$ a = b; $ b = c; $ c = b"
-    <> let cycle = recursiveDefinition ["b", "c"]
-           cycleT = TError cycle in
-       typedAst [ ("a", UVar $ Var2 Imut (TError Propagated) $ Expr2 (TError Propagated) $ EName "b")
-                , ("b", UVar $ Var2 Imut cycleT $ Expr2 cycleT $ EName "c")
-                , ("c", UVar $ Var2 Imut cycleT $ Expr2 cycleT $ EName "b")]
+    <> typedAst [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
+                , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "c")
+                , ("c", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")]
     <> typeErrors [recursiveDefinition ["b", "c"]]
 
 
   , source "$ a = 1; $ b = b + a"
 
     <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 1)
-                , ("b", UVar $ Var2 Imut (TError Propagated) $ Expr2 (TError Propagated)
+                , ("b", UVar $ Var2 Imut TError $ Expr2 TError
                     $ EBinOp Add
-                      (Expr2 (TError $ recursiveDefinition ["b"]) $ EName "b")
+                      (Expr2 TError $ EName "b")
                       (Expr2 TInt $ EName "a"))]
 
     <> typeErrors [recursiveDefinition ["b"]]

@@ -39,7 +39,8 @@ library
                      , TypeCheck
                      , TypeCheck.Unify
 
-  other-modules:       Ast.Name
+  other-modules:       Ast.Error
+                     , Ast.Name
                      , Ast.Op
                      , Ast.Phases
                      , Ast.Type

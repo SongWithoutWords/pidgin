@@ -5,6 +5,7 @@
 
 module Ast
   ( module Ast
+  , module Ast.Error
   , module Ast.Name
   , module Ast.Op
   , module Ast.Type
@@ -12,6 +13,7 @@ module Ast
 
 import MultiMap
 
+import Ast.Error
 import Ast.Name
 import Ast.Op
 import Ast.Phases

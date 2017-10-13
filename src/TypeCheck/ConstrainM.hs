@@ -1,9 +1,21 @@
 {-# language GADTs #-}
 module TypeCheck.ConstrainM
-  ( module TypeCheck.ConstrainM
+  ( ConstrainM
+  , runConstrainM
+  , constrain
+  , raise
+  , foundError
+  , pushNewScope
+  , popScope
+  , addLocalBinding
+  , getNextTypeVar
+  , lookupKinds
   ) where
 
 import Control.Monad.RWS
+-- import Control.Monad.Writer
+-- import Control.Monad.State
+-- import Control.Monad.Reader
 import qualified Data.Map as M
 
 import Ast
@@ -18,24 +30,31 @@ type Scopes = [Scope]
 data ConstrainState = ConstrainState
   { scopes :: Scopes
   , nextTypeId :: Word
+  , errors :: Errors
   }
 
 initialState :: ConstrainState
 initialState = ConstrainState
   { scopes = []
   , nextTypeId = 0
+  , errors = []
   }
 
 type ConstrainM a = RWS Ast2 [Constraint] ConstrainState a
 
-runConstrainM :: ConstrainM a -> Ast2 -> (a, [Constraint])
+runConstrainM :: ConstrainM a -> Ast2 -> (a, [Constraint], Errors)
 runConstrainM constrainM ast =
-  let (x, _, constraints) = runRWS constrainM ast initialState
-  in (x, constraints)
+  let (x, s, constraints) = runRWS constrainM ast initialState
+  in (x, constraints, errors s)
 
 constrain :: Type2 -> Type2 -> ConstrainM ()
 constrain t1 t2 = tell [t1 := t2]
 
+raise :: Error -> ConstrainM ()
+raise e = modify $ \s -> s{errors = e : errors s}
+
+foundError :: Error -> ConstrainM Type2
+foundError e = raise e >> pure TError
 
 pushScope :: Scope -> ConstrainM ()
 pushScope scope = modify $ \s -> s{scopes = scope : scopes s}

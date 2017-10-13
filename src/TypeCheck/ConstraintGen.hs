@@ -13,11 +13,10 @@ import TypeCheck.ConstrainM
 import TypeCheck.Util
 
 
-constrainAst :: Ast1 -> (Ast2, [Constraint])
+constrainAst :: Ast1 -> (Ast2, [Constraint], Errors)
 constrainAst ast =
-
   -- tie the knot, in order to refer to typevars further ahead in the input
-  let result@(ast', _) = runConstrainM (checkUnits ast) ast'
+  let result@(ast', _, _) = runConstrainM (checkUnits ast) ast'
   in result
 
 
@@ -91,16 +90,12 @@ checkExpr (Expr0 expression) = case expression of
 
   EName name -> do
     kinds <- lookupKinds name
-    let
-      t = case kinds of
-        [] -> TError $ UnknownId name
-        [KExpr t] -> case t of
-          TError _ -> TError Propagated
-          _ -> t
-        [KType] -> TError NeedExprFoundType
-        [KNamespace] -> TError NeedExprFoundNamespace
-        _ -> TError CompetingDefinitions
-
+    t <- case kinds of
+      [] -> foundError $ UnknownId name
+      [KExpr t] -> pure t
+      [KType] -> foundError NeedExprFoundType
+      [KNamespace] -> foundError NeedExprFoundNamespace
+      _ -> foundError CompetingDefinitions
     pure $ Expr2 t $ EName name
 
 
@@ -205,9 +200,9 @@ checkType typ =
   TUser typeName -> do
     kinds <- lookupKinds typeName
     case kinds of
-      [] -> pure $ TError $ UnknownTypeName typeName
+      [] -> foundError $ UnknownTypeName typeName
       [KType] -> return $ TUser typeName
-      _ -> pure $ TError $ AmbiguousTypeName typeName
+      _ -> foundError $ AmbiguousTypeName typeName
 
   TFunc purity params ret -> do
     params' <- mapM checkType params

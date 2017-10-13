@@ -5,15 +5,7 @@
 
 module Ast.Type where
 
--- import qualified Data.Set as Set
-
-import Cycle
-
-import Ast.Name
-import Ast.Op
 import Ast.Phases
-import Preface
-import Util.UnorderedPair
 
 
 data Kind
@@ -46,13 +38,12 @@ data Type :: B -> * where
   TNone :: Type b
 
   -- Type errors can only occur after the ast has been type checked
-  TError :: Error -> Type2
+  TError :: Type2
 
   -- A type-level meta-variable
   TVar :: Word -> Type2
 
 deriving instance Eq (Type b)
--- deriving instance Ord (Type b)
 deriving instance Show (Type b)
 
 type Typename = String
@@ -69,44 +60,4 @@ data Mut
   -- Constant   -- Not mutable in any scope - planned
   -- CtConstant -- Known at compile time - planned
   deriving(Eq, Ord, Show)
-
-
-type Errors = [Error]
-
-data Error
-
-  = ImplicitRetWithoutFinalExpr
-  | MidBlockReturnStatement
-  | UselessExpression
-
-  | UnknownId Name
-
-  | UnknownTypeName Typename
-  | AmbiguousTypeName Typename
-
-  | FailedToUnify (UnorderedPair Type2)
-
-  | NonApplicable Type2
-  | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
-  | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
-
-  | UndefinedOperator BinOp Type2 Type2
-
-  -- Multiple, competing, duplicate, overlapping, contrandictory?...
-  | CompetingDefinitions
-
-  | RecursiveDefinition (Cycle Name)
-
-  | NeedExprFoundType
-  | NeedExprFoundNamespace
-
-  | Propagated
-
-  deriving(Eq, Show)
-
-failedToUnify :: Type2 -> Type2 -> Error
-failedToUnify = FailedToUnify .: UnorderedPair
-
-recursiveDefinition :: [Name] -> Error
-recursiveDefinition = RecursiveDefinition . Cycle
 

@@ -31,8 +31,8 @@ unifyConstraint (t1 := t2) = let
     | TVar a' <- a = pure $ M.singleton a' b
     | TVar b' <- b = pure $ M.singleton b' a
 
-    | TError a' <- a = raise a' >> pure M.empty
-    | TError b' <- b = raise b' >> pure M.empty
+    | TError <- a = pure M.empty
+    | TError <- b = pure M.empty
 
     -- TODO: Handle purity
     | TFunc _ aParams aRet <- a
