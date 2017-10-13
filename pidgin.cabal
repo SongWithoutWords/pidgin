@@ -24,6 +24,7 @@ library
   exposed-modules:     Ast
                      , Ast0Builder
                      , Ast2Builder
+                     , Ast.Error
                      , CodeGen
                      , FormatAst
                      , Lexer
@@ -39,8 +40,7 @@ library
                      , TypeCheck
                      , TypeCheck.Unify
 
-  other-modules:       Ast.Error
-                     , Ast.Name
+  other-modules:       Ast.Name
                      , Ast.Op
                      , Ast.Phases
                      , Ast.Type

@@ -9,6 +9,7 @@ import System.IO.Unsafe
 import LLVM.AST as A
 
 import Ast
+import Ast.Error
 import Source
 
 import Lexer

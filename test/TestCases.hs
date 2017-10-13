@@ -4,6 +4,7 @@ import TestCase
 import TestComposer
 
 import Ast
+import Ast.Error
 import Ast0Builder
 import Ast2Builder
 import qualified Tokens as T
@@ -371,48 +372,43 @@ testCases =
     <> typedAst [ ("a", UVar $ Var2 Imut TError
                 $ Expr2 TError $ EName "a")]
 
-    <> typeErrors [recursiveDefinition ["a"]]
+    <> typeErrors [FailedToInferType $ EName "a"]
 
   , source "$ a = b; $ b = a"
     <> typedAst [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
                 , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "a")]
-    <> typeErrors [recursiveDefinition ["a", "b"]]
-
+    <> typeErrors []
 
   , source "$ a = b; $ b = b"
     <> typedAst
        [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
        , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")]
-
-    <> typeErrors [recursiveDefinition ["b"]]
-
+    <> typeErrors [ FailedToInferType $ EName "a"
+                  , FailedToInferType $ EName "b"]
 
   , source "$ a = b; $ b = c; $ c = a"
-
     <> typedAst [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
                 , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "c")
                 , ("c", UVar $ Var2 Imut TError $ Expr2 TError $ EName "a")]
-
-    <> typeErrors [recursiveDefinition ["a", "b", "c"]]
-
+    <> typeErrors [ FailedToInferType $ EName "a"
+                  , FailedToInferType $ EName "b"
+                  , FailedToInferType $ EName "c"]
 
   , source "$ a = b; $ b = c; $ c = b"
     <> typedAst [ ("a", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")
                 , ("b", UVar $ Var2 Imut TError $ Expr2 TError $ EName "c")
                 , ("c", UVar $ Var2 Imut TError $ Expr2 TError $ EName "b")]
-    <> typeErrors [recursiveDefinition ["b", "c"]]
-
+    <> typeErrors [ FailedToInferType $ EName "a"
+                  , FailedToInferType $ EName "b"
+                  , FailedToInferType $ EName "c"]
 
   , source "$ a = 1; $ b = b + a"
-
     <> typedAst [ ("a", UVar $ Var2 Imut TInt $ e2ValInt 1)
                 , ("b", UVar $ Var2 Imut TError $ Expr2 TError
                     $ EBinOp Add
                       (Expr2 TError $ EName "b")
                       (Expr2 TInt $ EName "a"))]
-
-    <> typeErrors [recursiveDefinition ["b"]]
-
+    <> typeErrors [FailedToInferType $ EName "b"]
 
   , source "$ a = true; $ a = false; $ b = a"
     <> typeErrors [CompetingDefinitions]

@@ -1,9 +1,6 @@
 module Ast.Error where
 
-import Ast.Name
-import Ast.Op
-import Ast.Type
-import Cycle
+import Ast
 import Preface
 import Util.UnorderedPair
 
@@ -21,6 +18,7 @@ data Error
   | AmbiguousTypeName Typename
 
   | FailedToUnify (UnorderedPair Type2)
+  | FailedToInferType Expr2'
 
   | NonApplicable Type2
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
@@ -31,18 +29,13 @@ data Error
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
 
-  | RecursiveDefinition (Cycle Name)
-
   | NeedExprFoundType
   | NeedExprFoundNamespace
 
-  | Propagated
+  -- | Propagated
 
   deriving(Eq, Show)
 
 failedToUnify :: Type2 -> Type2 -> Error
 failedToUnify = FailedToUnify .: UnorderedPair
-
-recursiveDefinition :: [Name] -> Error
-recursiveDefinition = RecursiveDefinition . Cycle
 

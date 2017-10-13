@@ -16,6 +16,7 @@ import Control.Monad.RWS
 import qualified Data.Map as M
 
 import Ast
+import Ast.Error
 import MultiMap
 import TypeCheck.Constraint
 import TypeCheck.Util

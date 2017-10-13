@@ -5,6 +5,7 @@ import MultiMap
 import TestCase
 
 import Ast
+import Ast.Error
 import Source
 import Tokens
 

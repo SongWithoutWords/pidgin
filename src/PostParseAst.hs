@@ -5,6 +5,7 @@ module PostParseAst (postParseAst) where
 import Control.Monad.Writer
 
 import Ast
+import Ast.Error
 import MultiMap
 
 postParseAst :: Ast0 -> (Ast1, Errors)

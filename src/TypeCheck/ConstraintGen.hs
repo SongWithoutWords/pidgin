@@ -6,6 +6,7 @@ module TypeCheck.ConstraintGen
   ) where
 
 import Ast
+import Ast.Error
 import Preface
 import MultiMap
 import TypeCheck.Constraint

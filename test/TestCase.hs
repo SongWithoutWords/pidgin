@@ -7,6 +7,7 @@ import Control.Applicative
 import Data.Monoid
 
 import Ast
+import Ast.Error
 import Source
 import Tokens
 
