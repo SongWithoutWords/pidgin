@@ -1,7 +1,7 @@
 {-# language GADTs #-}
 
 module TypeCheck.Unify
-  ( unifyConstraints
+  ( unify
   , module TypeCheck.Constraint
   , module TypeCheck.ErrorM
   , module TypeCheck.Substitution
@@ -13,40 +13,47 @@ import TypeCheck.Constraint
 import TypeCheck.ErrorM
 import TypeCheck.Substitution
 
-unifyConstraints :: [Constraint] -> ErrorM Substitutions
-unifyConstraints [] = pure M.empty
-unifyConstraints (c : cs) = do
-  s2 <- unifyConstraints cs
-  s1 <- unifyConstraint $ subConstraint s2 c
+unify :: [Constraint] -> (Substitutions, Errors)
+unify = runErrorM . unify'
+
+unify' :: [Constraint] -> ErrorM Substitutions
+unify' [] = pure M.empty
+unify' (c : cs) = do
+  s2 <- unify' cs
+  s1 <- unifyOne $ subConstraint s2 c
   let s2' = M.map (subType s1) s2
   pure $ M.union s1 s2'
 
-unifyConstraint :: Constraint -> ErrorM Substitutions
-unifyConstraint (t1 := t2) = let
-  unify' :: Type2 -> Type2 -> ErrorM Substitutions
-  unify' a b
+unifyOne :: Constraint -> ErrorM Substitutions
+unifyOne (a := b)
 
-    | a == b = pure M.empty
+  -- equality
+  | a == b = pure M.empty
 
-    | TVar a' <- a = pure $ M.singleton a' b
-    | TVar b' <- b = pure $ M.singleton b' a
+  -- var := any
+  | TVar a' <- a = pure $ M.singleton a' b
+  | TVar b' <- b = pure $ M.singleton b' a
 
-    | TError <- a = pure M.empty
-    | TError <- b = pure M.empty
+  -- error := any
+  | TError <- a = pure M.empty
+  | TError <- b = pure M.empty
 
-    -- TODO: Handle purity
-    | TFunc _ aParams aRet <- a
-    , TFunc _ bParams bRet <- b
-      = do
-          paramConstraints <- constrainParamTypes aParams bParams
-          unifyConstraints $ paramConstraints ++ [aRet := bRet]
+  -- function := function
+  | TFunc _ aParams aRet <- a
+  , TFunc _ bParams bRet <- b
+    = do
+        paramConstraints <- constrainParams aParams bParams
+        unify' $ paramConstraints ++ [aRet := bRet]
 
-    | otherwise = raise (failedToUnify a b) >> pure M.empty
+  -- function := non-function
+  | TFunc _ _ _ <- a = raise (NonApplicable b) >> pure M.empty
+  | TFunc _ _ _ <- b = raise (NonApplicable a) >> pure M.empty
 
-  in unify' t1 t2
+  -- inequality
+  | otherwise = raise (failedToUnify a b) >> pure M.empty
 
-constrainParamTypes :: [Type2] -> [Type2] -> ErrorM [Constraint]
-constrainParamTypes xs ys = if length xs == length ys
+constrainParams :: [Type2] -> [Type2] -> ErrorM [Constraint]
+constrainParams xs ys = if length xs == length ys
   then pure $ zipWith (\x y -> x := y) xs ys
   else raise (WrongNumArgs (length xs) (length ys)) >> pure []
 

@@ -1,15 +1,20 @@
+{-# language GeneralizedNewtypeDeriving #-}
+
 module TypeCheck.ErrorM
   ( module TypeCheck.ErrorM
   , module Ast.Error
-  , runWriter
   ) where
 
 import Control.Monad.Writer
 
 import Ast.Error
 
-type ErrorM a = Writer [Error] a
+newtype ErrorM a = ErrorM (Writer Errors a)
+  deriving(Functor, Applicative, Monad)
+
+runErrorM :: ErrorM a -> (a, Errors)
+runErrorM (ErrorM w) = runWriter w
 
 raise :: Error -> ErrorM ()
-raise = tell . pure
+raise = ErrorM . tell . pure
 

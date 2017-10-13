@@ -11,7 +11,7 @@ type SubstitutionList = [(Word, Type2)]
 
 unifyTest :: String -> [Constraint] -> SubstitutionList -> [Error] -> TestTree
 unifyTest name constraints subs errors =
-  let result = runWriter $ unifyConstraints constraints
+  let result = unify constraints
   in testGroup name
     [ testCase "substitutions" $ fst result @?= M.fromList subs
     , testCase "errors" $ snd result @?= errors
