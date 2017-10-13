@@ -649,6 +649,12 @@ testCases =
       \main() => fib(7)"
     <> returnVal 21
 
+  , name "gcd 18 24"
+    <> source
+      "gcd(Int a, Int b) => a if b == 0 else gcd(b, a % b)\n\
+      \main() => gcd(18, 24)"
+    <> returnVal 6
+
   -- Modulus operator tests
   , source "main() => 0 % 2"
     <> returnVal 0
