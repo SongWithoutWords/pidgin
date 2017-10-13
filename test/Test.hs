@@ -17,7 +17,7 @@ import TestCase()
 
 import Test.TypeCheck.Unify
 
-testTimeout_μs = 10000
+testTimeout_μs = 20000
 
 main :: IO ()
 main = T.defaultMain tests
