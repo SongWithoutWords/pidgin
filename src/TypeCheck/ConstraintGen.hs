@@ -124,17 +124,15 @@ checkExpr (Expr0 expression) = case expression of
     pure $ Expr2 tRet $ EApp $ App expr' (Args purity args')
 
   EIf e1 e2 e3 -> do
-    tIf <- getNextTypeVar
 
     e1'@(Expr2 t1 _) <- checkExpr e1
     e2'@(Expr2 t2 _) <- checkExpr e2
     e3'@(Expr2 t3 _) <- checkExpr e3
 
-    constrain tIf t1
     constrain TBln t2
-    constrain tIf t3
+    constrain t1 t3
 
-    pure $ Expr2 tIf $ EIf e1' e2' e3'
+    pure $ Expr2 t1 $ EIf e1' e2' e3'
 
   EUnOp op e -> let
     checkUnOp :: UnOp -> Type2 -> Type2 -> ConstrainM ()
