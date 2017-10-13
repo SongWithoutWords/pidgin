@@ -13,9 +13,6 @@ module TypeCheck.ConstrainM
   ) where
 
 import Control.Monad.RWS
--- import Control.Monad.Writer
--- import Control.Monad.State
--- import Control.Monad.Reader
 import qualified Data.Map as M
 
 import Ast
