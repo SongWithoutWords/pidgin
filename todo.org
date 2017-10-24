@@ -4,6 +4,8 @@
 *** DONE Conversion of ast parameters to phantom-type toggles for more fine-grained control
     CLOSED: [2017-09-17 Sun 15:18]
 ** Type checking
+*** TODO Add new phantom-type toggle for substitution phase? Or should I just split my Ast?
+*** TODO Operator/function overloading
 ** Code generation
 *** DONE Eliminate implicit rets before code generation, possibly during post parse
     CLOSED: [2017-09-17 Sun 15:19]
@@ -14,5 +16,6 @@
 **** DONE Make the necessary changes so that it runs and compiles
      CLOSED: [2017-09-17 Sun 15:19]
 ** Misc
-*** TODO Delete old makefile
-     
+*** DONE Delete old makefile
+    CLOSED: [2017-10-24 Tue 09:32]
+*** TODO Organize source files into subdirectories (things are a bit crowded)
