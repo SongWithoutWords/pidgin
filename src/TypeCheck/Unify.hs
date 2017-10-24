@@ -54,7 +54,7 @@ unifyOne (a := b)
 
 constrainParams :: [Type2] -> [Type2] -> ErrorM [Constraint]
 constrainParams xs ys = if length xs == length ys
-  then pure $ zipWith (\x y -> x := y) xs ys
+  then pure $ zipWith (:=) xs ys
   else raise (WrongNumArgs (length xs) (length ys)) >> pure []
 
 subConstraint :: Substitutions -> Constraint -> Constraint
