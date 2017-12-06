@@ -5,7 +5,7 @@ import Preface
 
 import Ast
 import Ast0Builder
-import ParseError
+import Parser.Error
 import qualified Tokens as T
 
 }

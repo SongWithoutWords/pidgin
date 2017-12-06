@@ -1,4 +1,4 @@
-module ParseError where 
+module Parser.Error where
 
 import Tokens
 import FormatAst
