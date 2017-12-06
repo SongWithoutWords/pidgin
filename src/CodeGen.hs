@@ -13,9 +13,9 @@ import qualified LLVM.AST.Global as G
 import qualified LLVM.AST.Type as T
 
 import Ast
-import CodeGenInstructions
-import CodeGenM
-import CodeGenUtil
+import CodeGen.Instructions
+import CodeGen.CodeGenM
+import CodeGen.Util
 import MultiMap
 
 codeGen :: Ast2 -> A.Module

@@ -1,5 +1,5 @@
-module CodeGenUtil
-  ( module CodeGenUtil
+module CodeGen.Util
+  ( module CodeGen.Util
   , fromString
   ) where
 
@@ -10,7 +10,7 @@ import qualified LLVM.AST.Constant as C
 import qualified LLVM.AST.Type as T
 
 import Ast
-import CodeGenM
+import CodeGen.CodeGenM
 
 typeToLlvmType :: Type2 -> A.Type
 typeToLlvmType t = case t of

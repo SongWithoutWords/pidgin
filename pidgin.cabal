@@ -46,9 +46,9 @@ library
                      , Ast.Type
                      , Debug
                      , Cycle
-                     , CodeGenInstructions
-                     , CodeGenM
-                     , CodeGenUtil
+                     , CodeGen.Instructions
+                     , CodeGen.CodeGenM
+                     , CodeGen.Util
                      , TypeCheck.ConstrainM
                      , TypeCheck.Constraint
                      , TypeCheck.ConstraintGen

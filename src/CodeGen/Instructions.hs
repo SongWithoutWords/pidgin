@@ -1,5 +1,5 @@
-module CodeGenInstructions
-  ( module CodeGenInstructions
+module CodeGen.Instructions
+  ( module CodeGen.Instructions
   ) where
 
 import qualified Data.Word as W
@@ -9,7 +9,7 @@ import qualified LLVM.AST.CallingConvention as CallingConvention
 import qualified LLVM.AST.IntegerPredicate as IPred
 import qualified LLVM.AST.Type as T
 
-import CodeGenM
+import CodeGen.CodeGenM
 
 type BinaryInstruction = A.Operand -> A.Operand -> CodeGenM A.Operand
 

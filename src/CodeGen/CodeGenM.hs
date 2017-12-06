@@ -1,7 +1,7 @@
 {-# language OverloadedStrings #-}
 {-# language GeneralizedNewtypeDeriving #-}
 
-module CodeGenM where
+module CodeGen.CodeGenM where
 
 import qualified Data.ByteString.Short as S
 import Data.Function
