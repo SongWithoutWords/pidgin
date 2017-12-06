@@ -7,7 +7,6 @@ import qualified Test.Tasty.HUnit as H
 import Preface
 
 import Ast
-import Source
 import Transforms
 import Tokens
 
@@ -97,7 +96,5 @@ testEq actual expected testCase =
   in H.testCase name $ actual H.@=? expected
 
 displayName :: TestCase -> String
-displayName t = testName t ?? case testSource t of
-  Just (SourceCode s) -> s
-  _ -> ""
+displayName t = testName t ?? testSource t ?? ""
 

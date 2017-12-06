@@ -33,7 +33,6 @@ library
                      , Parser.Error
                      , PostParseAst
                      , Preface
-                     , Source
                      , Tokens 
                      , Transforms
                      , TypeCheck

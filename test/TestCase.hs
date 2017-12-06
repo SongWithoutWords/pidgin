@@ -8,7 +8,6 @@ import Data.Monoid
 
 import Ast
 import Ast.Error
-import Source
 import Tokens
 
 
@@ -16,7 +15,7 @@ type TestCases = [TestCase]
 
 data TestCase = TestCase
   { testName :: Maybe String
-  , testSource :: Maybe SourceCode
+  , testSource :: Maybe String
   , testTokens :: Maybe Tokens
   , testAst :: Maybe Ast0
   , testTypedAst :: Maybe Ast2

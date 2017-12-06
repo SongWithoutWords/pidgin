@@ -4,7 +4,6 @@ import TestCase
 
 import Ast
 import Ast.Error
-import Source
 import Tokens
 import Util.MultiMap
 
@@ -15,7 +14,7 @@ name :: String -> TestCase
 name n = mempty {testName = Just n}
 
 source :: String -> TestCase
-source s = mempty {testSource = Just $ SourceCode s}
+source s = mempty {testSource = Just s}
 
 tokens :: Tokens -> TestCase
 tokens t = mempty {testTokens = Just t}

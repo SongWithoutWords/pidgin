@@ -10,7 +10,6 @@ import LLVM.AST as A
 
 import Ast
 import Ast.Error
-import Source
 
 import Lexer
 import Parser
@@ -23,22 +22,22 @@ import LlvmUtil
 
 -- TODO: Would be really great to wrap all of these transforms in a nice error monad
 
-parseTreeFromSource :: SourceCode -> Ast0
+parseTreeFromSource :: String -> Ast0
 parseTreeFromSource = parse . scanTokens
 
-astFromSource :: SourceCode -> Ast1
+astFromSource :: String -> Ast1
 astFromSource = fst . postParseAst . parseTreeFromSource
 
 astFromParseTree :: Ast0 -> Ast1
 astFromParseTree = fst . postParseAst
 
-lexParseCheck :: SourceCode -> (Ast2, Errors)
+lexParseCheck :: String -> (Ast2, Errors)
 lexParseCheck = typeCheckAst . astFromSource
 
-typedAstFromSource :: SourceCode -> Ast2
+typedAstFromSource :: String -> Ast2
 typedAstFromSource = fst . lexParseCheck
 
-typeErrorsFromSource :: SourceCode -> Errors
+typeErrorsFromSource :: String -> Errors
 typeErrorsFromSource = snd . lexParseCheck
 
 typedAstFromParseTree :: Ast0 -> Ast2
@@ -47,12 +46,12 @@ typedAstFromParseTree = fst . typeCheckAst . astFromParseTree
 typeErrorsFromParseTree :: Ast0 -> Errors
 typeErrorsFromParseTree = snd . typeCheckAst . astFromParseTree
 
-llvmModuleFromSource :: SourceCode -> A.Module
+llvmModuleFromSource :: String -> A.Module
 llvmModuleFromSource = codeGen . typedAstFromSource
 
-llvmIrFromSource :: SourceCode -> IO String
+llvmIrFromSource :: String -> IO String
 llvmIrFromSource = llvmAstToAsm . llvmModuleFromSource
 
-returnValFromSource :: SourceCode -> IO (Maybe Int)
+returnValFromSource :: String -> IO (Maybe Int)
 returnValFromSource = execMainOfLlvmAst . llvmModuleFromSource
 
