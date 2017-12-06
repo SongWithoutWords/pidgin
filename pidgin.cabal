@@ -44,7 +44,6 @@ library
                      , Ast.Op
                      , Ast.Phases
                      , Ast.Type
-                     , Debug
                      , CodeGen.Instructions
                      , CodeGen.CodeGenM
                      , CodeGen.Util
@@ -56,6 +55,7 @@ library
                      , TypeCheck.Substitution
                      , TypeCheck.Util
                      , Util.Cycle
+                     , Util.Debug
                      , Util.UnorderedPair
 
   build-tools:         alex

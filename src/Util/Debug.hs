@@ -1,4 +1,4 @@
-module Debug where
+module Util.Debug where
 
 import qualified Debug.Trace as Trace
 
