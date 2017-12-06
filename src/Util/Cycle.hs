@@ -1,4 +1,4 @@
-module Cycle where
+module Util.Cycle where
 
 shiftLeft :: [a] -> [a]
 shiftLeft [] = []

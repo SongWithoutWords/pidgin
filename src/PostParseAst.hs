@@ -6,7 +6,7 @@ import Control.Monad.Writer
 
 import Ast
 import Ast.Error
-import MultiMap
+import Util.MultiMap
 
 postParseAst :: Ast0 -> (Ast1, Errors)
 postParseAst = runWriter . mapUnits

@@ -1,6 +1,6 @@
 
-module MultiMap
-  ( module MultiMap
+module Util.MultiMap
+  ( module Util.MultiMap
   , M.Map
   ) where
 

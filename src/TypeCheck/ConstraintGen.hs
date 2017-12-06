@@ -8,10 +8,10 @@ module TypeCheck.ConstraintGen
 import Ast
 import Ast.Error
 import Preface
-import MultiMap
 import TypeCheck.Constraint
 import TypeCheck.ConstrainM
 import TypeCheck.Util
+import Util.MultiMap
 
 
 constrainAst :: Ast1 -> (Ast2, [Constraint], Errors)

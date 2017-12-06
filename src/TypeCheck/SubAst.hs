@@ -5,8 +5,8 @@ module TypeCheck.SubAst
   ) where
 
 import Ast
-import MultiMap
 import TypeCheck.Substitution
+import Util.MultiMap
 
 type Sub a = Substitutions -> a -> a
 

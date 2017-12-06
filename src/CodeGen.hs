@@ -16,7 +16,7 @@ import Ast
 import CodeGen.Instructions
 import CodeGen.CodeGenM
 import CodeGen.Util
-import MultiMap
+import Util.MultiMap
 
 codeGen :: Ast2 -> A.Module
 codeGen ast = A.defaultModule

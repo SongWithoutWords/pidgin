@@ -10,12 +10,12 @@ module Ast
   , module Ast.Type
   ) where
 
-import MultiMap
-
 import Ast.Name
 import Ast.Op
 import Ast.Phases
 import Ast.Type
+
+import Util.MultiMap
 
 type Table a = MultiMap Name a
 

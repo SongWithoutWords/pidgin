@@ -1,13 +1,12 @@
 module TestComposer where
 
-import MultiMap
-
 import TestCase
 
 import Ast
 import Ast.Error
 import Source
 import Tokens
+import Util.MultiMap
 
 -- example usage: myTest = source "$ a = 5; Bln b = a"
 --    <> typeErrors [TypeConflict TBln TInt]
