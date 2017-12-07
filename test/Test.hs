@@ -7,7 +7,7 @@ import qualified Test.Tasty.HUnit as H
 
 import Ast
 import Transforms
-import Tokens
+import Lexer.Token
 
 import TestCases
 

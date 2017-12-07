@@ -1,4 +1,4 @@
-module Tokens where
+module Lexer.Token where
 
 type Tokens = [Token]
 

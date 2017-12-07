@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -w #-}
 
 module Lexer (scanTokens) where
-import qualified Tokens as T
+import qualified Lexer.Token as T
 }
 
 %wrapper "monadUserState"

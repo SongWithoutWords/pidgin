@@ -4,7 +4,7 @@ import TestCase
 
 import Ast
 import Ast.Error
-import Tokens
+import Lexer.Token
 import Util.MultiMap
 
 -- example usage: myTest = source "$ a = 5; Bln b = a"

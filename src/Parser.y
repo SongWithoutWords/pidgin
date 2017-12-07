@@ -5,7 +5,7 @@ module Parser where
 import Ast
 import Ast0Builder
 import Parser.Error
-import qualified Tokens as T
+import qualified Lexer.Token as T
 import Util.Preface
 
 }

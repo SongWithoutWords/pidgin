@@ -8,7 +8,7 @@ import Data.Monoid
 
 import Ast
 import Ast.Error
-import Tokens
+import Lexer.Token
 
 
 type TestCases = [TestCase]

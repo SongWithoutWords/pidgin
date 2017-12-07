@@ -1,6 +1,6 @@
 module Parser.Error where
 
-import Tokens
+import Lexer.Token
 import FormatAst
 
 parseError :: [Token] -> a

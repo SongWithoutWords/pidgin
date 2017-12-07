@@ -7,7 +7,7 @@ import Ast
 import Ast.Error
 import Ast0Builder
 import Ast2Builder
-import qualified Tokens as T
+import qualified Lexer.Token as T
 
 
 testCases :: TestCases
