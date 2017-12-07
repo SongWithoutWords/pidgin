@@ -28,7 +28,7 @@ withJit context action = EE.withMCJIT
   (Just 0) -- optimization level
   Nothing  -- model
   Nothing  -- frame pointer elimination
-  Nothing  -- fast instruction selecti
+  Nothing  -- fast instruction selection
   action
 
 execFunction :: FunPtr a -> IO Int
