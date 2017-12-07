@@ -1,6 +1,4 @@
-module FormatAst (formatAst) where
-
-import Lexer.Token
+module Ast.PrettyPrint(formatAst) where
 
 indentedNewline :: Int -> String
 indentedNewline n = '\n' : replicate (2*n) ' '

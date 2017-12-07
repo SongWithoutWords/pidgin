@@ -22,11 +22,11 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Ast
+                     , Ast.PrettyPrint
                      , Ast0Builder
                      , Ast2Builder
                      , Ast.Error
                      , CodeGen
-                     , FormatAst
                      , Lexer
                      , Lexer.Token
                      , Lexer.FormatTokens
