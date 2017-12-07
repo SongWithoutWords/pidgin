@@ -4,7 +4,6 @@ import Data.Maybe
 import qualified Test.Tasty as T
 import qualified Test.Tasty.HUnit as H
 
-import Preface
 
 import Ast
 import Transforms
@@ -15,6 +14,8 @@ import TestCases
 import TestCase()
 
 import Test.TypeCheck.Unify
+
+import Util.Preface
 
 testTimeout_μs = 20000
 

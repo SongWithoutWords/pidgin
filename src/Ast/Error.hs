@@ -1,7 +1,7 @@
 module Ast.Error where
 
 import Ast
-import Preface
+import Util.Preface
 import Util.UnorderedPair
 
 type Errors = [Error]

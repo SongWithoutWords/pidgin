@@ -32,12 +32,12 @@ library
                      , Parser
                      , Parser.Error
                      , PostParseAst
-                     , Preface
                      , Tokens 
                      , Transforms
                      , TypeCheck
                      , TypeCheck.Unify
                      , Util.MultiMap
+                     , Util.Preface
 
   other-modules:       Ast.Name
                      , Ast.Op

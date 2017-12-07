@@ -1,12 +1,12 @@
 {
 module Parser where
 
-import Preface
 
 import Ast
 import Ast0Builder
 import Parser.Error
 import qualified Tokens as T
+import Util.Preface
 
 }
 

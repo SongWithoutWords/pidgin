@@ -1,7 +1,7 @@
 {-# language MultiParamTypeClasses #-}
 {-# language TypeOperators #-}
 
-module Preface where
+module Util.Preface where
 
 -- Might like to change this operator to ×
 -- type a & b = (a, b)
