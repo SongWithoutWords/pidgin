@@ -28,11 +28,12 @@ library
                      , CodeGen
                      , FormatAst
                      , Lexer
+                     , Lexer.Token
+                     , Lexer.FormatTokens
                      , LlvmUtil
                      , Parser
                      , Parser.Error
                      , PostParseAst
-                     , Lexer.Token 
                      , Transforms
                      , TypeCheck
                      , TypeCheck.Unify

@@ -1,4 +1,4 @@
-module FormatAst (formatAst, formatTokens) where
+module FormatAst (formatAst) where
 
 import Lexer.Token
 
@@ -16,15 +16,4 @@ formatAst s = formatAst' s 0
       | c == ' ' = indentedNewline n ++ formatAst' cs n
       | c == ',' = indentedNewline (n-1) ++ formatAst' cs n
       | otherwise = c : formatAst' cs n
-
-formatTokens :: [Token] -> String
-formatTokens tokens = formatTokens' $ show tokens
-  where
-    formatTokens' :: String -> String
-    formatTokens' [] = []
-    formatTokens' ('T':'k':'n':cs) = formatTokens' cs
-    formatTokens' (c:cs)
-      | c == '[' || c == ']' || c == '\"' = formatTokens' cs
-      | c == ',' = ' ' : formatTokens' cs
-      | otherwise = c : formatTokens' cs
 
