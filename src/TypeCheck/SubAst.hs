@@ -10,24 +10,15 @@ import qualified Ast.A3Typed as A3
 import TypeCheck.ErrorM
 import TypeCheck.Substitution
 import Util.MultiMap
+import Util.Preface
 
-type Sub a b = Substitutions -> a -> b
-
--- type SubM = Writer Errors -- RWS Substitutions Errors ()
-
--- TODO: Put this in an error monad, so that you can emit errors properly
 subAst :: Substitutions -> Ast -> (A3.Ast, Errors)
-subAst s ast = -- multiMap (subUnit s)
-  let (ast', errs) = runErrorM (subAst' s ast) -- s ()
-  in (ast', errs)
+subAst = runErrorM .: subAst'
 
 subAst' :: Substitutions -> Ast -> ErrorM A3.Ast
 subAst' substitutions ast = multiMapM subUnit ast
 
-  -- Put subsequent functions within this scope, for implicit access to the substitutions
   where
-    -- subAst'' = subAst substitutions
-
     subUnit :: Unit -> ErrorM A3.Unit
     subUnit unit = case unit of
       UNamespace units -> A3.UNamespace <$> multiMapM subUnit units
@@ -36,25 +27,13 @@ subAst' substitutions ast = multiMapM subUnit ast
 
     subVar :: Var -> ErrorM A3.Var
     subVar (Var m t e) = liftM2 (A3.Var m) (subType' t) (subExpr e)
-      -- do
-      -- t' <- subType' t
-      -- e' <- subExpr e
-      -- pure $ A3.Var m t' e'
 
     subFunc :: Func -> ErrorM A3.Func
     subFunc (Func s b) = liftM2 A3.Func (subSig s) (subBlock b)
-      -- do
-      -- s' <- subSig s
-      -- b' <- subBlock b
-      -- pure $ A3.Func s' b'
 
     subSig :: Sig -> ErrorM A3.Sig
     subSig (Sig pur params retType) =
       liftM2 (A3.Sig pur) (subParams params) (subType' retType)
-      -- do
-      -- params' <- subParams params
-      -- retType' <- subType' retType
-      -- pure $ A3.Sig pur params' retType'
 
     subParams :: Params -> ErrorM A3.Params
     subParams ps = mapM subParam ps
@@ -67,18 +46,10 @@ subAst' substitutions ast = multiMapM subUnit ast
     subBlock :: Block -> ErrorM A3.Block
     subBlock (Block stmts optExpr) =
       liftM2 A3.Block (mapM subStmt stmts) (mapM subExpr optExpr)
-      -- do
-      -- stmts' <- mapM subStmt stmts
-      -- optExpr' <- mapM subExpr optExpr
-      -- pure $ A3.Block stmts' optExpr'
 
     subStmt :: Stmt -> ErrorM A3.Stmt
     subStmt stmt = case stmt of
       SAssign lexpr expr -> liftM2 A3.SAssign (subLExpr lexpr) (subExpr expr)
-        -- do
-        -- lexpr' <- subLExpr lexpr
-        -- expr' <- subExpr expr
-        -- pure $ A3.SAssign  lexpr' expr'
       SVar namedVar -> A3.SVar <$> mapM subVar namedVar
       SFunc namedFunc -> A3.SFunc <$> mapM subFunc namedFunc
       SApp app -> A3.SApp <$> subApp app
