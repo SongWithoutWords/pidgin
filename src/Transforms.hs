@@ -13,16 +13,12 @@ import qualified Ast.A1PostParse as A1
 import Ast.A2Constrained.Error
 import qualified Ast.A3Typed as A3
 
--- import Ast
--- import Ast.Error
-
 import Lexer
 import Parser
 import PostParseAst
 import TypeCheck
 import CodeGen
 import LlvmUtil
-
 
 
 -- TODO: Would be really great to wrap all of these transforms in a nice error monad
