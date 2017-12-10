@@ -88,7 +88,6 @@ library
                      , array
                      , llvm-hs >= 5.0.0
                      , llvm-hs-pure >= 5.0.0
-                     , monad-st
                      , mtl
                      , transformers
 
