@@ -1,5 +1,3 @@
-{-# language GADTs #-}
-
 module PostParseAst (postParseAst) where
 
 import Control.Monad.Writer

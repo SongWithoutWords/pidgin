@@ -1,4 +1,3 @@
-{-# language GADTs #-}
 module TypeCheck.Util where
 
 import Ast.A2Constrained

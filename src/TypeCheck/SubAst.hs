@@ -1,5 +1,3 @@
-{-# language GADTs #-}
-
 module TypeCheck.SubAst
   ( subAst
   ) where

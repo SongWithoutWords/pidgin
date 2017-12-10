@@ -1,5 +1,4 @@
 {-# language OverloadedStrings #-}
-{-# language GADTs #-}
 
 module CodeGen(codeGen) where
 

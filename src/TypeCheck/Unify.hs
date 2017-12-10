@@ -1,5 +1,3 @@
-{-# language GADTs #-}
-
 module TypeCheck.Unify
   ( unify
   , module TypeCheck.Constraint

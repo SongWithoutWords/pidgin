@@ -1,4 +1,3 @@
-{-# language GADTs #-}
 module TypeCheck.Substitution where
 
 import qualified Data.Map as M

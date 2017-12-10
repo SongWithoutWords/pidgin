@@ -1,5 +1,3 @@
-{-# language GADTs #-}
-
 module TypeCheck.ConstraintGen
   ( constrainAst
   , module TypeCheck.Constraint
