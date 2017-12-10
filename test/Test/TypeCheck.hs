@@ -330,5 +330,17 @@ $ a = inc(1)
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
     ]
     []
+
+  , testGroup "implicit conversions"
+    [ test "Flt a = 5"
+      [("a", UVar $ Var Imut TFlt $ Expr TInt $ EVal $ VInt 5)]
+      []
+    , test "$ a = 5; Flt b = a"
+      [ ("a", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 5)
+      , ("b", UVar $ Var Imut TFlt $ Expr TInt $ EName "a")
+      ]
+      []
+    ]
+
   ]
 
