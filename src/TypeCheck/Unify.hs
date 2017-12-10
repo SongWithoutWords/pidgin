@@ -52,7 +52,7 @@ unifyOne (a := b)
   -- inequality
   | otherwise = raise (failedToUnify a b) >> pure M.empty
 
-constrainParams :: [Type2] -> [Type2] -> ErrorM [Constraint]
+constrainParams :: [Type] -> [Type] -> ErrorM [Constraint]
 constrainParams xs ys = if length xs == length ys
   then pure $ zipWith (:=) xs ys
   else raise (WrongNumArgs (length xs) (length ys)) >> pure []

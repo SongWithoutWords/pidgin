@@ -14,52 +14,73 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 
-extra-source-files:    src/Lexer.x
-                     , src/Parser.y
+extra-source-files:
+                    src/Lexer.x
+                    src/Parser.y
 
 library
 
-  hs-source-dirs:      src
+  hs-source-dirs:
+                    src
 
-  exposed-modules:     Ast
-                     , Ast.PrettyPrint
-                     , Ast0Builder
-                     , Ast2Builder
-                     , Ast.Error
-                     , CodeGen
-                     , Lexer
-                     , Lexer.Token
-                     , Lexer.FormatTokens
-                     , LlvmUtil
-                     , Parser
-                     , Parser.Error
-                     , PostParseAst
-                     , Transforms
-                     , TypeCheck
-                     , TypeCheck.Unify
-                     , Util.MultiMap
-                     , Util.Preface
+  exposed-modules:
+                    Ast.A0Parse
+                    Ast.A0Parse.Sig
+                    Ast.A0Parse.Type
 
-  other-modules:       Ast.Name
-                     , Ast.Op
-                     , Ast.Phases
-                     , Ast.Type
-                     , CodeGen.Instructions
-                     , CodeGen.CodeGenM
-                     , CodeGen.Util
-                     , TypeCheck.ConstrainM
-                     , TypeCheck.Constraint
-                     , TypeCheck.ConstraintGen
-                     , TypeCheck.ErrorM
-                     , TypeCheck.SubAst
-                     , TypeCheck.Substitution
-                     , TypeCheck.Util
-                     , Util.Cycle
-                     , Util.Debug
-                     , Util.UnorderedPair
+                    Ast.A1PostParse
 
-  build-tools:         alex
-                     , happy
+                    Ast.A2Constrained
+                    Ast.A2Constrained.Error
+                    Ast.A2Constrained.Type
+
+                    Ast.A3Typed
+                    Ast.A3Typed.Type
+
+                    Ast.Common.Access
+                    Ast.Common.Mutability
+                    Ast.Common.Name
+                    Ast.Common.Op
+                    Ast.Common.Purity
+                    Ast.Common.Table
+                    Ast.Common.Value
+
+                    CodeGen
+                    CodeGen.Instructions
+                    CodeGen.CodeGenM
+                    CodeGen.Util
+
+                    Lexer
+                    Lexer.Token
+                    Lexer.FormatTokens
+
+                    LlvmUtil
+
+                    Parser
+                    Parser.Error
+
+                    PostParseAst
+
+                    Transforms
+
+                    TypeCheck
+                    TypeCheck.ConstrainM
+                    TypeCheck.Constraint
+                    TypeCheck.ConstraintGen
+                    TypeCheck.ErrorM
+                    TypeCheck.Kind
+                    TypeCheck.SubAst
+                    TypeCheck.Substitution
+                    TypeCheck.Unify
+                    TypeCheck.Util
+
+                    Util.Cycle
+                    Util.Debug
+                    Util.MultiMap
+                    Util.Preface
+                    Util.UnorderedPair
+
+  build-tools: alex, happy
 
   build-depends:       base
                      , bytestring
@@ -94,14 +115,17 @@ test-suite pidgin-test
 
   main-is:             Test.hs
 
-  other-modules:       TestCase
-                     , TestCases
-                     , TestComposer
-                     , Test.TypeCheck.Unify
+  other-modules:     
+                     Test.CodeGen
+                     Test.Lexer
+                     Test.Parser
+                     Test.TypeCheck
+                     Test.TypeCheck.Unify
 
   build-depends:       base
                      , containers
                      , pidgin
+                     , string-qq
                      , tasty
                      , tasty-hunit
 

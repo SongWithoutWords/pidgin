@@ -5,74 +5,79 @@ module TypeCheck.ConstraintGen
   , module TypeCheck.Constraint
   ) where
 
-import Ast
-import Ast.Error
+import qualified Ast.A1PostParse as A1
+import qualified Ast.A2Constrained as A2
+import Ast.A2Constrained.Error
+import Ast.Common.Name
+import Ast.Common.Op
 import TypeCheck.Constraint
 import TypeCheck.ConstrainM
+import TypeCheck.Kind
 import TypeCheck.Util
 import Util.MultiMap
 import Util.Preface
 
 
-constrainAst :: Ast1 -> (Ast2, [Constraint], Errors)
+constrainAst :: A1.Ast -> (A2.Ast, [Constraint], Errors)
 constrainAst ast =
   -- tie the knot, in order to refer to typevars further ahead in the input
   let result@(ast', _, _) = runConstrainM (checkUnits ast) ast'
   in result
 
+type Constrain a b = a -> ConstrainM b
 
-checkUnits :: Ast1 -> ConstrainM Ast2
+checkUnits :: Constrain A1.Ast A2.Ast
 checkUnits = multiMapM checkUnit
 
-checkUnit :: Unit1 -> ConstrainM Unit2
+checkUnit :: Constrain A1.Unit A2.Unit
 checkUnit unit = case unit of
-  UNamespace1 n -> UNamespace1 <$> checkUnits n
-  UFunc f -> UFunc <$> checkFunc f
-  UVar v -> UVar <$> checkVar v
+  A1.UNamespace n -> A2.UNamespace <$> checkUnits n
+  A1.UFunc f -> A2.UFunc <$> checkFunc f
+  A1.UVar v -> A2.UVar <$> checkVar v
 
-checkFunc :: Func1 -> ConstrainM Func2
-checkFunc (Func1 (Sig0 pur params optRetType) block) = do
+checkFunc :: Constrain A1.Func A2.Func
+checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
   tRet <- getNextTypeVar
 
   optRetType' <- traverse checkType optRetType
   traverse (constrain tRet) optRetType'
 
-  params' <- mapM (\(Param m t n) -> checkType t >>= (\t' -> pure $ Param m t' n)) params
+  params' <- mapM (\(A1.Param m t n) -> checkType t >>= (\t' -> pure $ A2.Param m t' n)) params
   pushNewScope
 
-  mapM (\(Param _ t n) -> addLocalBinding n t) params'
-  block'@(Block1 _ optRetExpr') <- checkBlock block
-  let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (Expr2 t _) -> t
+  mapM (\(A2.Param _ t n) -> addLocalBinding n t) params'
+  block'@(A2.Block _ optRetExpr') <- checkBlock block
+  let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (A2.Expr t _) -> t
   constrain tRet tRetExpr
 
   popScope
 
-  pure $ Func1 (Sig2 pur params' tRet) block'
+  pure $ A2.Func (A2.Sig pur params' tRet) block'
 
-checkBlock :: Block1 -> ConstrainM Block2
-checkBlock (Block1 stmts maybeRetExpr) = do
+checkBlock :: A1.Block -> ConstrainM A2.Block
+checkBlock (A1.Block stmts maybeRetExpr) = do
   stmts' <- traverse checkStmt stmts
   maybeRetExpr' <- traverse checkExpr maybeRetExpr
-  return $ Block1 stmts' maybeRetExpr'
+  return $ A2.Block stmts' maybeRetExpr'
 
-checkStmt :: Stmt1 -> ConstrainM Stmt2
+checkStmt :: A1.Stmt -> ConstrainM A2.Stmt
 checkStmt stmt = case stmt of
 
   -- TODO: will need to account for mutations in future
-  SAssign lexpr expr -> undefined
+  A1.SAssign lexpr expr -> undefined
 
-  SVar (Named name var) -> do
+  A1.SVar (Named name var) -> do
     var' <- checkVar var
     addLocalBinding name $ typeOfVar var'
-    pure $ SVar $ Named name var'
+    pure $ A2.SVar $ Named name var'
 
-  SFunc f -> undefined
+  A1.SFunc f -> undefined
 
-  SIf ifBranch -> undefined
+  A1.SIf ifBranch -> undefined
 
 
-checkVar :: Var1 -> ConstrainM Var2
-checkVar (Var0 mut optType expr) = do
+checkVar :: A1.Var -> ConstrainM A2.Var
+checkVar (A1.Var mut optType expr) = do
   expr' <- checkExpr expr
   optType' <- traverse checkType optType
 
@@ -81,15 +86,15 @@ checkVar (Var0 mut optType expr) = do
     Nothing -> getNextTypeVar
 
   constrain tVar $ typeOfExpr expr'
-  return $ Var2 mut tVar expr'
+  return $ A2.Var mut tVar expr'
 
-checkNamedExpr :: Named Expr1 -> ConstrainM (Named Expr2)
+checkNamedExpr :: Named A1.Expr -> ConstrainM (Named A2.Expr)
 checkNamedExpr = traverse checkExpr
 
-checkExpr :: Expr1 -> ConstrainM Expr2
-checkExpr (Expr0 expression) = case expression of
+checkExpr :: A1.Expr -> ConstrainM A2.Expr
+checkExpr expression = case expression of
 
-  EName name -> do
+  A1.EName name -> do
     kinds <- lookupKinds name
     t <- case kinds of
       [] -> foundError $ UnknownId name
@@ -97,52 +102,52 @@ checkExpr (Expr0 expression) = case expression of
       [KType] -> foundError NeedExprFoundType
       [KNamespace] -> foundError NeedExprFoundNamespace
       _ -> foundError CompetingDefinitions
-    pure $ Expr2 t $ EName name
+    pure $ A2.Expr t $ A2.EName name
 
 
-  ELambda f -> do
+  A1.ELambda f -> do
     tLam <- getNextTypeVar
     f' <- checkFunc f
     constrain tLam $ typeOfFunc f'
-    pure $ Expr2 tLam $ ELambda f'
+    pure $ A2.Expr tLam $ A2.ELambda f'
 
 
-  EApp (App expr (Args purity args)) -> do
+  A1.EApp (A1.App expr (A1.Args purity args)) -> do
     tRet <- getNextTypeVar
 
-    expr'@(Expr2 t1 _) <- checkExpr expr
+    expr'@(A2.Expr t1 _) <- checkExpr expr
     args' <- traverse checkExpr args
 
-    let argTypes = (\(Expr2 t _) -> t) <$> args'
+    let argTypes = (\(A2.Expr t _) -> t) <$> args'
 
     constrain t1 $ TFunc purity argTypes tRet
 
-    pure $ Expr2 tRet $ EApp $ App expr' (Args purity args')
+    pure $ A2.Expr tRet $ A2.EApp $ A2.App expr' (A2.Args purity args')
 
-  EIf e1 e2 e3 -> do
+  A1.EIf (A1.Cond cond) e1 e2 -> do
 
-    e1'@(Expr2 t1 _) <- checkExpr e1
-    e2'@(Expr2 t2 _) <- checkExpr e2
-    e3'@(Expr2 t3 _) <- checkExpr e3
+    cond'@(A2.Expr tCond _) <- checkExpr cond
+    e1'@(A2.Expr t1 _) <- checkExpr e1
+    e2'@(A2.Expr t2 _) <- checkExpr e2
 
-    constrain TBln t2
-    constrain t1 t3
+    constrain TBln tCond
+    constrain t1 t2
 
-    pure $ Expr2 t1 $ EIf e1' e2' e3'
+    pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
 
-  EUnOp op e -> let
-    checkUnOp :: UnOp -> Type2 -> Type2 -> ConstrainM ()
+  A1.EUnOp op e -> let
+    checkUnOp :: UnOp -> A2.Type -> A2.Type -> ConstrainM ()
     checkUnOp Neg tExpr tRes = do
       mapM_ (constrain TInt) [tExpr, tRes]
     in do
-      e'@(Expr2 t _) <- checkExpr e
+      e'@(A2.Expr t _) <- checkExpr e
       tRes <- getNextTypeVar
       checkUnOp op t tRes
-      pure $ Expr2 tRes $ EUnOp op e'
+      pure $ A2.Expr tRes $ A2.EUnOp op e'
 
-  EBinOp op e1 e2 -> let
+  A1.EBinOp op e1 e2 -> let
 
-    checkBinOp :: BinOp -> Type2 -> Type2 -> Type2 -> ConstrainM ()
+    checkBinOp :: BinOp -> A2.Type -> A2.Type -> A2.Type -> ConstrainM ()
 
     -- Int -> Int -> Int
     checkBinOp Add a b r = do
@@ -173,56 +178,57 @@ checkExpr (Expr0 expression) = case expression of
       mapM_ (constrain TBln) [a, b, r]
 
     in do
-      e1'@(Expr2 t1 _) <- checkExpr e1
-      e2'@(Expr2 t2 _) <- checkExpr e2
+      e1'@(A2.Expr t1 _) <- checkExpr e1
+      e2'@(A2.Expr t2 _) <- checkExpr e2
 
       tRes <- getNextTypeVar
       checkBinOp op t1 t2 tRes
 
-      pure $ Expr2 tRes $ EBinOp op e1' e2'
+      pure $ A2.Expr tRes $ A2.EBinOp op e1' e2'
 
-  EVal v -> pure $ Expr2 t $ EVal v
+  A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
     where
       t = case v of
-        VBln _ -> TBln
-        VChr _ -> TChr
-        VFlt _ -> TFlt
-        VInt _ -> TInt
-        VStr _ -> TStr
+        A1.VBln _ -> TBln
+        A1.VChr _ -> TChr
+        A1.VFlt _ -> TFlt
+        A1.VInt _ -> TInt
+        A1.VStr _ -> TStr
 
-checkType :: Type0 -> ConstrainM Type2
+checkType :: A1.Type -> ConstrainM A2.Type
 checkType typ =
   let
-    checkAndRet f m t = do
-      t' <- checkType t
-      return $ f m t'
+    checkAndRet f m t = checkType t >>= pure f m
+      -- do
+      -- t' <- checkType t
+      -- return $ f m t'
 
   in case typ of
-  TUser typeName -> do
+  A1.TUser typeName -> do
     kinds <- lookupKinds typeName
     case kinds of
       [] -> foundError $ UnknownTypeName typeName
       [KType] -> return $ TUser typeName
       _ -> foundError $ AmbiguousTypeName typeName
 
-  TFunc purity params ret -> do
+  A1.TFunc purity params ret -> do
     params' <- mapM checkType params
     ret' <- checkType ret
     return $ TFunc purity params' ret'
 
-  TTempRef m t -> checkAndRet TTempRef m t
-  TPersRef m t -> checkAndRet TPersRef m t
+  A1.TRef m t -> checkType t >>= pure . A2.TRef m-- checkAndRet TTempRef m t
+  -- TPersRef m t -> checkAndRet TPersRef m t
 
-  TOption m t -> checkAndRet TOption m t
-  TZeroPlus m t -> checkAndRet TZeroPlus m t
-  TOnePlus m t -> checkAndRet TOnePlus m t
+  -- TOption m t -> checkAndRet TOption m t
+  -- TZeroPlus m t -> checkAndRet TZeroPlus m t
+  -- TOnePlus m t -> checkAndRet TOnePlus m t
 
-  TBln -> return TBln
-  TChr -> return TChr
-  TFlt -> return TFlt
-  TInt -> return TInt
-  TNat -> return TNat
-  TStr -> return TStr
+  A1.TBln -> return TBln
+  A1.TChr -> return TChr
+  A1.TFlt -> return TFlt
+  A1.TInt -> return TInt
+  A1.TNat -> return TNat
+  A1.TStr -> return TStr
 
-  TNone -> return TNone
+  A1.TNone -> return TNone
 

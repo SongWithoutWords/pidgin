@@ -4,11 +4,13 @@ module PostParseAst (postParseAst) where
 
 import Control.Monad.Writer
 
-import Ast
-import Ast.Error
-import Util.MultiMap
+import qualified Ast.A0Parse as A0
+import qualified Ast.A1PostParse as A1
+import Ast.A2Constrained.Error
+import Ast.Common.Name
+import Ast.Common.Table
 
-postParseAst :: Ast0 -> (Ast1, Errors)
+postParseAst :: A0.Ast -> (A1.Ast, Errors)
 postParseAst = runWriter . mapUnits
 
 type ErrorM a = Writer Errors a
@@ -16,61 +18,55 @@ type ErrorM a = Writer Errors a
 raise :: Error -> ErrorM ()
 raise e = tell [e]
 
-mapNamedList :: (a -> ErrorM b) -> [Named a] -> ErrorM (Table b)
-mapNamedList f xs = do
-  let mapNamed (Named n x) = f x >>= \x' -> return (n, x')
-  tuples <- mapM mapNamed xs
-  return $ multiFromList tuples
+mapUnits :: [Named A0.Unit] -> ErrorM (Table A1.Unit)
+mapUnits = tableFromNamedM mapUnit
 
-mapUnits :: [Named Unit0] -> ErrorM (Table Unit1)
-mapUnits = mapNamedList mapUnit
-
-mapUnit :: Unit0 -> ErrorM Unit1
+mapUnit :: A0.Unit -> ErrorM A1.Unit
 mapUnit unit = case unit of
-  UNamespace0 us     -> mapUnits us >>= return . UNamespace1
-  UClass (Class0 ms) -> mapMembers ms >>= return . UClass . Class1
-  UFunc f            -> mapFunc f >>= return . UFunc
-  UVar v             -> mapVar v >>= return . UVar
+  A0.UNamespace us     -> mapUnits us >>= return . A1.UNamespace
+  A0.UClass (A0.Class ms) -> mapMembers ms >>= return . A1.UClass . A1.Class
+  A0.UFunc f            -> mapFunc f >>= return . A1.UFunc
+  A0.UVar v             -> mapVar v >>= return . A1.UVar
 
-mapMembers :: [Named Member0] -> ErrorM (Table Member1)
-mapMembers = mapNamedList mapMember
+mapMembers :: [Named A0.Member] -> ErrorM (Table A1.Member)
+mapMembers = tableFromNamedM mapMember
 
-mapMember :: Member0 -> ErrorM Member1
+mapMember :: A0.Member -> ErrorM A1.Member
 mapMember member = case member of
-  MClass acc (Class0 ms) -> mapMembers ms >>= return . (MClass acc) . Class1
-  MCons acc f            -> mapFunc f >>= return . MCons acc
-  MFunc acc mut f        -> mapFunc f >>= return . MFunc acc mut
-  MVar acc v             -> mapVar v >>= return . MVar acc
+  A0.MClass acc (A0.Class ms) -> mapMembers ms >>= return . (A1.MClass acc) . A1.Class
+  A0.MCons acc f            -> mapFunc f >>= return . A1.MCons acc
+  A0.MFunc acc mut f        -> mapFunc f >>= return . A1.MFunc acc mut
+  A0.MVar acc v             -> mapVar v >>= return . A1.MVar acc
 
-mapFunc :: Func0 -> ErrorM Func1
-mapFunc (Func0 sig retNotation block) = mapBlock retNotation block >>= return . Func1 sig
+mapFunc :: A0.Func -> ErrorM A1.Func
+mapFunc (A0.Func sig retNotation block) = mapBlock retNotation block >>= return . A1.Func sig
 
-mapBlock :: RetNotation -> Block0 -> ErrorM Block1
-mapBlock retNotation (Block0 stmts) = do
-  (Block1 stmts' ret) <- mapBlock' retNotation stmts []
-  return $ Block1 (reverse stmts') ret
+mapBlock :: A0.RetNotation -> A0.Block -> ErrorM A1.Block
+mapBlock retNotation stmts = do
+  (A1.Block stmts' ret) <- mapBlock' retNotation stmts []
+  return $ A1.Block (reverse stmts') ret
 
   where
-    mapBlock' :: RetNotation -> [Stmt0] -> [Stmt1] -> ErrorM Block1
+    mapBlock' :: A0.RetNotation -> [A0.Stmt] -> [A1.Stmt] -> ErrorM A1.Block
 
-    mapBlock' ImplicitRet [SExpr e] xs = mapExpr e >>= return . Block1 xs . Just
+    mapBlock' A0.ImplicitRet [A0.SExpr e] xs = mapExpr e >>= return . A1.Block xs . Just
 
-    mapBlock' _ [SRet e] xs = mapExpr e >>= return . Block1 xs . Just
+    mapBlock' _ [A0.SRet e] xs = mapExpr e >>= return . A1.Block xs . Just
 
-    mapBlock' ImplicitRet [s] xs = do
+    mapBlock' A0.ImplicitRet [s] xs = do
       raise ImplicitRetWithoutFinalExpr
       s' <- mapStmt s
-      return $ Block1 (s' : xs) $ Nothing
+      return $ A1.Block (s' : xs) $ Nothing
 
-    mapBlock' _ (SRet e : _) xs = do
+    mapBlock' _ (A0.SRet e : _) xs = do
       raise MidBlockReturnStatement
-      mapExpr e >>= return . Block1 xs . Just
+      mapExpr e >>= return . A1.Block xs . Just
 
-    mapBlock' rn (SExpr (Expr0 (EApp app)) : rest) xs = do
+    mapBlock' rn (A0.SExpr (A0.EApp app) : rest) xs = do
       app' <- mapApp app
-      mapBlock' rn rest (SApp app' : xs)
+      mapBlock' rn rest (A1.SApp app' : xs)
 
-    mapBlock' rn (SExpr _ : rest) xs = do
+    mapBlock' rn (A0.SExpr _ : rest) xs = do
       raise UselessExpression
       mapBlock' rn rest xs
 
@@ -80,49 +76,49 @@ mapBlock retNotation (Block0 stmts) = do
 
     mapBlock' _ _ _ = error "All cases should have been accounted for"
 
-    mapStmt :: Stmt0 -> ErrorM Stmt1
+    mapStmt :: A0.Stmt -> ErrorM A1.Stmt
     mapStmt s = case s of
 
-      SVar (Named n v) -> mapVar v >>= return . SVar . Named n
-      SFunc (Named n f) -> mapFunc f >>= return . SFunc . Named n
+      A0.SVar (Named n v) -> mapVar v >>= return . A1.SVar . Named n
+      A0.SFunc (Named n f) -> mapFunc f >>= return . A1.SFunc . Named n
 
-      SExpr _ -> error "Should have been already handled"
-      SRet _ -> error "Should have been already handled"
+      A0.SExpr _ -> error "Should have been already handled"
+      A0.SRet _ -> error "Should have been already handled"
 
 
-mapVar :: Var0 -> ErrorM Var1
-mapVar (Var0 mut typ expr) = mapExpr expr >>= return . Var0 mut typ
+mapVar :: A0.Var -> ErrorM A1.Var
+mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ
 
-mapExpr :: Expr0 -> ErrorM Expr1
-mapExpr (Expr0 e) = mapExpr' e >>= return . Expr0
+-- mapExpr :: A0.Expr -> ErrorM A1.Expr
+-- mapExpr e = mapExpr' e >>= return . A1.Expr
 
-mapExpr' :: Expr0' -> ErrorM Expr1'
-mapExpr' expr = case expr of
+mapExpr :: A0.Expr -> ErrorM A1.Expr
+mapExpr expr = case expr of
 
-  EApp app -> mapApp app >>= return . EApp
+  A0.EApp app -> mapApp app >>= return . A1.EApp
 
-  EName n -> return $ EName n
+  A0.EName n -> return $ A1.EName n
 
-  EIf e1 ec e2 -> do
+  A0.EIf (A0.Cond cond) e1 e2 -> do
+    cond' <- mapExpr cond
     e1' <- mapExpr e1
-    ec' <- mapExpr ec
     e2' <- mapExpr e2
-    return $ EIf e1' ec' e2'
+    return $ A1.EIf (A1.Cond cond') e1' e2'
 
-  EUnOp op e -> do
+  A0.EUnOp op e -> do
     e' <- mapExpr e
-    return $ EUnOp op e'
+    return $ A1.EUnOp op e'
 
-  EBinOp op e1 e2 -> do
+  A0.EBinOp op e1 e2 -> do
     e1' <- mapExpr e1
     e2' <- mapExpr e2
-    return $ EBinOp op e1' e2'
+    return $ A1.EBinOp op e1' e2'
 
-  EVal v -> return $ EVal v
+  A0.EVal v -> return $ A1.EVal v
 
-mapApp :: App0 -> ErrorM App1
-mapApp (App e (Args purity args)) = do
+mapApp :: A0.App -> ErrorM A1.App
+mapApp (A0.App e (A0.Args purity args)) = do
     e' <- mapExpr e
     args' <- mapM mapExpr args
-    return $ App e' $ Args purity args'
+    return $ A1.App e' $ A1.Args purity args'
 

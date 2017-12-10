@@ -3,6 +3,7 @@
 
 module Lexer (scanTokens) where
 import qualified Lexer.Token as T
+import Util.Preface(alleq)
 }
 
 %wrapper "monadUserState"
@@ -212,13 +213,6 @@ checkIndentAction = updateInputAction checkIndent
 
 
 -- Utility functions
-alleq :: Eq a => [a] -> Bool
-alleq [] = True
-alleq (x:xs)
-  | xs == [] = True
-  | x == head xs = alleq xs
-  | otherwise = False
-
 lineNumber :: AlexPosn -> Int
 lineNumber (AlexPn charOffset line column) = line
 

@@ -1,14 +1,14 @@
 module TypeCheck.Constraint
   ( module TypeCheck.Constraint
-  , module Ast.Type
+  , module Ast.A2Constrained.Type
   ) where
 
-import Ast.Type
+import Ast.A2Constrained.Type
 
 data Constraint
-  = Type2 := Type2
+  = Type := Type
   deriving(Eq, Show)
 
-mapConstraint :: (Type2 -> Type2) -> Constraint -> Constraint
+mapConstraint :: (Type -> Type) -> Constraint -> Constraint
 mapConstraint f (t1 := t2) = (f t1) := (f t2)
 

@@ -1,6 +1,6 @@
-module Ast.Error where
+module Ast.A2Constrained.Error where
 
-import Ast
+import Ast.A2Constrained
 import Util.Preface
 import Util.UnorderedPair
 
@@ -17,14 +17,14 @@ data Error
   | UnknownTypeName Typename
   | AmbiguousTypeName Typename
 
-  | FailedToUnify (UnorderedPair Type2)
-  | FailedToInferType Expr2'
+  | FailedToUnify (UnorderedPair Type)
+  | FailedToInferType Type
 
-  | NonApplicable Type2
+  | NonApplicable Type
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
   | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
 
-  | UndefinedOperator BinOp Type2 Type2
+  | UndefinedOperator BinOp Type Type
 
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
@@ -32,10 +32,12 @@ data Error
   | NeedExprFoundType
   | NeedExprFoundNamespace
 
+  | RecursiveVariableDefinition (Named Var)
+
   -- | Propagated
 
   deriving(Eq, Show)
 
-failedToUnify :: Type2 -> Type2 -> Error
+failedToUnify :: Type -> Type -> Error
 failedToUnify = FailedToUnify .: UnorderedPair
 

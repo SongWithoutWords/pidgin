@@ -1,4 +1,4 @@
-module Ast.Op where
+module Ast.Common.Op where
 
 data BinOp
   = And

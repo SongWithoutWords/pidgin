@@ -12,41 +12,41 @@ import qualified LLVM.AST.Constant as C
 import qualified LLVM.AST.Global as G
 import qualified LLVM.AST.Type as T
 
-import Ast
+import Ast.A3Typed
 import CodeGen.Instructions
 import CodeGen.CodeGenM
 import CodeGen.Util
 import Util.MultiMap
 
-codeGen :: Ast2 -> A.Module
+codeGen :: Ast -> A.Module
 codeGen ast = A.defaultModule
   { A.moduleName = "pidgin!"
   , A.moduleDefinitions = multiMapFoldWithKey genUnit ast
   }
 
-genUnit :: String -> Unit2 -> A.Definition
+genUnit :: String -> Unit -> A.Definition
 genUnit name unit = A.GlobalDefinition $ case unit of
 
   -- Although I think purity could be discarded earlier in compilation, it may help
   -- with validating some optimizations
-  UFunc (Func1 (Sig2 purity params retType) block) -> G.functionDefaults
+  UFunc (Func (Sig purity params retType) block) -> G.functionDefaults
     { G.name = A.Name $ fromString name
     , G.parameters = let vaArgs = False in (genParams params, vaArgs)
     , G.returnType = typeToLlvmType retType
     , G.basicBlocks = genBlock params block
     }
 
-genParams :: Params2 -> [G.Parameter]
+genParams :: Params -> [G.Parameter]
 genParams params = map genParam params
   where
-    genParam :: Param2 -> G.Parameter
+    genParam :: Param -> G.Parameter
     genParam (Param _ typ name) = G.Parameter (typeToLlvmType typ) (fromString name) []
 
-genBlock :: Params2 -> Block2 -> [G.BasicBlock]
+genBlock :: Params -> Block -> [G.BasicBlock]
 genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
 
-genBlock' :: Params2 -> Block2 -> CodeGenM ()
-genBlock' params (Block1 stmts retExpr) = do
+genBlock' :: Params -> Block -> CodeGenM ()
+genBlock' params (Block stmts retExpr) = do
   entryBlockName <- addBlock "entry"
   setBlock entryBlockName
   mapM_ addParamBinding params
@@ -58,18 +58,18 @@ genBlock' params (Block1 stmts retExpr) = do
   where
     addParamBinding (Param _ typ name) = addLocalBinding name typ
 
-genStmt :: Stmt2 -> CodeGenM ()
+genStmt :: Stmt -> CodeGenM ()
 genStmt stmt = case stmt of
 
-  SVar (Named name (Var2 _ _ e)) -> do
+  SVar (Named name (Var _ _ e)) -> do
     oper <- genExpr e
     addBinding name oper
 
 intWidth = 64
 
 -- Generates intermediate computations + returns a reference to the operand of the result
-genExpr :: Expr2 -> CodeGenM A.Operand
-genExpr (Expr2 typ expr) = case expr of
+genExpr :: Expr -> CodeGenM A.Operand
+genExpr (Expr typ expr) = case expr of
 
   EApp (App e (Args _ args)) -> do
 
@@ -87,7 +87,7 @@ genExpr (Expr2 typ expr) = case expr of
       then localReference n typ
       else globalReference n typ
 
-  EIf e1 ec e2 -> do
+  EIf (Cond ec) e1 e2 -> do
     ifTrue <- addBlock "if.true"
     ifFalse <- addBlock "if.false"
     ifEnd <- addBlock "if.end"
@@ -106,9 +106,9 @@ genExpr (Expr2 typ expr) = case expr of
     setBlock ifEnd
     phi (typeToLlvmType typ) [(e1', ifTrue), (e2', ifFalse)]
 
-  EUnOp op a@(Expr2 ta _) -> let
+  EUnOp op a@(Expr ta _) -> let
 
-    genUnOp :: UnOp -> Type2 -> A.Operand -> CodeGenM A.Operand
+    genUnOp :: UnOp -> Type -> A.Operand -> CodeGenM A.Operand
 
     genUnOp Neg TInt = imul intWidth (A.ConstantOperand $ C.Int intWidth (-1))
 
@@ -117,9 +117,9 @@ genExpr (Expr2 typ expr) = case expr of
       genUnOp op ta a'
 
 
-  EBinOp op e1@(Expr2 t1 _) e2@(Expr2 t2 _) -> let
+  EBinOp op e1@(Expr t1 _) e2@(Expr t2 _) -> let
 
-    genBinOp :: BinOp -> Type2 -> Type2 -> A.Operand -> A.Operand -> CodeGenM A.Operand
+    genBinOp :: BinOp -> Type -> Type -> A.Operand -> A.Operand -> CodeGenM A.Operand
 
     genBinOp Add TInt TInt = iadd intWidth
     genBinOp Sub TInt TInt = isub intWidth

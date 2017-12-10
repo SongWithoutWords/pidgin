@@ -50,11 +50,19 @@ listToMaybe (x:_) = Just x
 
 -- Collections
 ----------------------------------------------------------------
+alleq :: Eq a => [a] -> Bool
+alleq [] = True
+alleq (x:xs)
+  | xs == [] = True
+  | x == head xs = alleq xs
+  | otherwise = False
+
 takeWhileInclusive :: (a -> Bool) -> [a] -> [a]
 takeWhileInclusive _ [] = []
 takeWhileInclusive p (x:xs) = x : if p x
   then takeWhileInclusive p xs
   else []
+
 
 -- Functions
 ----------------------------------------------------------------

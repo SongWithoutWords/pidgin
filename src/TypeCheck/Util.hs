@@ -1,15 +1,15 @@
 {-# language GADTs #-}
 module TypeCheck.Util where
 
-import Ast
+import Ast.A2Constrained
 
-typeOfExpr :: Expr2 -> Type2
-typeOfExpr (Expr2 t _) = t
+typeOfExpr :: Expr -> Type
+typeOfExpr (Expr t _) = t
 
-typeOfFunc :: Func2 -> Type2
-typeOfFunc (Func1 (Sig2 purity params returnType) _) =
+typeOfFunc :: Func -> Type
+typeOfFunc (Func (Sig purity params returnType) _) =
   TFunc purity (map (\(Param _ t _) -> t) params) returnType
 
-typeOfVar :: Var2 -> Type2
-typeOfVar (Var2 _ t _) = t
+typeOfVar :: Var -> Type
+typeOfVar (Var _ t _) = t
 

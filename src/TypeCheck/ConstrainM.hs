@@ -1,4 +1,3 @@
-{-# language GADTs #-}
 module TypeCheck.ConstrainM
   ( ConstrainM
   , runConstrainM
@@ -15,9 +14,10 @@ module TypeCheck.ConstrainM
 import Control.Monad.RWS
 import qualified Data.Map as M
 
-import Ast
-import Ast.Error
+import Ast.A2Constrained
+import Ast.A2Constrained.Error
 import TypeCheck.Constraint
+import TypeCheck.Kind
 import TypeCheck.Util
 import Util.MultiMap
 
@@ -38,20 +38,20 @@ initialState = ConstrainState
   , errors = []
   }
 
-type ConstrainM a = RWS Ast2 [Constraint] ConstrainState a
+type ConstrainM a = RWS Ast [Constraint] ConstrainState a
 
-runConstrainM :: ConstrainM a -> Ast2 -> (a, [Constraint], Errors)
+runConstrainM :: ConstrainM a -> Ast -> (a, [Constraint], Errors)
 runConstrainM constrainM ast =
   let (x, s, constraints) = runRWS constrainM ast initialState
   in (x, constraints, errors s)
 
-constrain :: Type2 -> Type2 -> ConstrainM ()
+constrain :: Type -> Type -> ConstrainM ()
 constrain t1 t2 = tell [t1 := t2]
 
 raise :: Error -> ConstrainM ()
 raise e = modify $ \s -> s{errors = e : errors s}
 
-foundError :: Error -> ConstrainM Type2
+foundError :: Error -> ConstrainM Type
 foundError e = raise e >> pure TError
 
 pushScope :: Scope -> ConstrainM ()
@@ -66,10 +66,10 @@ popScope = modify $ \s -> s{scopes = tail $ scopes s}
 modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
 modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 
-addLocalBinding :: Name -> Type2 -> ConstrainM ()
+addLocalBinding :: Name -> Type -> ConstrainM ()
 addLocalBinding n t = modifyCurrentScope $ M.insert n (KExpr t)
 
-getNextTypeVar :: ConstrainM Type2
+getNextTypeVar :: ConstrainM Type
 getNextTypeVar = do
   val <- (gets nextTypeId)
   modify $ \s -> s{nextTypeId = (val + 1)}
@@ -86,12 +86,12 @@ lookupKinds name = do
       Just k -> [k]
       Nothing -> lookupKinds' ls
 
-    kindOfUnit :: Unit2 -> Kind
+    kindOfUnit :: Unit -> Kind
     kindOfUnit u = case u of
-      UNamespace1 _ -> KNamespace
+      UNamespace _ -> KNamespace
       UClass _ -> KType
       UFunc f -> KExpr $ typeOfFunc f
-      UVar (Var2 _ typ _) -> KExpr typ
+      UVar (Var _ typ _) -> KExpr typ
 
   pure $ lookupKinds' locals
 

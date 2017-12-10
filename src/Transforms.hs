@@ -8,8 +8,13 @@ import System.IO.Unsafe
 
 import LLVM.AST as A
 
-import Ast
-import Ast.Error
+import qualified Ast.A0Parse as A0
+import qualified Ast.A1PostParse as A1
+import Ast.A2Constrained.Error
+import qualified Ast.A3Typed as A3
+
+-- import Ast
+-- import Ast.Error
 
 import Lexer
 import Parser
@@ -22,28 +27,28 @@ import LlvmUtil
 
 -- TODO: Would be really great to wrap all of these transforms in a nice error monad
 
-parseTreeFromSource :: String -> Ast0
+parseTreeFromSource :: String -> A0.Ast
 parseTreeFromSource = parse . scanTokens
 
-astFromSource :: String -> Ast1
+astFromSource :: String -> A1.Ast
 astFromSource = fst . postParseAst . parseTreeFromSource
 
-astFromParseTree :: Ast0 -> Ast1
+astFromParseTree :: A0.Ast -> A1.Ast
 astFromParseTree = fst . postParseAst
 
-lexParseCheck :: String -> (Ast2, Errors)
+lexParseCheck :: String -> (A3.Ast, Errors)
 lexParseCheck = typeCheckAst . astFromSource
 
-typedAstFromSource :: String -> Ast2
+typedAstFromSource :: String -> A3.Ast
 typedAstFromSource = fst . lexParseCheck
 
 typeErrorsFromSource :: String -> Errors
 typeErrorsFromSource = snd . lexParseCheck
 
-typedAstFromParseTree :: Ast0 -> Ast2
+typedAstFromParseTree :: A0.Ast -> A3.Ast
 typedAstFromParseTree = fst . typeCheckAst . astFromParseTree
 
-typeErrorsFromParseTree :: Ast0 -> Errors
+typeErrorsFromParseTree :: A0.Ast -> Errors
 typeErrorsFromParseTree = snd . typeCheckAst . astFromParseTree
 
 llvmModuleFromSource :: String -> A.Module

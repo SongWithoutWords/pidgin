@@ -1,4 +1,4 @@
-module Ast.Name where
+module Ast.Common.Name where
 
 type Name = String
 type Names = [Name]

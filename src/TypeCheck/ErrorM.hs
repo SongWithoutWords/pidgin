@@ -2,12 +2,12 @@
 
 module TypeCheck.ErrorM
   ( module TypeCheck.ErrorM
-  , module Ast.Error
+  , module Ast.A2Constrained.Error
   ) where
 
 import Control.Monad.Writer
 
-import Ast.Error
+import Ast.A2Constrained.Error
 
 newtype ErrorM a = ErrorM (Writer Errors a)
   deriving(Functor, Applicative, Monad)

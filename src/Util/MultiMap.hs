@@ -20,7 +20,13 @@ multiEmpty :: M.Map k [a]
 multiEmpty = M.empty
 
 multiFromList :: Ord k => [(k, a)] -> M.Map k [a]
-multiFromList pairs = Prelude.foldl (\m (k, v) -> multiInsert k v m) (M.empty) pairs
+multiFromList pairs = foldl (\m (k, v) -> multiInsert k v m) (M.empty) pairs
+
+multiToAscList :: Ord k => M.Map k [a] -> [(k, a)]
+multiToAscList m = concatMap split $ M.toAscList m
+  where
+    split :: (k, [a]) -> [(k, a)]
+    split (k, as) = map (\a -> (k, a)) as
 
 multiMap :: Ord k => (a -> b) -> MultiMap k a -> MultiMap k b
 multiMap f m = M.map (map f) m
@@ -29,10 +35,10 @@ multiMapM :: (Monad m, Ord k) => (a -> m b) -> M.Map k [a] -> m (M.Map k [b])
 multiMapM f m = sequence $ M.map (mapM f) m
 
 multiMapWithKey :: (k -> a -> b) -> M.Map k [a] -> M.Map k [b]
-multiMapWithKey f = M.mapWithKey (\k xs -> Prelude.map (f k) xs)
+multiMapWithKey f = M.mapWithKey (\k xs -> map (f k) xs)
 
 multiMapFoldWithKey :: (k -> a -> b) -> M.Map k [a] -> [b]
-multiMapFoldWithKey f = M.foldMapWithKey (\k xs -> Prelude.map (f k) xs)
+multiMapFoldWithKey f = M.foldMapWithKey (\k xs -> map (f k) xs)
 
 multiMapWithKeyM :: (Monad m, Ord k)  => (k -> a -> m b) -> M.Map k [a] -> m (M.Map k [b])
 multiMapWithKeyM f m = sequence $ M.mapWithKey (\k xs -> mapM (f k) xs) m

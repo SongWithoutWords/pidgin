@@ -1,9 +1,7 @@
 {
-module Parser where
+module Parser(parse) where
 
-
-import Ast
-import Ast0Builder
+import Ast.A0Parse
 import Parser.Error
 import qualified Lexer.Token as T
 import Util.Preface
@@ -113,7 +111,7 @@ namedUnits
   | namedUnit lineSep namedUnits { $1 : $3}
 
 namedUnit
-  : namespace       { fmap UNamespace0 $1 }
+  : namespace       { fmap UNamespace $1 }
   | namedClass      { fmap UClass $1 }
   | namedFunc       { fmap UFunc $1 }
   | namedVar        { fmap UVar $1 }
@@ -122,7 +120,7 @@ namespace
   : tknNamespace name indentedUnits { Named $2 $3 }
 
 namedClass
-  : tknClass typename indentedMembers  { Named $2 $ Class0 $3 } 
+  : tknClass typename indentedMembers  { Named $2 $ Class $3 } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -147,11 +145,11 @@ namedFunc
   : name func { Named $1 $2 }
 
 func
-  : signature "=>" block { Func0 $1 ImplicitRet $3 }
-  | signature ":"  block { Func0 $1 ExplicitRet $3 }
+  : signature "=>" block { Func $1 ImplicitRet $3 }
+  | signature ":"  block { Func $1 ExplicitRet $3 }
 
 signature
-  : purityAndParams optionRetType { Sig0 (fst $1) (snd $1) $2}
+  : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
 
 purityAndParams
   : "(" ")"                         { (Pure, []) }
@@ -174,9 +172,9 @@ retType
   : "->" type   { $2 }
 
 block
-  : lineSep       { Block0 [] }
-  | shallowStmt   { Block0 [$1] }
-  | ind stmts ded { Block0 $2 }
+  : lineSep       { [] }
+  | shallowStmt   { [$1] }
+  | ind stmts ded { $2 }
 
 stmts
   : stmt            { [$1] }
@@ -194,40 +192,40 @@ shallowStmt
   | ret expr        { SRet $2 }
 
 ifBranch
-  : if condBlock               { Iff $2 }
+  : if condBlock               { If $2 }
   | if condBlock else block    { IfElse $2 $4 }
-  | if condBlock else ifBranch { IfElif $2 $4 }
+  | if condBlock else ifBranch { IfElseIf $2 $4 }
 
 condBlock
-  : expr ":" block                   { CondBlock $1 $3 }
+  : expr ":" block             { CondBlock $1 $3 }
 
 namedVar
-  : mut maybeType name "=" expr { Named $3 $ Var0 $1 $2 $5 }
+  : mut maybeType name "=" expr { Named $3 $ Var $1 $2 $5 }
 
 exprs
   : expr            { [$1]}
   | expr "," exprs  { $1 : $3 }
 
 expr
-  : name   { Expr0 $ EName $1 }
-  | select { Expr0 $ ESelect $1 }
-  | apply  { Expr0 $ EApp $1 }
+  : name   { EName $1 }
+  | select { ESelect $1 }
+  | apply  { EApp $1 }
 
-  | cons   { Expr0 $1 }
+  | cons   { $1 }
 
-  | eIf    { Expr0 $1 }
-  | func   { Expr0 $ ELambda $1 }
+  | eIf    { $1 }
+  | func   { ELambda $1 }
 
   | op     { $1 }
 
-  | litBln { e0ValBln $1 }
-  | litChr { e0ValChr $1 }
-  | litFlt { e0ValFlt $1 }
-  | litInt { e0ValInt $1 }
-  | litStr { e0ValStr $1 }
+  | litBln { EVal $ VBln $1 }
+  | litChr { EVal $ VChr $1 }
+  | litFlt { EVal $ VFlt $1 }
+  | litInt { EVal $ VInt $1 }
+  | litStr { EVal $ VStr $1 }
 
 eIf
-  : expr if expr else optEol expr { EIf $1 $3 $6 }
+  : expr if expr else optEol expr { EIf (Cond $3) $1 $6 }
 
 cons
   : typename "(" args ")" { ECons $1 $3 }
@@ -235,27 +233,27 @@ cons
 op
   : "(" expr ")"            { $2 }
 
-  | "-" expr %prec prec_neg { e0UnOp Neg $2 }
+  | "-" expr %prec prec_neg { EUnOp Neg $2 }
 
-  | expr "+" expr           { e0BinOp Add $1 $3 }
-  | expr "-" expr           { e0BinOp Sub $1 $3 }
-  | expr "*" expr           { e0BinOp Mul $1 $3 }
-  | expr "/" expr           { e0BinOp Div $1 $3 }
-  | expr "%" expr           { e0BinOp Mod $1 $3 }
+  | expr "+" expr           { EBinOp Add $1 $3 }
+  | expr "-" expr           { EBinOp Sub $1 $3 }
+  | expr "*" expr           { EBinOp Mul $1 $3 }
+  | expr "/" expr           { EBinOp Div $1 $3 }
+  | expr "%" expr           { EBinOp Mod $1 $3 }
 
-  | expr ">" expr           { e0BinOp (Cmp Greater) $1 $3 }
-  | expr "<" expr           { e0BinOp (Cmp Lesser) $1 $3 }
-  | expr ">=" expr          { e0BinOp (Cmp GreaterEq) $1 $3 }
-  | expr "<=" expr          { e0BinOp (Cmp LesserEq) $1 $3 }
-  | expr "==" expr          { e0BinOp (Cmp Equal) $1 $3 }
-  | expr "!=" expr          { e0BinOp (Cmp NotEqual) $1 $3 }
+  | expr ">" expr           { EBinOp (Cmp Greater) $1 $3 }
+  | expr "<" expr           { EBinOp (Cmp Lesser) $1 $3 }
+  | expr ">=" expr          { EBinOp (Cmp GreaterEq) $1 $3 }
+  | expr "<=" expr          { EBinOp (Cmp LesserEq) $1 $3 }
+  | expr "==" expr          { EBinOp (Cmp Equal) $1 $3 }
+  | expr "!=" expr          { EBinOp (Cmp NotEqual) $1 $3 }
 
-  | expr name expr          { e0BinOp (OpUser $2) $1 $3 }
+  | expr name expr          { EBinOp (OpUser $2) $1 $3 }
 
 lexpr
-  : apply   { LExpr0 $ LApp $1 }
-  | select  { LExpr0 $ LSelect $1 } 
-  | name    { LExpr0 $ LName $1 }
+  : apply   { LApp $1 }
+  | select  { LSelect $1 } 
+  | name    { LName $1 }
 
 apply
   : expr "(" args ")" { App $1 $3 }
@@ -284,11 +282,11 @@ maybeType
 type
   : typename  { TUser $1 }
   | funcType  { $1 }
-  | "^" mut type { TTempRef $2 $3 }
-  | "&" mut type { TPersRef $2 $3 }
-  | "?" mut type { TOption $2 $3 }
-  | "*" mut type { TZeroPlus $2 $3 }
-  | "+" mut type { TOnePlus $2 $3 }
+  -- | "^" mut type { TTempRef $2 $3 }
+  | "&" mut type { TRef $2 $3 }
+  -- | "?" mut type { TOption $2 $3 }
+  -- | "*" mut type { TZeroPlus $2 $3 }
+  -- | "+" mut type { TOnePlus $2 $3 }
 
   | Bln       { TBln }
   | Chr       { TChr }

@@ -1,4 +1,4 @@
-module Test.TypeCheck.Unify(unifyTests) where
+module Test.TypeCheck.Unify(tests) where
 
 import Data.Map as M
 
@@ -7,7 +7,7 @@ import Test.Tasty.HUnit
 
 import TypeCheck.Unify
 
-type SubstitutionList = [(Word, Type2)]
+type SubstitutionList = [(Word, Type)]
 
 unifyTest :: String -> [Constraint] -> SubstitutionList -> [Error] -> TestTree
 unifyTest name constraints subs errors =
@@ -17,8 +17,8 @@ unifyTest name constraints subs errors =
     , testCase "errors" $ snd result @?= errors
     ]
 
-unifyTests :: TestTree
-unifyTests = testGroup "Unification"
+tests :: TestTree
+tests = testGroup "Unification"
   [ unifyTest "00 - empty" [] [] []
 
   , unifyTest "01 - single"
