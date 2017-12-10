@@ -8,11 +8,6 @@ import TypeCheck.SubAst
 import TypeCheck.Unify
 
 typeCheckAst :: A1.Ast -> (A3.Ast, Errors)
--- typeCheckAst ast =
---   let (ast', constraints, constrainErrs) = constrainAst ast in
---   let (substitutions, unifyErrs) = unify constraints in
---   (subAst substitutions ast', constrainErrs ++ unifyErrs)
-
 typeCheckAst ast =
   let
     (ast', constraints, constrainErrs) = constrainAst ast
