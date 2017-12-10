@@ -1,14 +1,13 @@
 {-# language QuasiQuotes #-}
 module Test.CodeGen(tests) where
 
+import Control.Monad(unless)
 import Data.String.QQ
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import Transforms
--- returnValFromSource :: String -> IO (Maybe Int)
--- returnValFromSource = undefined
 
 test :: String -> Int -> TestTree
 test src = namedTest src src
@@ -16,8 +15,11 @@ test src = namedTest src src
 namedTest :: String -> String -> Int -> TestTree
 namedTest name src retValExpected = testCase name $ do
   retValActual <- returnValFromSource src
-  retValActual @?= (Just retValExpected)
-
+  unless (retValActual == Just retValExpected) $ do
+    llvmIr <- llvmIrFromSource src
+    assertFailure $ "expected:\n" ++ show retValExpected
+      ++ "\nbut got:\n" ++ show retValActual
+      ++ "\nwith llvm-ir:\n" ++ llvmIr
 
 tests :: TestTree
 tests = testGroup "codegen"
