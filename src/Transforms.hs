@@ -15,7 +15,7 @@ import qualified Ast.A3Typed as A3
 
 import Lexer
 import Parser
-import PostParseAst
+import PostParse
 import TypeCheck
 import CodeGen
 import LlvmUtil
@@ -27,10 +27,10 @@ parseTreeFromSource :: String -> A0.Ast
 parseTreeFromSource = parse . scanTokens
 
 astFromSource :: String -> A1.Ast
-astFromSource = fst . postParseAst . parseTreeFromSource
+astFromSource = fst . postParse . parseTreeFromSource
 
 astFromParseTree :: A0.Ast -> A1.Ast
-astFromParseTree = fst . postParseAst
+astFromParseTree = fst . postParse
 
 lexParseCheck :: String -> (A3.Ast, Errors)
 lexParseCheck = typeCheckAst . astFromSource

@@ -59,7 +59,7 @@ library
                     Parser
                     Parser.Error
 
-                    PostParseAst
+                    PostParse
 
                     Transforms
 

@@ -1,4 +1,4 @@
-module PostParseAst (postParseAst) where
+module PostParse(postParse) where
 
 import Control.Monad.Writer
 
@@ -8,8 +8,8 @@ import Ast.A2Constrained.Error
 import Ast.Common.Name
 import Ast.Common.Table
 
-postParseAst :: A0.Ast -> (A1.Ast, Errors)
-postParseAst = runWriter . mapUnits
+postParse :: A0.Ast -> (A1.Ast, Errors)
+postParse = runWriter . mapUnits
 
 type ErrorM a = Writer Errors a
 
@@ -21,23 +21,23 @@ mapUnits = tableFromNamedM mapUnit
 
 mapUnit :: A0.Unit -> ErrorM A1.Unit
 mapUnit unit = case unit of
-  A0.UNamespace us     -> mapUnits us >>= return . A1.UNamespace
-  A0.UClass (A0.Class ms) -> mapMembers ms >>= return . A1.UClass . A1.Class
-  A0.UFunc f            -> mapFunc f >>= return . A1.UFunc
-  A0.UVar v             -> mapVar v >>= return . A1.UVar
+  A0.UNamespace us        -> A1.UNamespace <$> mapUnits us
+  A0.UClass (A0.Class ms) -> (A1.UClass . A1.Class) <$> mapMembers ms
+  A0.UFunc f              -> A1.UFunc <$> mapFunc f
+  A0.UVar v               -> A1.UVar <$> mapVar v
 
 mapMembers :: [Named A0.Member] -> ErrorM (Table A1.Member)
 mapMembers = tableFromNamedM mapMember
 
 mapMember :: A0.Member -> ErrorM A1.Member
 mapMember member = case member of
-  A0.MClass acc (A0.Class ms) -> mapMembers ms >>= return . (A1.MClass acc) . A1.Class
-  A0.MCons acc f            -> mapFunc f >>= return . A1.MCons acc
-  A0.MFunc acc mut f        -> mapFunc f >>= return . A1.MFunc acc mut
-  A0.MVar acc v             -> mapVar v >>= return . A1.MVar acc
+  A0.MClass acc (A0.Class ms) -> (A1.MClass acc) . A1.Class <$> mapMembers ms
+  A0.MCons acc f              -> A1.MCons acc <$> mapFunc f
+  A0.MFunc acc mut f          -> A1.MFunc acc mut <$> mapFunc f
+  A0.MVar acc v               -> A1.MVar acc <$> mapVar v
 
 mapFunc :: A0.Func -> ErrorM A1.Func
-mapFunc (A0.Func sig retNotation block) = mapBlock retNotation block >>= return . A1.Func sig
+mapFunc (A0.Func sig retNotation block) = A1.Func sig <$> mapBlock retNotation block
 
 mapBlock :: A0.RetNotation -> A0.Block -> ErrorM A1.Block
 mapBlock retNotation stmts = do
@@ -77,8 +77,8 @@ mapBlock retNotation stmts = do
     mapStmt :: A0.Stmt -> ErrorM A1.Stmt
     mapStmt s = case s of
 
-      A0.SVar (Named n v) -> mapVar v >>= return . A1.SVar . Named n
-      A0.SFunc (Named n f) -> mapFunc f >>= return . A1.SFunc . Named n
+      A0.SVar (Named n v) -> A1.SVar . Named n <$> mapVar v
+      A0.SFunc (Named n f) -> A1.SFunc . Named n <$> mapFunc f
 
       A0.SExpr _ -> error "Should have been already handled"
       A0.SRet _ -> error "Should have been already handled"
@@ -86,9 +86,6 @@ mapBlock retNotation stmts = do
 
 mapVar :: A0.Var -> ErrorM A1.Var
 mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ
-
--- mapExpr :: A0.Expr -> ErrorM A1.Expr
--- mapExpr e = mapExpr' e >>= return . A1.Expr
 
 mapExpr :: A0.Expr -> ErrorM A1.Expr
 mapExpr expr = case expr of
