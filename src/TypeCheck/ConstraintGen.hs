@@ -19,8 +19,9 @@ import Util.Preface
 constrainAst :: A1.Ast -> (A2.Ast, [Constraint], Errors)
 constrainAst ast =
   -- tie the knot, in order to refer to typevars further ahead in the input
-  let result@(ast', _, _) = runConstrainM (checkUnits ast) ast'
-  in result
+  let (ast', constraints, errors) = runConstrainM (checkUnits ast) ast'
+  -- reverse the constraints so that they appear in the order generated
+  in (ast', reverse constraints, errors)
 
 type Constrain a b = a -> ConstrainM b
 
