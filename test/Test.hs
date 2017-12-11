@@ -7,7 +7,7 @@ import qualified Test.Parser as Parser
 import qualified Test.TypeCheck as TypeCheck
 import qualified Test.CodeGen as CodeGen
 
-testTimeout_μs = 20000
+testTimeout_μs = 50000
 
 main :: IO ()
 main = T.defaultMain tests
