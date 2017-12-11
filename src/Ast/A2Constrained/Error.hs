@@ -1,8 +1,7 @@
 module Ast.A2Constrained.Error where
 
 import Ast.A2Constrained
-import Util.Preface
-import Util.UnorderedPair
+import TypeCheck.Constraint
 
 type Errors = [Error]
 
@@ -17,7 +16,7 @@ data Error
   | UnknownTypeName Typename
   | AmbiguousTypeName Typename
 
-  | FailedToUnify (UnorderedPair Type)
+  | FailedToUnify Constraint
   | FailedToInferType Type
 
   | NonApplicable Type
@@ -34,10 +33,5 @@ data Error
 
   | RecursiveVariableDefinition (Named Var)
 
-  -- | Propagated
-
   deriving(Eq, Show)
-
-failedToUnify :: Type -> Type -> Error
-failedToUnify = FailedToUnify .: UnorderedPair
 

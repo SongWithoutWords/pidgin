@@ -23,31 +23,32 @@ constrainAst ast =
   -- reverse the constraints so that they appear in the order generated
   in (ast', reverse constraints, errors)
 
-type Constrain a b = a -> ConstrainM b
-
-checkUnits :: Constrain A1.Ast A2.Ast
+checkUnits :: A1.Ast -> ConstrainM A2.Ast
 checkUnits = multiMapM checkUnit
 
-checkUnit :: Constrain A1.Unit A2.Unit
+checkUnit :: A1.Unit -> ConstrainM A2.Unit
 checkUnit unit = case unit of
   A1.UNamespace n -> A2.UNamespace <$> checkUnits n
   A1.UFunc f -> A2.UFunc <$> checkFunc f
   A1.UVar v -> A2.UVar <$> checkVar v
 
-checkFunc :: Constrain A1.Func A2.Func
+checkFunc :: A1.Func -> ConstrainM A2.Func
 checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
   tRet <- getNextTypeVar
 
+  -- TODO: It should be possible to have only one constraint on ret types,
+  -- and not introduce a new type var when an explicit type exists. Would this be better?
   optRetType' <- traverse checkType optRetType
-  mapM_ (constrain tRet) optRetType'
+  mapM_ (tRet <<:) optRetType'
 
-  params' <- mapM (\(A1.Param m t n) -> checkType t >>= (\t' -> pure $ A2.Param m t' n)) params
+  params' <- mapM (\(A1.Param m t n) -> (Named n) . (MType m) <$> checkType t) params
+
   pushNewScope
 
-  mapM_ (\(A2.Param _ t n) -> addLocalBinding n t) params'
+  mapM_ addLocalBinding params'
   block'@(A2.Block _ optRetExpr') <- checkBlock block
   let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (A2.Expr t _) -> t
-  constrain tRet tRetExpr
+  tRetExpr <<: tRet
 
   popScope
 
@@ -67,7 +68,7 @@ checkStmt stmt = case stmt of
 
   A1.SVar (Named name var) -> do
     var' <- checkVar var
-    addLocalBinding name $ typeOfVar var'
+    addLocalBinding $ Named name $ typeOfVar var'
     pure $ A2.SVar $ Named name var'
 
   A1.SFunc f -> undefined
@@ -84,8 +85,8 @@ checkVar (A1.Var mut optType expr) = do
     Just t -> pure t
     Nothing -> getNextTypeVar
 
-  constrain tVar $ typeOfExpr expr'
-  return $ A2.Var mut tVar expr'
+  (typeOfExpr expr') <<: tVar
+  return $ A2.Var (MType mut tVar) expr'
 
 checkNamedExpr :: Named A1.Expr -> ConstrainM (Named A2.Expr)
 checkNamedExpr = traverse checkExpr
@@ -97,7 +98,7 @@ checkExpr expression = case expression of
     kinds <- lookupKinds name
     t <- case kinds of
       [] -> foundError $ UnknownId name
-      [KExpr t] -> pure t
+      [KVar (MType _ t)] -> pure t
       [KType] -> foundError NeedExprFoundType
       [KNamespace] -> foundError NeedExprFoundNamespace
       _ -> foundError CompetingDefinitions
@@ -105,21 +106,19 @@ checkExpr expression = case expression of
 
 
   A1.ELambda f -> do
-    tLam <- getNextTypeVar
     f' <- checkFunc f
-    constrain tLam $ typeOfFunc f'
-    pure $ A2.Expr tLam $ A2.ELambda f'
+    pure $ A2.Expr (typeOfFunc f') $ A2.ELambda f'
 
 
   A1.EApp (A1.App expr (A1.Args purity args)) -> do
     tRet <- getNextTypeVar
 
-    expr'@(A2.Expr t1 _) <- checkExpr expr
+    expr'@(A2.Expr tExpr _) <- checkExpr expr
     args' <- traverse checkExpr args
 
     let argTypes = (\(A2.Expr t _) -> t) <$> args'
 
-    constrain t1 $ TFunc purity argTypes tRet
+    TFunc purity argTypes tRet <<: tExpr
 
     pure $ A2.Expr tRet $ A2.EApp $ A2.App expr' (A2.Args purity args')
 
@@ -129,15 +128,15 @@ checkExpr expression = case expression of
     e1'@(A2.Expr t1 _) <- checkExpr e1
     e2'@(A2.Expr t2 _) <- checkExpr e2
 
-    constrain TBln tCond
-    constrain t1 t2
+    tCond <<: TBln
+    t2 <<: t1
 
     pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
 
   A1.EUnOp op e -> let
     checkUnOp :: UnOp -> A2.Type -> A2.Type -> ConstrainM ()
     checkUnOp Neg tExpr tRes = do
-      mapM_ (constrain TInt) [tExpr, tRes]
+      mapM_ (<<: TInt) [tExpr, tRes]
     in do
       e'@(A2.Expr t _) <- checkExpr e
       tRes <- getNextTypeVar
@@ -150,31 +149,31 @@ checkExpr expression = case expression of
 
     -- Int -> Int -> Int
     checkBinOp Add a b r = do
-      mapM_ (constrain TInt) [a, b, r]
+      mapM_ (<<: TInt) [a, b, r]
 
     checkBinOp Sub a b r = do
-      mapM_ (constrain TInt) [a, b, r]
+      mapM_ (<<: TInt) [a, b, r]
 
     checkBinOp Mul a b r = do
-      mapM_ (constrain TInt) [a, b, r]
+      mapM_ (<<: TInt) [a, b, r]
 
     checkBinOp Div a b r = do
-      mapM_ (constrain TInt) [a, b, r]
+      mapM_ (<<: TInt) [a, b, r]
 
     checkBinOp Mod a b r = do
-      mapM_ (constrain TInt) [a, b, r]
+      mapM_ (<<: TInt) [a, b, r]
 
     -- Int -> Int -> Bln
     checkBinOp (Cmp _) a b r = do
-      mapM_ (constrain TInt) [a, b]
-      constrain TBln r
+      mapM_ (<<: TInt) [a, b]
+      r <<: TBln
 
     -- Bln -> Bln -> Bln
     checkBinOp And a b r = do
-      mapM_ (constrain TBln) [a, b, r]
+      mapM_ (<<: TBln) [a, b, r]
 
     checkBinOp Or a b r = do
-      mapM_ (constrain TBln) [a, b, r]
+      mapM_ (<<: TBln) [a, b, r]
 
     in do
       e1'@(A2.Expr t1 _) <- checkExpr e1
@@ -197,10 +196,7 @@ checkExpr expression = case expression of
 checkType :: A1.Type -> ConstrainM A2.Type
 checkType typ =
   let
-    checkAndRet f m t = checkType t >>= pure f m
-      -- do
-      -- t' <- checkType t
-      -- return $ f m t'
+    checkAndRet f m t = f m <$> checkType t
 
   in case typ of
   A1.TUser typeName -> do
@@ -215,7 +211,7 @@ checkType typ =
     ret' <- checkType ret
     return $ TFunc purity params' ret'
 
-  A1.TRef m t -> checkType t >>= pure . A2.TRef m-- checkAndRet TTempRef m t
+  A1.TRef m t -> A2.TRef . MType m <$> checkType t
   -- TPersRef m t -> checkAndRet TPersRef m t
 
   -- TOption m t -> checkAndRet TOption m t

@@ -7,13 +7,22 @@ module Ast.A2Constrained.Type
 import Ast.Common.Mutability
 import Ast.Common.Purity
 
+data MType = MType Mut Type
+  deriving(Eq, Show)
+
+mut :: Type -> MType
+mut = MType Mut
+
+imt :: Type -> MType
+imt = MType Imt
+
 data Type
   = TUser Typename
 
   -- Neither caller nor callee care about left-most mutability of param and return types
   | TFunc Purity [Type] Type
 
-  | TRef Mut Type
+  | TRef MType
 
   | TBln
   | TChr

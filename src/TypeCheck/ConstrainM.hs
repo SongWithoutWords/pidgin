@@ -1,7 +1,7 @@
 module TypeCheck.ConstrainM
   ( ConstrainM
   , runConstrainM
-  , constrain
+  , (<<:)
   , raise
   , foundError
   , pushNewScope
@@ -45,8 +45,8 @@ runConstrainM constrainM ast =
   let (x, s, constraints) = runRWS constrainM ast initialState
   in (x, constraints, errors s)
 
-constrain :: Type -> Type -> ConstrainM ()
-constrain t1 t2 = tell [t1 := t2]
+(<<:) :: Constrain a => a -> a -> ConstrainM ()
+x <<: y = tell [x <: y]
 
 raise :: Error -> ConstrainM ()
 raise e = modify $ \s -> s{errors = e : errors s}
@@ -66,8 +66,8 @@ popScope = modify $ \s -> s{scopes = tail $ scopes s}
 modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
 modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 
-addLocalBinding :: Name -> Type -> ConstrainM ()
-addLocalBinding n t = modifyCurrentScope $ M.insert n (KExpr t)
+addLocalBinding :: Named MType -> ConstrainM ()
+addLocalBinding (Named n mt) = modifyCurrentScope $ M.insert n $ KVar mt
 
 getNextTypeVar :: ConstrainM Type
 getNextTypeVar = do
@@ -90,8 +90,8 @@ lookupKinds name = do
     kindOfUnit u = case u of
       UNamespace _ -> KNamespace
       UClass _ -> KType
-      UFunc f -> KExpr $ typeOfFunc f
-      UVar (Var _ typ _) -> KExpr typ
+      UFunc f -> KVar $ imt $ typeOfFunc f
+      UVar (Var mt _) -> KVar mt
 
   pure $ lookupKinds' locals
 

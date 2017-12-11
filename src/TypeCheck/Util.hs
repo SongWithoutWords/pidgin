@@ -7,8 +7,8 @@ typeOfExpr (Expr t _) = t
 
 typeOfFunc :: Func -> Type
 typeOfFunc (Func (Sig purity params returnType) _) =
-  TFunc purity (map (\(Param _ t _) -> t) params) returnType
+  TFunc purity (map (\(Named _ (MType _ t)) -> t) params) returnType
 
-typeOfVar :: Var -> Type
-typeOfVar (Var _ t _) = t
+typeOfVar :: Var -> MType
+typeOfVar (Var mt _) = mt
 

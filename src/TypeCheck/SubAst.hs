@@ -26,7 +26,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       UVar v -> A3.UVar <$> subVar v
 
     subVar :: Var -> ErrorM A3.Var
-    subVar (Var m t e) = liftM2 (A3.Var m) (subType' t) (subExpr e)
+    subVar (Var (MType m t) e) = liftM2 A3.Var (MType m <$> subType' t) (subExpr e)
 
     subFunc :: Func -> ErrorM A3.Func
     subFunc (Func s b) = liftM2 A3.Func (subSig s) (subBlock b)
@@ -39,9 +39,7 @@ subAst' substitutions ast = multiMapM subUnit ast
     subParams ps = mapM subParam ps
 
     subParam :: Param -> ErrorM A3.Param
-    subParam (Param m t n) = do
-      t' <- subType' t
-      pure $ A3.Param m t' n
+    subParam (Named n (MType m t)) = (Named n) . (MType m) <$> subType' t
 
     subBlock :: Block -> ErrorM A3.Block
     subBlock (Block stmts optExpr) =
@@ -94,7 +92,7 @@ subAst' substitutions ast = multiMapM subUnit ast
     subType' typ = case typ of
       TFunc p paramTypes retType ->
         liftM2 (A3.TFunc p) (mapM subType' paramTypes) (subType' retType)
-      TRef m t -> A3.TRef m <$> subType' t
+      TRef (MType m t) -> A3.TRef . MType m <$> subType' t
       TVar tvar -> subTypeVar tvar
       t -> pure t
       where

@@ -46,8 +46,9 @@ data Sig = Sig Purity Params Type
 -- In future Params could be alias for [Named MType]
 type Params = [Param]
 
-data Param = Param Mut Type Name
-  deriving(Eq, Show)
+type Param = Named MType
+--Param MType Name
+  -- deriving(Eq, Show)
 
 data Block = Block [Stmt] (Maybe Expr)
   deriving(Eq, Show)
@@ -69,7 +70,7 @@ data IfBranch
 data CondBlock = CondBlock Expr Block
   deriving(Eq, Show)
 
-data Var = Var Mut Type Expr
+data Var = Var MType Expr
   deriving(Eq, Show)
 
 data Expr = Expr Type Expr'
