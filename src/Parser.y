@@ -313,7 +313,7 @@ purity
   | "~""@"  { PWrite }
 
 mut
-  : {- none -} { Imut }
+  : {- none -} { Imt }
   | "~"        { Mut }
 
 optEol

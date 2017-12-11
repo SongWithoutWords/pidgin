@@ -59,30 +59,30 @@ tests = testGroup "type check"
     [ namedTest "empty string" "" [] []
 
     , test "Bln a = true"
-      [("a", UVar $ Var Imut TBln $ Expr TBln $ EVal $ VBln True)]
+      [("a", UVar $ Var Imt TBln $ Expr TBln $ EVal $ VBln True)]
       []
 
     , test "Bln a = false"
-      [("a", UVar $ Var Imut TBln $ Expr TBln $ EVal $ VBln False)]
+      [("a", UVar $ Var Imt TBln $ Expr TBln $ EVal $ VBln False)]
       []
 
     , test "Bln a = 5"
-      [("a", UVar $ Var Imut TBln $ Expr TInt $ EVal $ VInt 5)]
+      [("a", UVar $ Var Imt TBln $ Expr TInt $ EVal $ VInt 5)]
       [failedToUnify TBln TInt]
 
     , test "Int a = true"
-      [("a", UVar $ Var Imut TInt $ Expr TBln $ EVal $ VBln True)]
+      [("a", UVar $ Var Imt TInt $ Expr TBln $ EVal $ VBln True)]
       [failedToUnify TInt TBln]
 
     , test "$ a = b"
-      [("a", UVar $ Var Imut TError $ Expr TError $ EName "b")]
+      [("a", UVar $ Var Imt TError $ Expr TError $ EName "b")]
       [UnknownId "b"]
     ]
 
   , testGroup "recursive definitions"
     [ let
       condition
-        [("a", (UVar (Var Imut (TVar a) (Expr (TVar b) (EName "a")))))]
+        [("a", (UVar (Var Imt (TVar a) (Expr (TVar b) (EName "a")))))]
         [FailedToInferType (TVar c), FailedToInferType (TVar d)]
         = alleq [a, b, c, d]
       condition _ _ = False
@@ -90,8 +90,8 @@ tests = testGroup "type check"
 
     , let
       condition
-        [ ("a", UVar (Var Imut (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var Imut (TVar c) (Expr (TVar d) (EName "a"))))
+        [ ("a", UVar (Var Imt (TVar a) (Expr (TVar b) (EName "b"))))
+        , ("b", UVar (Var Imt (TVar c) (Expr (TVar d) (EName "a"))))
         ]
         [ FailedToInferType (TVar e), FailedToInferType (TVar f)
         , FailedToInferType (TVar g), FailedToInferType (TVar h)
@@ -102,8 +102,8 @@ tests = testGroup "type check"
 
     , let
       condition
-        [ ("a", UVar (Var Imut (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var Imut (TVar c) (Expr (TVar d) (EName "b"))))
+        [ ("a", UVar (Var Imt (TVar a) (Expr (TVar b) (EName "b"))))
+        , ("b", UVar (Var Imt (TVar c) (Expr (TVar d) (EName "b"))))
         ]
         [ FailedToInferType (TVar e), FailedToInferType (TVar f)
         , FailedToInferType (TVar g), FailedToInferType (TVar h)
@@ -114,9 +114,9 @@ tests = testGroup "type check"
 
     , let
       condition
-        [ ("a", UVar (Var Imut (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var Imut (TVar c) (Expr (TVar d) (EName "c"))))
-        , ("c", UVar (Var Imut (TVar e) (Expr (TVar f) (EName "a"))))
+        [ ("a", UVar (Var Imt (TVar a) (Expr (TVar b) (EName "b"))))
+        , ("b", UVar (Var Imt (TVar c) (Expr (TVar d) (EName "c"))))
+        , ("c", UVar (Var Imt (TVar e) (Expr (TVar f) (EName "a"))))
         ]
         [ FailedToInferType (TVar g), FailedToInferType (TVar h)
         , FailedToInferType (TVar i), FailedToInferType (TVar j)
@@ -128,9 +128,9 @@ tests = testGroup "type check"
 
     , let
       condition
-        [ ("a", UVar (Var Imut (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var Imut (TVar c) (Expr (TVar d) (EName "c"))))
-        , ("c", UVar (Var Imut (TVar e) (Expr (TVar f) (EName "b"))))
+        [ ("a", UVar (Var Imt (TVar a) (Expr (TVar b) (EName "b"))))
+        , ("b", UVar (Var Imt (TVar c) (Expr (TVar d) (EName "c"))))
+        , ("c", UVar (Var Imt (TVar e) (Expr (TVar f) (EName "b"))))
         ]
         [ FailedToInferType (TVar g), FailedToInferType (TVar h)
         , FailedToInferType (TVar i), FailedToInferType (TVar j)
@@ -140,11 +140,11 @@ tests = testGroup "type check"
       condition _ _ = False
       in test' "$ a = b; $ b = c; $ c = b" condition
 
-    , let b = (Var Imut TInt $ Expr TInt $ EBinOp Add
+    , let b = (Var Imt TInt $ Expr TInt $ EBinOp Add
             (Expr TInt $ EName "b")
             (Expr TInt $ EName "a"))
       in test "$ a = 1; $ b = b + a"
-        [ ("a", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 1)
+        [ ("a", UVar $ Var Imt TInt $ Expr TInt $ EVal $ VInt 1)
         , ("b", UVar b)
         ]
         [ RecursiveVariableDefinition $ Named "b" b]
@@ -157,46 +157,46 @@ tests = testGroup "type check"
     [CompetingDefinitions]
 
   , test "$ a = true; $ b = a"
-    [ ("a", UVar $ Var Imut TBln $ Expr TBln $ EVal $ VBln True)
-    , ("b", UVar $ Var Imut TBln $ Expr TBln $ EName "a")]
+    [ ("a", UVar $ Var Imt TBln $ Expr TBln $ EVal $ VBln True)
+    , ("b", UVar $ Var Imt TBln $ Expr TBln $ EName "a")]
     []
 
   , test "$ a = b; $ b = true"
-    [ ("a", UVar $ Var Imut TBln $ Expr TBln $ EName "b")
-    , ("b", UVar $ Var Imut TBln $ Expr TBln $ EVal $ VBln True)]
+    [ ("a", UVar $ Var Imt TBln $ Expr TBln $ EName "b")
+    , ("b", UVar $ Var Imt TBln $ Expr TBln $ EVal $ VBln True)]
     []
 
   , errorTest "$ a = 5; Bln b = a"
     [failedToUnify TBln TInt]
 
   , test "$ a = 5; $ b = a; $ c = b"
-    [ ("a", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 5)
-    , ("b", UVar $ Var Imut TInt $ Expr TInt $ EName "a")
-    , ("c", UVar $ Var Imut TInt $ Expr TInt $ EName "b")]
+    [ ("a", UVar $ Var Imt TInt $ Expr TInt $ EVal $ VInt 5)
+    , ("b", UVar $ Var Imt TInt $ Expr TInt $ EName "a")
+    , ("c", UVar $ Var Imt TInt $ Expr TInt $ EName "b")]
     []
 
   , test "Bln a = b; $ b = c; $ c = 5"
-    [ ("a", UVar $ Var Imut TBln $ Expr TInt $ EName "b")
-    , ("b", UVar $ Var Imut TInt $ Expr TInt $ EName "c")
-    , ("c", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 5)]
+    [ ("a", UVar $ Var Imt TBln $ Expr TInt $ EName "b")
+    , ("b", UVar $ Var Imt TInt $ Expr TInt $ EName "c")
+    , ("c", UVar $ Var Imt TInt $ Expr TInt $ EVal $ VInt 5)]
     [failedToUnify TBln TInt]
 
 
   -- TypeCheck operator tests
   , test "$ a = 3 + 7"
-    [("a", UVar $ Var Imut TInt $ Expr TInt
+    [("a", UVar $ Var Imt TInt $ Expr TInt
        $ EBinOp Add (Expr TInt $ EVal $ VInt 3) (Expr TInt $ EVal $ VInt 7))]
     []
 
   , test "$ a = b + c; $ b = 3; $ c = 7"
-    [ ("a", UVar $ Var Imut TInt $ Expr TInt
+    [ ("a", UVar $ Var Imt TInt $ Expr TInt
         $ EBinOp Add (Expr TInt $ EName "b") (Expr TInt $ EName "c"))
-    , ("b", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 3)
-    , ("c", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 7)]
+    , ("b", UVar $ Var Imt TInt $ Expr TInt $ EVal $ VInt 3)
+    , ("c", UVar $ Var Imt TInt $ Expr TInt $ EVal $ VInt 7)]
     []
 
   , test "$ a = 1 if true else 0"
-    [("a", UVar $ Var Imut TInt $ Expr TInt
+    [("a", UVar $ Var Imt TInt $ Expr TInt
        $ EIf (Cond $ Expr TBln $ EVal $ VBln True)
         (Expr TInt $ EVal $ VInt 1)
         (Expr TInt $ EVal $ VInt 0))
@@ -204,14 +204,14 @@ tests = testGroup "type check"
     []
 
   , test "$ a = 1 if \"true\" else 0"
-    [("a", UVar $ Var Imut TInt $ Expr TInt
+    [("a", UVar $ Var Imt TInt $ Expr TInt
        $ EIf (Cond $ Expr TStr $ EVal $ VStr "true")
          (Expr TInt $ EVal $ VInt 1)
          (Expr TInt $ EVal $ VInt 0))]
     [failedToUnify TBln TStr]
 
   , test "$ a = 1 if true else \"zero\""
-    [("a", UVar $ Var Imut TInt $ Expr TInt
+    [("a", UVar $ Var Imt TInt $ Expr TInt
        $ EIf (Cond $ Expr TBln $ EVal $ VBln True)
          (Expr TInt $ EVal $ VInt 1)
          (Expr TStr $ EVal $ VStr "zero"))]
@@ -229,7 +229,7 @@ $ a = one()
 |]
     [ ("one", UFunc $ Func (Sig Pure [] TInt)
         $ Block [] (Just $ Expr TInt $ EVal $ VInt 1))
-    , ("a", UVar $ Var Imut TInt
+    , ("a", UVar $ Var Imt TInt
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [] TInt) $ EName "one") $ Args Pure [])
     ]
     []
@@ -248,9 +248,9 @@ inc(Int x) -> Int => x + 1
 $ a = inc(1)
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Param Imut TInt "x"] TInt) $ Block []
+        (Sig Pure [Param Imt TInt "x"] TInt) $ Block []
           (Just $ Expr TInt $ EBinOp Add (Expr TInt $ EName "x") $ Expr TInt $ EVal $ VInt 1))
-    , ("a", UVar $ Var Imut TInt
+    , ("a", UVar $ Var Imt TInt
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
     ]
@@ -261,9 +261,9 @@ inc(Int x) -> Int => x + 1
 $ a = inc(inc(1))
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Param Imut TInt "x"] TInt ) $ Block []
+        (Sig Pure [Param Imt TInt "x"] TInt ) $ Block []
           (Just $ Expr TInt $ EBinOp Add (Expr TInt $ EName "x") $ Expr TInt $ EVal $ VInt 1))
-    , ("a", UVar $ Var Imut TInt $ Expr TInt
+    , ("a", UVar $ Var Imt TInt $ Expr TInt
         $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
             $ Args Pure [Expr TInt $ EVal $ VInt 1]])
@@ -291,10 +291,10 @@ inc(Int x) => x + 1
 $ a = inc(1)
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Param Imut TInt "x"] TInt) $ Block []
+        (Sig Pure [Param Imt TInt "x"] TInt) $ Block []
         (Just $ Expr TInt $ EBinOp Add (Expr TInt $ EName "x") $ Expr TInt $ EVal $ VInt 1)
       )
-    , ("a", UVar $ Var Imut TInt $ Expr TInt
+    , ("a", UVar $ Var Imt TInt $ Expr TInt
         $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
     ]
@@ -305,10 +305,10 @@ inc(Int x) => x + 1
 $ a = inc("one")
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Param Imut TInt "x"] TInt) $ Block []
+        (Sig Pure [Param Imt TInt "x"] TInt) $ Block []
         (Just $ Expr TInt $ EBinOp Add (Expr TInt $ EName "x") $ Expr TInt $ EVal $ VInt 1)
       )
-    , ("a", UVar $ Var Imut TInt
+    , ("a", UVar $ Var Imt TInt
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TStr $ EVal $ VStr "one"])
     ]
@@ -322,10 +322,10 @@ inc(Int x) =>
 $ a = inc(1)
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Param Imut TInt "x"] TInt ) $ Block
-        [SVar $ Named "one" $ Var Imut TInt (Expr TInt $ EVal $ VInt 1) ]
+        (Sig Pure [Param Imt TInt "x"] TInt ) $ Block
+        [SVar $ Named "one" $ Var Imt TInt (Expr TInt $ EVal $ VInt 1) ]
         (Just$ Expr TInt $ EBinOp Add (Expr TInt $ EName "x") (Expr TInt $ EName "one")))
-    , ("a", UVar $ Var Imut TInt
+    , ("a", UVar $ Var Imt TInt
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
     ]
@@ -333,11 +333,12 @@ $ a = inc(1)
 
   , testGroup "implicit conversions"
     [ test "Flt a = 5"
-      [("a", UVar $ Var Imut TFlt $ Expr TInt $ EVal $ VInt 5)]
+      [("a", UVar $ Var Imt TFlt $ Expr TInt $ EVal $ VInt 5)]
       []
+
     , test "$ a = 5; Flt b = a"
-      [ ("a", UVar $ Var Imut TInt $ Expr TInt $ EVal $ VInt 5)
-      , ("b", UVar $ Var Imut TFlt $ Expr TInt $ EName "a")
+      [ ("a", UVar $ Var Imt TInt $ Expr TInt $ EVal $ VInt 5)
+      , ("b", UVar $ Var Imt TFlt $ Expr TInt $ EName "a")
       ]
       []
     ]
