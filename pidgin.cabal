@@ -35,7 +35,6 @@ library
                     Ast.A2Constrained.Type
 
                     Ast.A3Typed
-                    Ast.A3Typed.Type
 
                     Ast.Common.Access
                     Ast.Common.Mutability

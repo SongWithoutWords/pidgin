@@ -3,7 +3,6 @@ module TypeCheck.Substitution where
 import qualified Data.Map as M
 
 import Ast.A2Constrained.Type
--- import qualified Ast.A3Typed.Type as A3
 
 type Substitutions = M.Map Word Type
 
