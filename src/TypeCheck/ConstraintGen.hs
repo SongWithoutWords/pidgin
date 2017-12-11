@@ -39,12 +39,12 @@ checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
   tRet <- getNextTypeVar
 
   optRetType' <- traverse checkType optRetType
-  traverse (constrain tRet) optRetType'
+  mapM_ (constrain tRet) optRetType'
 
   params' <- mapM (\(A1.Param m t n) -> checkType t >>= (\t' -> pure $ A2.Param m t' n)) params
   pushNewScope
 
-  mapM (\(A2.Param _ t n) -> addLocalBinding n t) params'
+  mapM_ (\(A2.Param _ t n) -> addLocalBinding n t) params'
   block'@(A2.Block _ optRetExpr') <- checkBlock block
   let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (A2.Expr t _) -> t
   constrain tRet tRetExpr
