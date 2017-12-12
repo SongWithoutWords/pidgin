@@ -15,6 +15,7 @@ import TypeCheck.Constraint
 import Transforms
 import Util.MultiMap
 import Util.Preface
+import Util.PrettyShow
 
 test :: String -> [(Name, Unit)] -> Errors -> TestTree
 test src = namedTest src src
@@ -45,15 +46,15 @@ assertAst :: [(Name, Unit)] -> Ast -> Assertion
 assertAst units ast' =
   let ast = multiFromList units
   in unless (ast' == ast) $ assertFailure $
-    "expected ast:\n" ++ show ast ++ "\nbut got:\n" ++ show ast'
+    "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
 assertErrors :: Errors -> Errors -> Assertion
 assertErrors errors errors' =
   unless (errors' == errors) $ assertFailure $
-    "expected errors:\n" ++ show errors ++ "\nbut got:\n" ++ show errors'
+    "expected errors:\n" ++ prettyShow errors ++ "\nbut got:\n" ++ prettyShow errors'
 
 tests :: TestTree
-tests = testGroup "type check"
+tests = testGroup "typecheck"
   [ Unify.tests
 
   , testGroup "simple tests"
@@ -345,12 +346,13 @@ $ a = inc(1)
 
   , namedTest "mutableInc" [s|
 mutableInc(^~Int x):
-    mutableInc(x)
     x = x + 1
+
+inc(~Int x) =>
+    mutableInc(x)
+    x
 |]
--- inc(~Int x) =>
-    -- mutableInc(x)
-    -- x
+
       [ ("mutableInc", UFunc $ Func
           (Sig Pure [Named "x" $ MType Imt $ TRef $ mut TInt] TNone) $ Block
           [SAssign (LExpr (TRef $ mut TInt) $ LName "x") $ Expr TInt
