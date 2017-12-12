@@ -68,7 +68,7 @@ unifyOne constraint@(a :< b)
 constrainParams :: [Type] -> [Type] -> ErrorM [Constraint]
 constrainParams xs ys = if length xs == length ys
   then pure $ zipWith (:<) ys xs
-  else raise (WrongNumArgs (length ys) (length xs)) >> pure []
+  else raise (WrongNumArgs (length xs) (length ys)) >> pure []
 
 subConstraint :: Substitutions -> Constraint -> Constraint
 subConstraint = mapConstraint . subType
