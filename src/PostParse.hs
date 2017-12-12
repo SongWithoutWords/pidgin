@@ -78,7 +78,6 @@ mapBlock retNotation stmts = do
     mapStmt s = case s of
 
       A0.SVar (Named n v) -> A1.SVar . Named n <$> mapVar v
-      A0.SFunc (Named n f) -> A1.SFunc . Named n <$> mapFunc f
 
       A0.SExpr _ -> error "Should have been already handled"
       A0.SRet _ -> error "Should have been already handled"

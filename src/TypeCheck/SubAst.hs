@@ -49,7 +49,6 @@ subAst' substitutions ast = multiMapM subUnit ast
     subStmt stmt = case stmt of
       SAssign lexpr expr -> liftM2 A3.SAssign (subLExpr lexpr) (subExpr expr)
       SVar namedVar -> A3.SVar <$> mapM subVar namedVar
-      SFunc namedFunc -> A3.SFunc <$> mapM subFunc namedFunc
       SApp app -> A3.SApp <$> subApp app
 
     subExpr :: Expr -> ErrorM A3.Expr

@@ -52,7 +52,6 @@ type Block = [Stmt]
 data Stmt
   = SAssign LExpr Expr
   | SVar (Named Var)
-  | SFunc (Named Func)
   | SIf IfBranch
 
   -- SExprs and SRets are replaced by SApps and ret field on block during post-parse

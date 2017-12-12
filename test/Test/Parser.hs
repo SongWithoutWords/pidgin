@@ -10,34 +10,37 @@ import Ast.A0Parse
 import Lexer
 import Parser
 
-test :: String -> String -> Ast -> TestTree
-test name input expected = H.testCase name $ (parse $ scanTokens input) H.@?= expected
+test :: String -> Ast -> TestTree
+test src = namedTest src src
+
+namedTest :: String -> String -> Ast -> TestTree
+namedTest name input expected = H.testCase name $ (parse $ scanTokens input) H.@?= expected
 
 tests :: TestTree
 tests = testGroup "parser"
 
-  [ test "empty str" "" []
+  [ namedTest "empty str" "" []
 
-  , test "def pi"
+  , namedTest "def pi"
     "$ pi = 3.14159265"
     [Named "pi" $ UVar $ Var Imt Nothing $ EVal $ VFlt 3.14159265]
 
-  , test "op expr"
+  , namedTest "op expr"
     "$ three = 1 + 2"
     [ Named "three" $ UVar $ Var Imt Nothing $ EBinOp Add (EVal $ VInt 1) (EVal $ VInt 2) ]
 
-  , test "if expr"
+  , namedTest "if expr"
     [s|$ msg = "it works!" if true else "or not :("|]
     [ Named "msg" $ UVar $ Var Imt Nothing
     $ EIf (Cond $ EVal $ VBln True) (EVal $ VStr "it works!") (EVal $ VStr "or not :(") ]
 
-  , test "negate inline"
+  , namedTest "negate inline"
     "negate(Bln b) -> Bln => false if b else true"
     [ Named "negate" $ UFunc $ Func (Sig Pure [Param Imt TBln "b"] $ Just TBln) ImplicitRet
       [ SExpr $ EIf (Cond $ EName "b") (EVal $ VBln False) (EVal $ VBln True) ]
     ]
 
-  , test "negate block"
+  , namedTest "negate block"
     [s|
 negate(Bln b) -> Bln =>
     false if b else true
@@ -46,7 +49,7 @@ negate(Bln b) -> Bln =>
       [ SExpr $ EIf (Cond $ EName "b") (EVal $ VBln False) (EVal $ VBln True) ]
     ]
 
-  , test "factorial"
+  , namedTest "factorial"
     [s|
 factorial(Int n) -> Int =>
     1 if n <= 0 else n * factorial(n-1)
@@ -63,7 +66,7 @@ factorial(Int n) -> Int =>
       ]
     ]
 
-  , test "cascading if exprs"
+  , namedTest "cascading if exprs"
     [s|
 clothing(Weather w) -> Clothing =>
     rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket
@@ -78,7 +81,7 @@ clothing(Weather w) -> Clothing =>
       ]
     ]
 
-  , test "cascading if exprs multiline"
+  , namedTest "cascading if exprs multiline"
     [s|
 clothing(Weather w) -> Clothing =>
     rainCoat if w.isRaining else
@@ -96,7 +99,7 @@ clothing(Weather w) -> Clothing =>
       ]
     ]
 
-  , test "draw widget"
+  , namedTest "draw widget"
     [s|
 drawWidget(~@, Nat width, Nat height):
     $ w = Widget(width, height)
@@ -116,7 +119,7 @@ drawWidget(~@, Nat width, Nat height):
       ]
     ]
 
-  , test "quadratic (explicit return types)"
+  , namedTest "quadratic (explicit return types)"
     [s|
 quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>
     (Flt x) -> Flt =>
@@ -139,7 +142,7 @@ quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>
       ]
     ]
 
-  , test "quadratic (implicit return types)"
+  , namedTest "quadratic (implicit return types)"
     [s|
 quadratic(Flt a, Flt b, Flt c) =>
     (Flt x) =>
@@ -161,7 +164,7 @@ quadratic(Flt a, Flt b, Flt c) =>
       ]
     ]
 
-  , test "quadratic formula (single root)"
+  , namedTest "quadratic formula (single root)"
     [s|
 singleRoot(Flt a, Flt b, Flt c) -> Flt =>
     (-b + math.sqrt(b*b - 4*a*c)) / 2*a
@@ -184,6 +187,23 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
           )
           (EBinOp Mul (EVal $ VInt 2) (EName "a"))
         ]
+    ]
+
+  , test "foo() => foo()"
+    [ Named "foo" $ UFunc $ Func
+      (Sig Pure [] Nothing)
+      ImplicitRet
+      [SExpr $ EApp $ App (EName "foo") $ Args Pure []]
+    ]
+
+  , test [s|
+foo() =>
+    foo()
+|]
+    [ Named "foo" $ UFunc $ Func
+      (Sig Pure [] Nothing)
+      ImplicitRet
+      [SExpr $ EApp $ App (EName "foo") $ Args Pure []]
     ]
   ]
 

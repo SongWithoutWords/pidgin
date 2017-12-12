@@ -48,7 +48,6 @@ data Block = Block [Stmt] (Maybe Expr)
 data Stmt
   = SAssign LExpr Expr
   | SVar (Named Var)
-  | SFunc (Named Func)
   | SIf IfBranch
   | SApp App
   deriving(Eq, Show)

@@ -342,7 +342,31 @@ $ a = inc(1)
       , ("b", UVar $ Var (MType Imt TFlt) $ Expr TInt $ EName "a")
       ]
       []
-    ]
 
+  , namedTest "mutableInc" [s|
+mutableInc(^~Int x):
+    mutableInc(x)
+    x = x + 1
+|]
+-- inc(~Int x) =>
+    -- mutableInc(x)
+    -- x
+      [ ("mutableInc", UFunc $ Func
+          (Sig Pure [Named "x" $ MType Imt $ TRef $ mut TInt] TNone) $ Block
+          [SAssign (LExpr (TRef $ mut TInt) $ LName "x") $ Expr TInt
+            $ EBinOp Add (Expr TInt $ EName "x") (Expr TInt $ EVal $ VInt 1)]
+          Nothing)
+
+      , ("inc", UFunc $ Func
+          (Sig Pure [Named "x" $ mut TInt] TInt ) $ Block
+          [SApp $ App (Expr (TFunc Pure [TRef $ mut TInt] TNone) $ EName "mutableInc")
+           $ Args Pure [Expr TInt $ EName "x"]
+          ]
+          (Just$ Expr TInt $ EName "x" ))
+      ]
+
+      []
+
+    ]
   ]
 

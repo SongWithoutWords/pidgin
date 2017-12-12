@@ -173,23 +173,19 @@ retType
 
 block
   : lineSep       { [] }
-  | shallowStmt   { [$1] }
+  | expr          { [SExpr $1] }
   | ind stmts ded { $2 }
 
 stmts
-  : stmt            { [$1] }
+  : stmt                { [$1] }
   | stmt lineSep stmts  { $1 : $3 }
 
 stmt
-  : shallowStmt     { $1 }
-  | namedFunc       { SFunc $1 }
-  | ifBranch        { SIf $1 }
-
-shallowStmt
   : expr            { SExpr $1 }
   | lexpr eqExpr    { SAssign $1 $2 }
   | namedVar        { SVar $1 }
   | ret expr        { SRet $2 }
+  | ifBranch        { SIf $1 }
 
 ifBranch
   : if condBlock               { If $2 }
@@ -285,8 +281,8 @@ maybeType
 type
   : typename  { TUser $1 }
   | funcType  { $1 }
-  -- | "^" mut type { TTempRef $2 $3 }
-  | "&" mut type { TRef $2 $3 }
+  | "^" mut type { TRef $2 $3 }
+  -- | "&" mut type { TPersRef $2 $3 }
   -- | "?" mut type { TOption $2 $3 }
   -- | "*" mut type { TZeroPlus $2 $3 }
   -- | "+" mut type { TOnePlus $2 $3 }

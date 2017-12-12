@@ -71,8 +71,6 @@ checkStmt stmt = case stmt of
     addLocalBinding $ Named name $ typeOfVar var'
     pure $ A2.SVar $ Named name var'
 
-  A1.SFunc f -> undefined
-
   A1.SIf ifBranch -> undefined
 
 
