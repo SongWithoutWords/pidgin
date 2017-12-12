@@ -187,7 +187,7 @@ stmt
 
 shallowStmt
   : expr            { SExpr $1 }
-  | lexpr "=" expr  { SAssign $1 $3 }
+  | lexpr eqExpr    { SAssign $1 $2 }
   | namedVar        { SVar $1 }
   | ret expr        { SRet $2 }
 
@@ -200,7 +200,10 @@ condBlock
   : expr ":" block             { CondBlock $1 $3 }
 
 namedVar
-  : mut maybeType name "=" expr { Named $3 $ Var $1 $2 $5 }
+  : mut maybeType name eqExpr { Named $3 $ Var $1 $2 $4 }
+
+eqExpr
+  : "=" expr { $2 }
 
 exprs
   : expr            { [$1]}
