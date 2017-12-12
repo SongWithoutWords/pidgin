@@ -90,7 +90,7 @@ lookupKinds name = do
     kindOfUnit u = case u of
       UNamespace _ -> KNamespace
       UClass _ -> KType
-      UFunc f -> KVar $ imt $ typeOfFunc f
+      UFunc f -> KVar $ MType Imt $ typeOfFunc f
       UVar (Var mt _) -> KVar mt
 
   pure $ lookupKinds' locals

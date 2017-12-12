@@ -10,12 +10,6 @@ import Ast.Common.Purity
 data MType = MType Mut Type
   deriving(Eq, Show)
 
-mut :: Type -> MType
-mut = MType Mut
-
-imt :: Type -> MType
-imt = MType Imt
-
 data Type
   = TUser Typename
 
