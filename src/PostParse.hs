@@ -1,5 +1,6 @@
 module PostParse(postParse) where
 
+import Data.Monoid()
 import Control.Monad.Writer
 
 import qualified Ast.A0Parse as A0
@@ -7,6 +8,7 @@ import qualified Ast.A1PostParse as A1
 import Ast.A2Constrained.Error
 import Ast.Common.Name
 import Ast.Common.Table
+import Util.Preface
 
 postParse :: A0.Ast -> (A1.Ast, Errors)
 postParse = runWriter . mapUnits
@@ -41,50 +43,56 @@ mapFunc (A0.Func sig retNotation block) = A1.Func sig <$> mapBlock retNotation b
 
 mapBlock :: A0.RetNotation -> A0.Block -> ErrorM A1.Block
 mapBlock retNotation stmts = do
-  (A1.Block stmts' ret) <- mapBlock' retNotation stmts []
+  (A1.Block stmts' ret) <- xMapBlock' stmts retNotation []
   return $ A1.Block (reverse stmts') ret
 
   where
-    mapBlock' :: A0.RetNotation -> [A0.Stmt] -> [A1.Stmt] -> ErrorM A1.Block
+    xMapBlock' :: [A0.Stmt] -> A0.RetNotation -> [A1.Stmt] -> ErrorM A1.Block
 
-    mapBlock' A0.ImplicitRet [A0.SExpr e] xs = mapExpr e >>= return . A1.Block xs . Just
+    -- No statements left => no ret value
+    xMapBlock' [] rn xs = do
+      when (rn == A0.ImplicitRet) $ raise ImplicitRetWithoutFinalExpr
+      return $ A1.Block xs Nothing
 
-    mapBlock' _ [A0.SRet e] xs = mapExpr e >>= return . A1.Block xs . Just
+    -- One remaining expr + implicit ret => ret value
+    xMapBlock' [A0.SExpr e] A0.ImplicitRet xs =
+      A1.Block xs . Just <$> mapExpr e
 
-    mapBlock' A0.ImplicitRet [s] xs = do
-      raise ImplicitRetWithoutFinalExpr
-      s' <- mapStmt s
-      return $ A1.Block (s' : xs) $ Nothing
+    xMapBlock' (s : rest) rn xs = case s of
 
-    mapBlock' _ (A0.SRet e : _) xs = do
-      raise MidBlockReturnStatement
-      mapExpr e >>= return . A1.Block xs . Just
+      A0.SExpr expr -> case expr of
+        -- Application can be significant without being returned
+        A0.EApp app -> do
+          app' <- mapApp app
+          xMapBlock' rest rn (A1.SApp app' : xs)
+        -- All other expressions are insignificant when not returned
+        _ -> do
+          raise UselessExpression
+          xMapBlock' rest rn xs
 
-    mapBlock' rn (A0.SExpr (A0.EApp app) : rest) xs = do
-      app' <- mapApp app
-      mapBlock' rn rest (A1.SApp app' : xs)
+      -- Ret statement => ret value
+      A0.SRet expr -> do
+        -- Raise error/warning if mid-block
+        when (not $ null rest) $ raise MidBlockReturnStatement
+        A1.Block xs . Just <$> mapExpr expr
 
-    mapBlock' rn (A0.SExpr _ : rest) xs = do
-      raise UselessExpression
-      mapBlock' rn rest xs
+      A0.SVar var -> do
+        var' <- mapM mapVar var
+        xMapBlock' rest rn (A1.SVar var' : xs)
 
-    mapBlock' rn (s : rest) xs = do
-      s' <- mapStmt s
-      mapBlock' rn rest $ s' : xs
-
-    mapBlock' _ _ _ = error "All cases should have been accounted for"
-
-    mapStmt :: A0.Stmt -> ErrorM A1.Stmt
-    mapStmt s = case s of
-
-      A0.SVar (Named n v) -> A1.SVar . Named n <$> mapVar v
-
-      A0.SExpr _ -> error "Should have been already handled"
-      A0.SRet _ -> error "Should have been already handled"
+      A0.SAssign lexpr expr -> do
+        lexpr' <- mapLexpr lexpr
+        expr' <- mapExpr expr
+        xMapBlock' rest rn (A1.SAssign lexpr' expr' : xs)
 
 
 mapVar :: A0.Var -> ErrorM A1.Var
 mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ
+
+mapLexpr :: A0.LExpr -> ErrorM A1.LExpr
+mapLexpr lexpr = case lexpr of
+  A0.LApp app -> A1.LApp <$> mapApp app
+  A0.LName name -> pure $ A1.LName name
 
 mapExpr :: A0.Expr -> ErrorM A1.Expr
 mapExpr expr = case expr of
