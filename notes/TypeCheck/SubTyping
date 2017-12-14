@@ -1,0 +1,15 @@
+What if, instead of trying to allow subtyping during type-checking, I did this as a post type-check step? 
+  - Corollary: I would still need to select the best overloads based on the coercions that were available.
+  - That seems not to work. What if I were to add a layer of indirection between all assignments and passings?
+
+
+What if, with what I've learned, I made the switch back to more traditional, bidirectional type checking, and disallowed type inference for recursive functions?
+
+what's our setup for this new style of unification?
+  * Constraint Gen
+     - Traverse the ast. For each non-trivially typed expression, assign this expression a type variable, and add an equation for this node to the list of equations
+  * Unification/Simplification
+    - While there are still constraints:
+      - Visit each constraint. If it can be solved, solve it, emit a substitution for it, and apply this substitution to all other constraints.
+  * Substitution
+
