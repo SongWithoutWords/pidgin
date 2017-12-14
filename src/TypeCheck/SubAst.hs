@@ -52,10 +52,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       SApp app -> A3.SApp <$> subApp app
 
     subExpr :: Expr -> ErrorM A3.Expr
-    subExpr (Expr t e) = do
-      t' <- subType' t
-      e' <- subExpr' e
-      pure $ A3.Expr (t') (e')
+    subExpr (Expr mt e) = liftM2 A3.Expr (subMType mt) (subExpr' e)
 
     subExpr' :: Expr' -> ErrorM A3.Expr'
     subExpr' expr = let subExp = subExpr in case expr of
@@ -70,7 +67,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       EVal v -> pure $ A3.EVal v
 
     subLExpr :: LExpr -> ErrorM A3.LExpr
-    subLExpr (LExpr t l) = liftM2 A3.LExpr (subType' t) (subLExpr' l)
+    subLExpr (LExpr mt l) = liftM2 A3.LExpr (subMType mt) (subLExpr' l)
 
     subLExpr' :: LExpr' -> ErrorM A3.LExpr'
     subLExpr' l = case l of
@@ -86,6 +83,9 @@ subAst' substitutions ast = multiMapM subUnit ast
 
     subSelect :: Select -> ErrorM A3.Select
     subSelect (Select e name) = subExpr e >>= \e' -> pure $ A3.Select e' name
+
+    subMType :: MType -> ErrorM A3.MType
+    subMType (MType m t) = A3.MType m <$> subType' t
 
     subType' :: Type -> ErrorM A3.Type
     subType' typ = case typ of

@@ -63,6 +63,11 @@ takeWhileInclusive p (x:xs) = x : if p x
   then takeWhileInclusive p xs
   else []
 
+maybeLast :: [a] -> Maybe a
+maybeLast [] = Nothing
+maybeLast [x] = Just x
+maybeLast (_:xs) = maybeLast xs
+
 
 -- Functions
 ----------------------------------------------------------------

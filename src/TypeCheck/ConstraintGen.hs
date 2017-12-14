@@ -3,6 +3,8 @@ module TypeCheck.ConstraintGen
   , module TypeCheck.Constraint
   ) where
 
+import Control.Monad(when)
+
 import qualified Ast.A1PostParse as A1
 import qualified Ast.A2Constrained as A2
 import Ast.A2Constrained.Error
@@ -47,7 +49,9 @@ checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
 
   mapM_ addLocalBinding params'
   block'@(A2.Block _ optRetExpr') <- checkBlock block
-  let tRetExpr = case optRetExpr' of Nothing -> TNone; Just (A2.Expr t _) -> t
+  let tRetExpr = case optRetExpr' of
+        Nothing -> TNone
+        Just (A2.Expr (MType _ t) _) -> t
   tRetExpr <<: tRet
 
   popScope
@@ -64,19 +68,21 @@ checkStmt :: A1.Stmt -> ConstrainM A2.Stmt
 checkStmt stmt = case stmt of
 
   -- TODO: will need to account for mutations in future
-  A1.SAssign lexpr expr -> undefined
+  A1.SAssign lhs rhs -> do
+    lhs'@(A2.LExpr tLhs@(MType m _) _) <- checkLExpr lhs
+    when (m == Imt) $ raise AssignmentToImmutableValue
+    rhs'@(A2.Expr tRhs _) <- checkExpr rhs
+    tRhs <<: tLhs
+    pure $ A2.SAssign lhs' rhs'
 
   A1.SVar (Named name var) -> do
     var' <- checkVar var
-    addLocalBinding $ Named name $ typeOfVar var'
+    addLocalBinding $ Named name $ mTypeOfVar var'
     pure $ A2.SVar $ Named name var'
 
   A1.SIf ifBranch -> undefined
 
   A1.SApp app -> A2.SApp . fst <$> checkApp app
-    -- do
-    -- expr' <- checkExpr expr
-    -- args' <- checkArgs args
 
 
 checkVar :: A1.Var -> ConstrainM A2.Var
@@ -91,53 +97,64 @@ checkVar (A1.Var mut optType expr) = do
   (typeOfExpr expr') <<: tVar
   return $ A2.Var (MType mut tVar) expr'
 
-checkNamedExpr :: Named A1.Expr -> ConstrainM (Named A2.Expr)
-checkNamedExpr = traverse checkExpr
+
+checkLExpr :: A1.LExpr -> ConstrainM A2.LExpr
+checkLExpr lexpr = case lexpr of
+  A1.LName name -> do
+    mt <- checkName name
+    pure $ A2.LExpr mt $ A2.LName name
+
+checkName :: Name -> ConstrainM MType
+checkName name = do
+    kinds <- lookupKinds name
+    case kinds of
+      [KVar mt] -> pure mt
+      _ -> do
+        raise $ case kinds of
+          [] -> UnknownId name
+          [KType] -> NeedExprFoundType
+          [KNamespace] -> NeedExprFoundNamespace
+          _ -> CompetingDefinitions
+        pure $ MType Mut TError
 
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of
 
   A1.EName name -> do
-    kinds <- lookupKinds name
-    t <- case kinds of
-      [] -> foundError $ UnknownId name
-      [KVar (MType _ t)] -> pure t
-      [KType] -> foundError NeedExprFoundType
-      [KNamespace] -> foundError NeedExprFoundNamespace
-      _ -> foundError CompetingDefinitions
-    pure $ A2.Expr t $ A2.EName name
+    mt <- checkName name
+    pure $ A2.Expr mt $ A2.EName name
 
 
   A1.ELambda f -> do
     f' <- checkFunc f
-    pure $ A2.Expr (typeOfFunc f') $ A2.ELambda f'
+    pure $ A2.Expr (MType Imt $ typeOfFunc f') $ A2.ELambda f'
 
 
   A1.EApp app -> do
     (app', t) <- checkApp app
-    pure $ A2.Expr t $ A2.EApp app'
+    pure $ A2.Expr (MType Mut t) $ A2.EApp app'
 
 
   A1.EIf (A1.Cond cond) e1 e2 -> do
 
-    cond'@(A2.Expr tCond _) <- checkExpr cond
-    e1'@(A2.Expr t1 _) <- checkExpr e1
-    e2'@(A2.Expr t2 _) <- checkExpr e2
+    cond'@(A2.Expr (MType _ tCond) _) <- checkExpr cond
+    e1'@(A2.Expr mt1 _) <- checkExpr e1
+    e2'@(A2.Expr mt2 _) <- checkExpr e2
 
     tCond <<: TBln
-    t2 <<: t1
+    mt2 <<: mt1
 
-    pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
+    pure $ A2.Expr mt1 $ A2.EIf (A2.Cond cond') e1' e2'
 
   A1.EUnOp op e -> let
     checkUnOp :: UnOp -> A2.Type -> A2.Type -> ConstrainM ()
     checkUnOp Neg tExpr tRes = do
       mapM_ (<<: TInt) [tExpr, tRes]
     in do
-      e'@(A2.Expr t _) <- checkExpr e
+      e'@(A2.Expr (MType _ t) _) <- checkExpr e
       tRes <- getNextTypeVar
       checkUnOp op t tRes
-      pure $ A2.Expr tRes $ A2.EUnOp op e'
+      pure $ A2.Expr (MType Mut tRes) $ A2.EUnOp op e'
 
   A1.EBinOp op e1 e2 -> let
 
@@ -172,15 +189,15 @@ checkExpr expression = case expression of
       mapM_ (<<: TBln) [a, b, r]
 
     in do
-      e1'@(A2.Expr t1 _) <- checkExpr e1
-      e2'@(A2.Expr t2 _) <- checkExpr e2
+      e1'@(A2.Expr (MType _ t1) _) <- checkExpr e1
+      e2'@(A2.Expr (MType _ t2) _) <- checkExpr e2
 
       tRes <- getNextTypeVar
       checkBinOp op t1 t2 tRes
 
-      pure $ A2.Expr tRes $ A2.EBinOp op e1' e2'
+      pure $ A2.Expr (MType Mut tRes) $ A2.EBinOp op e1' e2'
 
-  A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
+  A1.EVal v -> pure $ A2.Expr (MType Mut t) $ A2.EVal v
     where
       t = case v of
         A1.VBln _ -> TBln
@@ -193,10 +210,10 @@ checkApp :: A1.App -> ConstrainM (A2.App, A2.Type)
 checkApp (A1.App expr (A1.Args purity args)) = do
     tRet <- getNextTypeVar
 
-    expr'@(A2.Expr tExpr _) <- checkExpr expr
+    expr'@(A2.Expr (MType _ tExpr) _) <- checkExpr expr
     args' <- traverse checkExpr args
 
-    let argTypes = (\(A2.Expr t _) -> t) <$> args'
+    let argTypes = (\(A2.Expr (MType _ t) _) -> t) <$> args'
 
     tExpr <<: TFunc purity argTypes tRet
 
@@ -211,9 +228,9 @@ checkType typ =
   A1.TUser typeName -> do
     kinds <- lookupKinds typeName
     case kinds of
-      [] -> foundError $ UnknownTypeName typeName
+      [] -> raise (UnknownTypeName typeName) >> pure TError
       [KType] -> return $ TUser typeName
-      _ -> foundError $ AmbiguousTypeName typeName
+      _ -> raise (AmbiguousTypeName typeName) >> pure TError
 
   A1.TFunc purity params ret -> do
     params' <- mapM checkType params

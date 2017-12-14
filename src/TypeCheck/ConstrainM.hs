@@ -3,7 +3,6 @@ module TypeCheck.ConstrainM
   , runConstrainM
   , (<<:)
   , raise
-  , foundError
   , pushNewScope
   , popScope
   , addLocalBinding
@@ -50,9 +49,6 @@ x <<: y = tell [x <: y]
 
 raise :: Error -> ConstrainM ()
 raise e = modify $ \s -> s{errors = e : errors s}
-
-foundError :: Error -> ConstrainM Type
-foundError e = raise e >> pure TError
 
 pushScope :: Scope -> ConstrainM ()
 pushScope scope = modify $ \s -> s{scopes = scope : scopes s}

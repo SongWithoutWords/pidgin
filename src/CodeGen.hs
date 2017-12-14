@@ -68,7 +68,7 @@ intWidth = 64
 
 -- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr -> CodeGenM A.Operand
-genExpr (Expr typ expr) = case expr of
+genExpr (Expr (MType _ typ) expr) = case expr of
 
   EApp (App e (Args _ args)) -> do
 
@@ -105,7 +105,7 @@ genExpr (Expr typ expr) = case expr of
     setBlock ifEnd
     phi (typeToLlvmType typ) [(e1', ifTrue), (e2', ifFalse)]
 
-  EUnOp op a@(Expr ta _) -> let
+  EUnOp op a@(Expr (MType _ ta) _) -> let
 
     genUnOp :: UnOp -> Type -> A.Operand -> CodeGenM A.Operand
 
@@ -116,7 +116,7 @@ genExpr (Expr typ expr) = case expr of
       genUnOp op ta a'
 
 
-  EBinOp op e1@(Expr t1 _) e2@(Expr t2 _) -> let
+  EBinOp op e1@(Expr (MType _ t1) _) e2@(Expr (MType _ t2) _) -> let
 
     genBinOp :: BinOp -> Type -> Type -> A.Operand -> A.Operand -> CodeGenM A.Operand
 

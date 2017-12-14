@@ -47,8 +47,6 @@ data Sig = Sig Purity Params Type
 type Params = [Param]
 
 type Param = Named MType
---Param MType Name
-  -- deriving(Eq, Show)
 
 data Block = Block [Stmt] (Maybe Expr)
   deriving(Eq, Show)
@@ -72,7 +70,7 @@ data CondBlock = CondBlock Expr Block
 data Var = Var MType Expr
   deriving(Eq, Show)
 
-data Expr = Expr Type Expr'
+data Expr = Expr MType Expr'
   deriving(Eq, Show)
 
 data Expr'
@@ -96,7 +94,7 @@ newtype Cond = Cond Expr
   deriving(Eq, Show)
 
 -- LExpr are a subset of Expr that can appear on the left side of an assignment
-data LExpr = LExpr Type LExpr'
+data LExpr = LExpr MType LExpr'
   deriving(Eq, Show)
 
 data LExpr'

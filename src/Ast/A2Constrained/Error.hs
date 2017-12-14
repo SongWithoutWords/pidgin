@@ -32,6 +32,7 @@ data Error
   | NeedExprFoundNamespace
 
   | RecursiveVariableDefinition (Named Var)
+  | AssignmentToImmutableValue
 
   deriving(Eq, Show)
 
