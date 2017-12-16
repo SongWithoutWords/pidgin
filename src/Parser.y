@@ -108,7 +108,7 @@ indentedUnits
 
 namedUnits
   : namedUnit                    { [$1] }
-  | namedUnit lineSep namedUnits { $1 : $3}
+  | namedUnit optLineSep namedUnits { $1 : $3 }
 
 namedUnit
   : namespace       { fmap UNamespace $1 }
@@ -315,11 +315,15 @@ mut
   : {- none -} { Imt }
   | "~"        { Mut }
 
-optEol
-  : eol         {}
+optLineSep
+  : lineSep     {}
   | {- none -}  {}
 
 lineSep
   : eol {}
   | ";" {}
+
+optEol
+  : eol         {}
+  | {- none -}  {}
 
