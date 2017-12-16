@@ -163,31 +163,38 @@ checkExpr expression = case expression of
 
     -- Int -> Int -> Int
     checkBinOp Add a b r = do
-      mapM_ (TInt $=) [a, b, r]
+      mapM_ (TInt $=) [a, b]
+      r $= TInt
 
     checkBinOp Sub a b r = do
-      mapM_ (TInt $=) [a, b, r]
+      mapM_ ($= TInt) [a, b]
+      r $= TInt
 
     checkBinOp Mul a b r = do
-      mapM_ (TInt $=) [a, b, r]
+      mapM_ (TInt $=) [a, b]
+      r $= TInt
 
     checkBinOp Div a b r = do
-      mapM_ (TInt $=) [a, b, r]
+      mapM_ (TInt $=) [a, b]
+      r $= TInt
 
     checkBinOp Mod a b r = do
-      mapM_ (TInt $=) [a, b, r]
+      mapM_ (TInt $=) [a, b]
+      r $= TInt
 
     -- Int -> Int -> Bln
     checkBinOp (Cmp _) a b r = do
       mapM_ (TInt $=) [a, b]
-      TBln $= r
+      r $= TBln
 
     -- Bln -> Bln -> Bln
     checkBinOp And a b r = do
-      mapM_ (TBln $=) [a, b, r]
+      mapM_ (TBln $=) [a, b]
+      r $= TBln
 
     checkBinOp Or a b r = do
-      mapM_ (TBln $=) [a, b, r]
+      mapM_ (TBln $=) [a, b]
+      r $= TBln
 
     in do
       e1'@(A2.Expr t1 _) <- checkExpr e1
@@ -216,7 +223,7 @@ checkApp (A1.App expr (A1.Args purity args)) = do
 
     let argTypes = (\(A2.Expr t _) -> t) <$> args'
 
-    tExpr $= TFunc purity argTypes tRet
+    TFunc purity argTypes tRet $= tExpr
 
     pure (A2.App expr' (A2.Args purity args'), tRet)
 

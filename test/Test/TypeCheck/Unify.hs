@@ -59,9 +59,9 @@ tests = testGroup "Unification"
     []
 
   , unifyTest "08 - inc constraints"
-    [ TInt :$= TVar 1
+    [ TVar 1 :$= TInt
     , TInt :$= TInt
-    , TInt :$= TVar 2
+    , TVar 2 :$= TInt
     , TVar 0 :$= TFunc Pure [TVar 1] (TVar 2)
     , TVar 0 :$= TFunc Pure [TInt] (TVar 3)
     ]
