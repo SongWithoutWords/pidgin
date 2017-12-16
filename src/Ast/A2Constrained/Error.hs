@@ -18,6 +18,7 @@ data Error
 
   | FailedToUnify Constraint
   | FailedToInferType Type
+  | FailedUnification Constraints
 
   | NonApplicable Type
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }

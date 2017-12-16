@@ -63,6 +63,7 @@ library
                     Transforms
 
                     TypeCheck
+                    TypeCheck.ApplySubs
                     TypeCheck.ConstrainM
                     TypeCheck.Constraint
                     TypeCheck.ConstraintGen
