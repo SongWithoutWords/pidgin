@@ -216,7 +216,7 @@ checkApp (A1.App expr (A1.Args purity args)) = do
 
     let argTypes = (\(A2.Expr t _) -> t) <$> args'
 
-    tExpr $= TFunc purity argTypes tRet -- $= tExpr
+    tExpr $= TFunc purity argTypes tRet
 
     pure (A2.App expr' (A2.Args purity args'), tRet)
 
@@ -225,11 +225,7 @@ applyMut Mut = TMut
 applyMut _ = identity
 
 checkType :: A1.Type -> ConstrainM A2.Type
-checkType typ =
-  let
-    checkAndRet f m t = f m <$> checkType t
-
-  in case typ of
+checkType typ = case  typ of
   A1.TUser typeName -> do
     kinds <- lookupKinds typeName
     case kinds of
@@ -242,7 +238,7 @@ checkType typ =
     ret' <- checkType ret
     return $ TFunc purity params' ret'
 
-  A1.TRef m t -> A2.TRef <$> checkType t
+  A1.TRef m t -> A2.TRef . (applyMut m) <$> checkType t
   -- TPersRef m t -> checkAndRet TPersRef m t
 
   -- TOption m t -> checkAndRet TOption m t
