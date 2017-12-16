@@ -1,75 +1,113 @@
 module TypeCheck.Unify
   ( unify
+  , module Ast.A2Constrained.Error
   , module TypeCheck.Constraint
-  , module TypeCheck.ErrorM
   , module TypeCheck.Substitution
   ) where
 
-import Data.Map as M
+import Control.Monad.RWS
+import qualified Data.Map as M
+import qualified Data.Set as S
 
+import Ast.A2Constrained.Error
+import TypeCheck.ApplySubs
 import TypeCheck.Constraint
-import TypeCheck.ErrorM
 import TypeCheck.Substitution
 
-unify :: [Constraint] -> (Substitutions, Errors)
-unify = runErrorM . unify'
+import Util.Preface
 
-unify' :: [Constraint] -> ErrorM Substitutions
-unify' [] = pure M.empty
-unify' (c : cs) = do
-  s2 <- unify' cs
-  s1 <- unifyOne $ subConstraint s2 c
-  let s2' = M.map (subType s1) s2
-  pure $ M.union s1 s2'
 
-unifyOne :: Constraint -> ErrorM Substitutions
+unify :: Constraints -> (Substitutions, Errors)
+unify = execUnifyM . unifyAll
 
+
+type UnifyM = RWS () Errors Substitutions
+
+execUnifyM :: UnifyM a -> (Substitutions, Errors)
+execUnifyM unifyM =
+  let (substitutions, errors) = execRWS unifyM () mempty
+  in (substitutions, subErrors substitutions errors)
+
+raise :: Error -> UnifyM ()
+raise err = tell [err]
+
+sub :: TVar -> Type -> UnifyM ()
+sub tvar t = modify (M.insert tvar t)
+
+
+unorderedEq :: (Eq a, Ord a) => [a] -> [a] -> Bool
+unorderedEq xs ys = S.fromList xs == S.fromList ys
+
+unifyAll :: [Constraint] -> UnifyM ()
+unifyAll [] = pure ()
+unifyAll cs = do
+  cs' <- concatMapM (applySubs >=> unifyOne) cs
+  modify reduceSubs
+  if unorderedEq cs cs'
+    then raise $ FailedUnification cs
+    else unifyAll cs'
+
+applySubs :: Constraint -> UnifyM Constraint
+applySubs c = do
+  subs <- get
+  pure $ subConstraint subs c
+
+
+unifyOne :: Constraint -> UnifyM Constraints
 unifyOne ((TMut a) :$= (TMut b)) = unifyOne (a :$= b)
 unifyOne (a :$= (TMut b)) = unifyOne (a :$= b)
 unifyOne c@(TMut _ :$= _) = raise (FailedToUnify c) >> pure mempty
 
-unifyOne constraint@(a :$= b)
+unifyOne c@(a :$= b)
 
   -- equality
-  | a == b = pure M.empty
+  | a == b = pure []
 
   -- var := any
-  | TVar a' <- a = pure $ M.singleton a' b
+  | TVar a' <- a = sub a' b >> pure []
 
-  -- any <: var
-  | TVar b' <- b = pure $ M.singleton b' a
+  -- any := tvar
+  | TVar _ <- b = pure [c]
 
-  -- error :< any
-  | TError <- a = pure M.empty
+  -- error :$= any
+  | TError <- a = pure []
 
-  -- any <: error
-  | TError <- b = pure M.empty
+  -- any :$= error
+  | TError <- b = pure []
 
-  -- ref <: ref
+  -- ref :$= ref
   | TRef a' <- a
   , TRef b' <- b
     = unifyOne $ a' :$= b'
 
-  -- function <: function
+  -- function :$= function
   | TFunc _ aParams aRet <- a
   , TFunc _ bParams bRet <- b = do
       paramConstraints <- constrainParams aParams bParams
-      unify' $ paramConstraints ++ [aRet :$= bRet]
+      concatMapM unifyOne $ (aRet :$= bRet) : paramConstraints
 
-  -- function <: non-function
-  | TFunc _ _ _ <- a = raise (NonApplicable b) >> pure M.empty
+  -- function :$= non-function
+  | TFunc _ _ _ <- a = raise (NonApplicable b) >> pure []
 
-  -- non-function <: function
-  | TFunc _ _ _ <- b = raise (NonApplicable a) >> pure M.empty
+  -- non-function :$= function
+  | TFunc _ _ _ <- b = raise (NonApplicable a) >> pure []
+
+
+  -- TODO: Should probably replace with determination of whether the types may be unifiable
 
   -- inequality
-  | otherwise = raise (FailedToUnify constraint) >> pure M.empty
+  | not (typeIsKnown b) = pure [c]
+  | otherwise = raise (FailedToUnify c) >> pure []
 
-constrainParams :: [Type] -> [Type] -> ErrorM [Constraint]
+constrainParams :: [Type] -> [Type] -> UnifyM [Constraint]
 constrainParams xs ys = if length xs == length ys
   then pure $ zipWith (:$=) ys xs
-  else raise (WrongNumArgs (length xs) (length ys)) >> pure []
+  else raise (WrongNumArgs (length ys) (length xs)) >> pure []
 
-subConstraint :: Substitutions -> Constraint -> Constraint
-subConstraint = mapConstraint . subType
+typeIsKnown :: Type -> Bool
+typeIsKnown (TMut t) = typeIsKnown t
+typeIsKnown (TFunc _ params ret) = all typeIsKnown (ret : params)
+typeIsKnown (TRef t) = typeIsKnown t
+typeIsKnown (TVar _) = False
+typeIsKnown _ = True
 
