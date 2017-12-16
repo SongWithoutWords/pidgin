@@ -198,7 +198,8 @@ parseIndentation' str pos
 
 checkIndent' :: Int -> Update
 checkIndent' indent state
-  | indent < curIndent = setIndentDepth indent $ appendTokens ((replicate (curIndent - indent) T.Dedent) ++ [T.Eol]) state
+  | indent < curIndent = setIndentDepth indent
+    $ appendTokens (replicate (curIndent - indent) T.Dedent) state
   | indent == curIndent = appendToken T.Eol state
   | indent == (curIndent + 1) = setIndentDepth indent $ appendToken T.Indent state
   | indent == (curIndent + 2) = state -- line continuation, parser need not be aware
