@@ -36,12 +36,10 @@ checkUnit unit = case unit of
 
 checkFunc :: A1.Func -> ConstrainM A2.Func
 checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
-  tRet <- getNextTypeVar
 
-  -- TODO: It should be possible to have only one constraint on ret types,
-  -- and not introduce a new type var when an explicit type exists. Would this be better?
-  optRetType' <- traverse checkType optRetType
-  mapM_ (tRet <<:) optRetType'
+  tRet <- case optRetType of
+    Just t -> checkType t
+    Nothing -> getNextTypeVar
 
   params' <- mapM (\(A1.Param m t n) -> (Named n) . (MType m) <$> checkType t) params
 
