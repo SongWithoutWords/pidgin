@@ -27,9 +27,11 @@ data Type
   | TNone
 
   | TError
-  | TVar Word
+  | TVar TVar
 
   deriving(Eq, Show)
+
+type TVar = Word
 
 type Typename = String
 

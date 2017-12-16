@@ -7,7 +7,7 @@ import Test.Tasty.HUnit
 
 import TypeCheck.Unify
 
-type SubstitutionList = [(Word, Type)]
+type SubstitutionList = [(TVar, Type)]
 
 unifyTest :: String -> [Constraint] -> SubstitutionList -> [Error] -> TestTree
 unifyTest name constraints subs errors =

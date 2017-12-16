@@ -92,7 +92,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       TVar tvar -> subTypeVar tvar
       t -> pure t
       where
-        subTypeVar :: Word -> ErrorM A3.Type
+        subTypeVar :: TVar -> ErrorM A3.Type
         subTypeVar tvar = case M.lookup tvar substitutions of
           Nothing -> raise (FailedToInferType typ) >> pure typ
           Just t@(TVar _) -> raise (FailedToInferType t) >> pure t

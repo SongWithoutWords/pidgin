@@ -26,7 +26,7 @@ type Scopes = [Scope]
 
 data ConstrainState = ConstrainState
   { scopes :: Scopes
-  , nextTypeId :: Word
+  , nextTypeId :: TVar
   , errors :: Errors
   }
 
