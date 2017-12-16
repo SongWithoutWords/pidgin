@@ -160,7 +160,7 @@ setIndentDepth :: Int -> Update
 setIndentDepth n state = state { indentDepth = n }
 
 
--- Updates with intput
+-- Updates with input
 data UserInput = UserInput
   { str :: String
   , pos :: AlexPosn }
