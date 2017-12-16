@@ -3,6 +3,9 @@
 
 module Util.Preface where
 
+import Control.Monad(liftM2)
+import Data.Monoid((<>))
+
 -- Might like to change this operator to ×
 -- type a & b = (a, b)
 
@@ -77,3 +80,8 @@ maybeLast (_:xs) = maybeLast xs
 (.:) f g x y = f $ g x y
 
 
+-- Monads
+----------------------------------------------------------------
+concatMapM :: (Monad m, Monoid b) => (a -> m b) -> [a] -> m b
+concatMapM _ [] = pure mempty
+concatMapM f (x:xs) = liftM2 (<>) (f x) (concatMapM f xs)
