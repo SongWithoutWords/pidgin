@@ -62,8 +62,8 @@ popScope = modify $ \s -> s{scopes = tail $ scopes s}
 modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
 modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 
-addLocalBinding :: Named MType -> ConstrainM ()
-addLocalBinding (Named n mt) = modifyCurrentScope $ M.insert n $ KVar mt
+addLocalBinding :: Named Type -> ConstrainM ()
+addLocalBinding (Named n t) = modifyCurrentScope $ M.insert n $ KVar t
 
 getNextTypeVar :: ConstrainM Type
 getNextTypeVar = do
@@ -86,8 +86,8 @@ lookupKinds name = do
     kindOfUnit u = case u of
       UNamespace _ -> KNamespace
       UClass _ -> KType
-      UFunc f -> KVar $ MType Imt $ typeOfFunc f
-      UVar (Var mt _) -> KVar mt
+      UFunc f -> KVar $ typeOfFunc f
+      UVar (Var t _) -> KVar t
 
   pure $ lookupKinds' locals
 

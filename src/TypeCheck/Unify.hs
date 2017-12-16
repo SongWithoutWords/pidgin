@@ -23,10 +23,10 @@ unify' (c : cs) = do
   pure $ M.union s1 s2'
 
 unifyOne :: Constraint -> ErrorM Substitutions
-unifyOne constraint@((MType Imt _) ::< (MType Mut _))
-  = raise (FailedToUnify constraint) >> pure M.empty
-unifyOne ((MType _ a) ::< (MType _ b))
-  = unifyOne (a :< b)
+
+unifyOne ((TMut a) :< (TMut b)) = unifyOne (a :< b)
+unifyOne ((TMut a) :< b) = unifyOne (a :< b)
+unifyOne c@((_ :< TMut _)) = raise (FailedToUnify c) >> pure mempty
 
 unifyOne constraint@(a :< b)
 

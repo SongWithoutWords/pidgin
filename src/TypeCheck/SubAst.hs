@@ -26,7 +26,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       UVar v -> A3.UVar <$> subVar v
 
     subVar :: Var -> ErrorM A3.Var
-    subVar (Var (MType m t) e) = liftM2 A3.Var (MType m <$> subType' t) (subExpr e)
+    subVar (Var t e) = liftM2 A3.Var (subType' t) (subExpr e)
 
     subFunc :: Func -> ErrorM A3.Func
     subFunc (Func s b) = liftM2 A3.Func (subSig s) (subBlock b)
@@ -39,7 +39,7 @@ subAst' substitutions ast = multiMapM subUnit ast
     subParams ps = mapM subParam ps
 
     subParam :: Param -> ErrorM A3.Param
-    subParam (Named n (MType m t)) = (Named n) . (MType m) <$> subType' t
+    subParam (Named n t) = (Named n) <$> subType' t
 
     subBlock :: Block -> ErrorM A3.Block
     subBlock (Block stmts optExpr) =
@@ -52,7 +52,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       SApp app -> A3.SApp <$> subApp app
 
     subExpr :: Expr -> ErrorM A3.Expr
-    subExpr (Expr mt e) = liftM2 A3.Expr (subMType mt) (subExpr' e)
+    subExpr (Expr t e) = liftM2 A3.Expr (subType' t) (subExpr' e)
 
     subExpr' :: Expr' -> ErrorM A3.Expr'
     subExpr' expr = let subExp = subExpr in case expr of
@@ -67,7 +67,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       EVal v -> pure $ A3.EVal v
 
     subLExpr :: LExpr -> ErrorM A3.LExpr
-    subLExpr (LExpr mt l) = liftM2 A3.LExpr (subMType mt) (subLExpr' l)
+    subLExpr (LExpr t l) = liftM2 A3.LExpr (subType' t) (subLExpr' l)
 
     subLExpr' :: LExpr' -> ErrorM A3.LExpr'
     subLExpr' l = case l of
@@ -84,14 +84,11 @@ subAst' substitutions ast = multiMapM subUnit ast
     subSelect :: Select -> ErrorM A3.Select
     subSelect (Select e name) = subExpr e >>= \e' -> pure $ A3.Select e' name
 
-    subMType :: MType -> ErrorM A3.MType
-    subMType (MType m t) = A3.MType m <$> subType' t
-
     subType' :: Type -> ErrorM A3.Type
     subType' typ = case typ of
       TFunc p paramTypes retType ->
         liftM2 (A3.TFunc p) (mapM subType' paramTypes) (subType' retType)
-      TRef (MType m t) -> A3.TRef . MType m <$> subType' t
+      TRef t -> A3.TRef <$> subType' t
       TVar tvar -> subTypeVar tvar
       t -> pure t
       where

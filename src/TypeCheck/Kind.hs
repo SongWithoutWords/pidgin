@@ -5,5 +5,5 @@ import Ast.A2Constrained.Type
 data Kind
   = KNamespace
   | KType
-  | KVar MType
+  | KVar Type
 
