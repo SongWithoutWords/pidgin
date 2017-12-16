@@ -150,7 +150,7 @@ checkExpr expression = case expression of
   A1.EUnOp op e -> let
     checkUnOp :: UnOp -> A2.Type -> A2.Type -> ConstrainM ()
     checkUnOp Neg tExpr tRes = do
-      mapM_ (TInt $=) [tExpr, tRes]
+      TInt $= tExpr >> tRes $= TInt
     in do
       e'@(A2.Expr t _) <- checkExpr e
       tRes <- getNextTypeVar
