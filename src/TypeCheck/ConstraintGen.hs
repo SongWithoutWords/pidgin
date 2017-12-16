@@ -50,7 +50,7 @@ checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
   let tRetExpr = case optRetExpr' of
         Nothing -> TNone
         Just (A2.Expr t _) -> t
-  tRetExpr <<: tRet
+  tRet $= tRetExpr
 
   popScope
 
@@ -73,7 +73,7 @@ checkStmt stmt = case stmt of
       _ -> raise AssignmentToImmutableValue
 
     rhs'@(A2.Expr tRhs _) <- checkExpr rhs
-    tRhs <<: tLhs
+    tLhs $= tRhs
     pure $ A2.SAssign lhs' rhs'
 
   A1.SVar (Named name var) -> do
@@ -95,7 +95,7 @@ checkVar (A1.Var mut optType expr) = do
     Just t -> pure t
     Nothing -> getNextTypeVar
 
-  (typeOfExpr expr') <<: tVar
+  tVar $= (typeOfExpr expr')
   return $ A2.Var (applyMut mut tVar) expr'
 
 
@@ -142,15 +142,15 @@ checkExpr expression = case expression of
     e1'@(A2.Expr t1 _) <- checkExpr e1
     e2'@(A2.Expr t2 _) <- checkExpr e2
 
-    tCond <<: TBln
-    t2 <<: t1
+    TBln $= tCond
+    t1 $= t2
 
     pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
 
   A1.EUnOp op e -> let
     checkUnOp :: UnOp -> A2.Type -> A2.Type -> ConstrainM ()
     checkUnOp Neg tExpr tRes = do
-      mapM_ (<<: TInt) [tExpr, tRes]
+      mapM_ (TInt $=) [tExpr, tRes]
     in do
       e'@(A2.Expr t _) <- checkExpr e
       tRes <- getNextTypeVar
@@ -163,31 +163,31 @@ checkExpr expression = case expression of
 
     -- Int -> Int -> Int
     checkBinOp Add a b r = do
-      mapM_ (<<: TInt) [a, b, r]
+      mapM_ (TInt $=) [a, b, r]
 
     checkBinOp Sub a b r = do
-      mapM_ (<<: TInt) [a, b, r]
+      mapM_ (TInt $=) [a, b, r]
 
     checkBinOp Mul a b r = do
-      mapM_ (<<: TInt) [a, b, r]
+      mapM_ (TInt $=) [a, b, r]
 
     checkBinOp Div a b r = do
-      mapM_ (<<: TInt) [a, b, r]
+      mapM_ (TInt $=) [a, b, r]
 
     checkBinOp Mod a b r = do
-      mapM_ (<<: TInt) [a, b, r]
+      mapM_ (TInt $=) [a, b, r]
 
     -- Int -> Int -> Bln
     checkBinOp (Cmp _) a b r = do
-      mapM_ (<<: TInt) [a, b]
-      r <<: TBln
+      mapM_ (TInt $=) [a, b]
+      TBln $= r
 
     -- Bln -> Bln -> Bln
     checkBinOp And a b r = do
-      mapM_ (<<: TBln) [a, b, r]
+      mapM_ (TBln $=) [a, b, r]
 
     checkBinOp Or a b r = do
-      mapM_ (<<: TBln) [a, b, r]
+      mapM_ (TBln $=) [a, b, r]
 
     in do
       e1'@(A2.Expr t1 _) <- checkExpr e1
@@ -216,7 +216,7 @@ checkApp (A1.App expr (A1.Args purity args)) = do
 
     let argTypes = (\(A2.Expr t _) -> t) <$> args'
 
-    tExpr <<: TFunc purity argTypes tRet
+    tExpr $= TFunc purity argTypes tRet -- $= tExpr
 
     pure (A2.App expr' (A2.Args purity args'), tRet)
 

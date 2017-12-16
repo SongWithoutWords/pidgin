@@ -1,7 +1,7 @@
 module TypeCheck.ConstrainM
   ( ConstrainM
   , runConstrainM
-  , (<<:)
+  , ($=)
   , raise
   , pushNewScope
   , popScope
@@ -44,8 +44,8 @@ runConstrainM constrainM ast =
   let (x, s, constraints) = runRWS constrainM ast initialState
   in (x, constraints, errors s)
 
-(<<:) :: Constrain a => a -> a -> ConstrainM ()
-x <<: y = tell [x <: y]
+($=) :: Type -> Type -> ConstrainM ()
+x $= y = tell [x :$= y]
 
 raise :: Error -> ConstrainM ()
 raise e = modify $ \s -> s{errors = e : errors s}

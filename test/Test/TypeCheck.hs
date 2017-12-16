@@ -70,11 +70,11 @@ tests = testGroup "typecheck"
 
     , test "Bln a = 5"
       [("a", UVar $ Var TBln $ Expr TInt $ EVal $ VInt 5)]
-      [FailedToUnify (TInt :< TBln)]
+      [FailedToUnify $ TBln :$= TInt]
 
     , test "Int a = true"
       [("a", UVar $ Var TInt $ Expr TBln $ EVal $ VBln True)]
-      [FailedToUnify $ TBln :< TInt]
+      [FailedToUnify $ TInt :$= TBln]
 
     , test "$ a = b"
       [("a", UVar $ Var TError $ Expr TError $ EName "b")]
@@ -169,7 +169,7 @@ tests = testGroup "typecheck"
     []
 
   , errorTest "$ a = 5; Bln b = a"
-    [FailedToUnify $ TInt <: TBln]
+    [FailedToUnify $ TBln :$= TInt]
 
   , test "$ a = 5; $ b = a; $ c = b"
     [ ("a", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 5)
@@ -181,7 +181,7 @@ tests = testGroup "typecheck"
     [ ("a", UVar $ Var TBln $ Expr TInt $ EName "b")
     , ("b", UVar $ Var TInt $ Expr TInt $ EName "c")
     , ("c", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 5)]
-    [FailedToUnify $ TInt <: TBln]
+    [FailedToUnify $ TBln :$= TInt]
 
 
   -- TypeCheck operator tests
@@ -210,14 +210,14 @@ tests = testGroup "typecheck"
        $ EIf (Cond $ Expr TStr $ EVal $ VStr "true")
          (Expr TInt $ EVal $ VInt 1)
          (Expr TInt $ EVal $ VInt 0))]
-    [FailedToUnify $ TStr :< TBln]
+    [FailedToUnify $ TBln :$= TStr]
 
   , test "$ a = 1 if true else \"zero\""
     [("a", UVar $ Var TInt $ Expr TInt
        $ EIf (Cond $ Expr TBln $ EVal $ VBln True)
          (Expr TInt $ EVal $ VInt 1)
          (Expr TStr $ EVal $ VStr "zero"))]
-    [FailedToUnify $ TStr <: TInt]
+    [FailedToUnify $ TInt :$= TStr]
 
   , errorTest "$ a = 5(1)"
     [NonApplicable TInt, FailedToInferType $ TVar 0, FailedToInferType $ TVar 0]
@@ -240,7 +240,7 @@ $ a = one()
 
   , namedErrorTest "one explicit, wrong return type"
     "one() -> Int => \"one\""
-    [FailedToUnify $ TStr <: TInt]
+    [FailedToUnify $ TInt :$= TStr]
 
   , namedErrorTest "one implicit, wrong num args"
     "one() => 1\n\
@@ -288,7 +288,7 @@ $ a = inc(inc(1))
 
   , namedErrorTest "inc explicit, wrong return type"
     [s|inc(Int x) -> Int => "one"|]
-    [FailedToUnify $ TStr :< TInt]
+    [FailedToUnify $ TInt :$= TStr]
 
   , namedErrorTest "inc explicit, wrong num args (a)" [s|
 inc(Int x) -> Int => x + 1
@@ -334,7 +334,7 @@ $ a = inc("one")
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TStr $ EVal $ VStr "one"])
     ]
-    [FailedToUnify $ TStr :< TInt]
+    [FailedToUnify $ TInt :$= TStr]
 
   , namedTest "inc implicit, local var" [s|
 inc(Int x) =>

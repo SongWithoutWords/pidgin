@@ -24,11 +24,11 @@ unify' (c : cs) = do
 
 unifyOne :: Constraint -> ErrorM Substitutions
 
-unifyOne ((TMut a) :< (TMut b)) = unifyOne (a :< b)
-unifyOne ((TMut a) :< b) = unifyOne (a :< b)
-unifyOne c@((_ :< TMut _)) = raise (FailedToUnify c) >> pure mempty
+unifyOne ((TMut a) :$= (TMut b)) = unifyOne (a :$= b)
+unifyOne (a :$= (TMut b)) = unifyOne (a :$= b)
+unifyOne c@(TMut _ :$= _) = raise (FailedToUnify c) >> pure mempty
 
-unifyOne constraint@(a :< b)
+unifyOne constraint@(a :$= b)
 
   -- equality
   | a == b = pure M.empty
@@ -48,13 +48,13 @@ unifyOne constraint@(a :< b)
   -- ref <: ref
   | TRef a' <- a
   , TRef b' <- b
-    = unifyOne $ a' <: b'
+    = unifyOne $ a' :$= b'
 
   -- function <: function
   | TFunc _ aParams aRet <- a
   , TFunc _ bParams bRet <- b = do
       paramConstraints <- constrainParams aParams bParams
-      unify' $ paramConstraints ++ [aRet <: bRet]
+      unify' $ paramConstraints ++ [aRet :$= bRet]
 
   -- function <: non-function
   | TFunc _ _ _ <- a = raise (NonApplicable b) >> pure M.empty
@@ -67,7 +67,7 @@ unifyOne constraint@(a :< b)
 
 constrainParams :: [Type] -> [Type] -> ErrorM [Constraint]
 constrainParams xs ys = if length xs == length ys
-  then pure $ zipWith (:<) ys xs
+  then pure $ zipWith (:$=) ys xs
   else raise (WrongNumArgs (length xs) (length ys)) >> pure []
 
 subConstraint :: Substitutions -> Constraint -> Constraint
