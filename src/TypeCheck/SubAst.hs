@@ -7,6 +7,7 @@ import Data.Map as M
 
 import Ast.A2Constrained as A2
 import qualified Ast.A3Typed as A3
+import TypeCheck.ApplySubs
 import TypeCheck.ErrorM
 import TypeCheck.Substitution
 import Util.MultiMap
@@ -93,8 +94,7 @@ subAst' substitutions ast = multiMapM subUnit ast
       t -> pure t
       where
         subTypeVar :: TVar -> ErrorM A3.Type
-        subTypeVar tvar = case M.lookup tvar substitutions of
-          Nothing -> raise (FailedToInferType typ) >> pure typ
-          Just t@(TVar _) -> raise (FailedToInferType t) >> pure t
-          Just t -> pure t
+        subTypeVar tvar = case subTVar substitutions tvar of
+          (TVar _) -> raise (FailedToInferType typ) >> pure typ
+          t -> pure t
 
