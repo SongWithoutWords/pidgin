@@ -1,5 +1,6 @@
 module Test.TypeCheck.Unify(tests) where
 
+import Data.Set as S
 import Data.Map as M
 
 import Test.Tasty
@@ -11,10 +12,10 @@ type SubstitutionList = [(TVar, Type)]
 
 unifyTest :: String -> [Constraint] -> SubstitutionList -> [Error] -> TestTree
 unifyTest name constraints subs errors =
-  let result = unify constraints
+  let (subsActual, errorsActual) = unify constraints
   in testGroup name
-    [ testCase "substitutions" $ fst result @?= M.fromList subs
-    , testCase "errors" $ snd result @?= errors
+    [ testCase "substitutions" $ subsActual @?= M.fromList subs
+    , testCase "errors" $ errorsActual @?= S.fromList errors
     ]
 
 tests :: TestTree

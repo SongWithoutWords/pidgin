@@ -29,7 +29,7 @@ execUnifyM unifyM =
   in (substitutions, subErrors substitutions errors)
 
 raise :: Error -> UnifyM ()
-raise err = tell [err]
+raise err = tell $ S.singleton err
 
 sub :: TVar -> Type -> UnifyM ()
 sub tvar t = modify (M.insert tvar t)

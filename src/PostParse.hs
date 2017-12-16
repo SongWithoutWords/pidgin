@@ -8,15 +8,10 @@ import qualified Ast.A1PostParse as A1
 import Ast.A2Constrained.Error
 import Ast.Common.Name
 import Ast.Common.Table
-import Util.Preface
+import TypeCheck.ErrorM
 
 postParse :: A0.Ast -> (A1.Ast, Errors)
-postParse = runWriter . mapUnits
-
-type ErrorM a = Writer Errors a
-
-raise :: Error -> ErrorM ()
-raise e = tell [e]
+postParse = runErrorM . mapUnits
 
 mapUnits :: [Named A0.Unit] -> ErrorM (Table A1.Unit)
 mapUnits = tableFromNamedM mapUnit

@@ -12,6 +12,7 @@ module TypeCheck.ConstrainM
 
 import Control.Monad.RWS
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 import Ast.A2Constrained
 import Ast.A2Constrained.Error
@@ -34,7 +35,7 @@ initialState :: ConstrainState
 initialState = ConstrainState
   { scopes = []
   , nextTypeId = 0
-  , errors = []
+  , errors = S.empty
   }
 
 type ConstrainM a = RWS Ast [Constraint] ConstrainState a
@@ -48,7 +49,7 @@ runConstrainM constrainM ast =
 x $= y = tell [x :$= y]
 
 raise :: Error -> ConstrainM ()
-raise e = modify $ \s -> s{errors = e : errors s}
+raise e = modify $ \s -> s{errors = S.insert e $ errors s}
 
 pushScope :: Scope -> ConstrainM ()
 pushScope scope = modify $ \s -> s{scopes = scope : scopes s}

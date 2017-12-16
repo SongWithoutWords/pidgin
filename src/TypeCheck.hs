@@ -1,5 +1,7 @@
 module TypeCheck(typeCheckAst) where
 
+import Data.Monoid((<>))
+
 import qualified Ast.A1PostParse as A1
 import qualified Ast.A3Typed as A3
 
@@ -14,5 +16,5 @@ typeCheckAst ast =
     (substitutions, unifyErrs) = unify constraints
     (ast'', substituionErrs) = subAst substitutions ast'
   in
-    (ast'', constrainErrs ++ unifyErrs ++ substituionErrs)
+    (ast'', constrainErrs <> unifyErrs <> substituionErrs)
 

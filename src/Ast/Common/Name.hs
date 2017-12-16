@@ -4,7 +4,7 @@ type Name = String
 type Names = [Name]
 
 data Named a = Named Name a
-  deriving(Eq, Show)
+  deriving(Eq, Ord, Show)
 
 instance Functor Named where
   fmap f (Named n a) = Named n $ f a

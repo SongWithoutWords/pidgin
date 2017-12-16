@@ -1,9 +1,11 @@
 module Ast.A2Constrained.Error where
 
+import Data.Set
+
 import Ast.A2Constrained
 import TypeCheck.Constraint
 
-type Errors = [Error]
+type Errors = Set Error
 
 data Error
 
@@ -32,8 +34,8 @@ data Error
   | NeedExprFoundType
   | NeedExprFoundNamespace
 
-  | RecursiveVariableDefinition (Named Var)
+  | RecursiveVariableDefinition Name
   | AssignmentToImmutableValue
 
-  deriving(Eq, Show)
+  deriving(Eq, Ord, Show)
 

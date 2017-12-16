@@ -1,8 +1,9 @@
 {-# language QuasiQuotes #-}
 module Test.TypeCheck(tests) where
 
-import Data.String.QQ
 import Control.Monad(unless)
+import qualified Data.Set as S
+import Data.String.QQ
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -17,27 +18,30 @@ import Util.MultiMap
 import Util.Preface
 import Util.PrettyShow
 
-test :: String -> [(Name, Unit)] -> Errors -> TestTree
+test :: String -> [(Name, Unit)] -> [Error] -> TestTree
 test src = namedTest src src
 
-namedTest :: String -> String -> [(Name, Unit)] -> Errors -> TestTree
+namedTest :: String -> String -> [(Name, Unit)] -> [Error] -> TestTree
 namedTest name src units errors =
   let (ast, errors') = lexParseCheck src
   in testGroup name [testAst "ast" units ast, testErrors "errors" errors errors']
 
-test' :: String -> ([(Name, Unit)] -> Errors -> Bool) -> TestTree
+test' :: String -> ([(Name, Unit)] -> [Error] -> Bool) -> TestTree
 test' src = namedTest' src src
 
-namedTest' :: String -> String -> ([(Name, Unit)] -> Errors -> Bool) -> TestTree
+namedTest' :: String -> String -> ([(Name, Unit)] -> [Error] -> Bool) -> TestTree
 namedTest' name src condition =
   let (ast, errors') = lexParseCheck src
-  in testCase name $ unless (condition (multiToAscList ast) errors') $ assertFailure $
-    "test failed with ast:\n" ++ prettyShow ast ++ "\nand errors:\n" ++ prettyShow errors'
+  in testCase name
+    $ unless (condition (multiToAscList ast) (S.toAscList errors'))
+    $ assertFailure $
+    "test failed with ast:\n" ++ prettyShow ast ++
+    "\nand errors:\n" ++ prettyShow errors'
 
-errorTest :: String -> Errors -> TestTree
+errorTest :: String -> [Error] -> TestTree
 errorTest src = namedErrorTest src src
 
-namedErrorTest :: String -> String -> Errors -> TestTree
+namedErrorTest :: String -> String -> [Error] -> TestTree
 namedErrorTest name src errors =
   let (_, errors') = lexParseCheck src
   in testErrors name errors errors'
@@ -48,10 +52,13 @@ testAst name units ast' =
   in testCase name $ unless (ast' == ast) $ assertFailure $
     "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
-testErrors :: String -> Errors -> Errors -> TestTree
-testErrors name errors errors' = testCase name $
-  unless (errors' == errors) $ assertFailure $
-    "expected errors:\n" ++ prettyShow errors ++ "\nbut got:\n" ++ prettyShow errors'
+testErrors :: String -> [Error] -> Errors -> TestTree
+testErrors name errorList errors' =
+  let errors = S.fromList errorList
+  in testCase name $
+    unless (errors' == errors) $ assertFailure $
+      "expected errors:\n" ++ prettyShow errors ++
+      "\nbut got:\n" ++ prettyShow errors'
 
 tests :: TestTree
 tests = testGroup "typecheck"
@@ -84,61 +91,52 @@ tests = testGroup "typecheck"
   , testGroup "recursive definitions"
     [ let
       condition
-        [("a", (UVar (Var (TVar a) (Expr (TVar b) (EName "a")))))]
-        [FailedToInferType (TVar c), FailedToInferType (TVar d)]
-        = alleq [a, b, c, d]
+        [("a", (UVar (Var (TVar t) (Expr (TVar u) (EName "a")))))]
+        [FailedToInferType (TVar v)]
+        = alleq [t, u, v]
       condition _ _ = False
       in test' "$ a = a" condition
 
     , let
       condition
-        [ ("a", UVar (Var (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var (TVar c) (Expr (TVar d) (EName "a"))))
+        [ ("a", UVar (Var (TVar t) (Expr (TVar u) (EName "b"))))
+        , ("b", UVar (Var (TVar v) (Expr (TVar w) (EName "a"))))
         ]
-        [ FailedToInferType (TVar e), FailedToInferType (TVar f)
-        , FailedToInferType (TVar g), FailedToInferType (TVar h)
-        ]
-        = alleq [a, b, c, c, d, e, f, g, h]
+        [FailedToInferType (TVar x)]
+        = alleq [t, u, v, w, x]
       condition _ _ = False
       in test' "$ a = b; $ b = a" condition
 
     , let
       condition
-        [ ("a", UVar (Var (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var (TVar c) (Expr (TVar d) (EName "b"))))
+        [ ("a", UVar (Var (TVar t) (Expr (TVar u) (EName "b"))))
+        , ("b", UVar (Var (TVar v) (Expr (TVar w) (EName "b"))))
         ]
-        [ FailedToInferType (TVar e), FailedToInferType (TVar f)
-        , FailedToInferType (TVar g), FailedToInferType (TVar h)
-        ]
-        = alleq [a, b, c, c, d, e, f, g, h]
+        [FailedToInferType (TVar x)]
+        = alleq [t, u, v, w, x]
       condition _ _ = False
       in test' "$ a = b; $ b = b" condition
 
     , let
       condition
-        [ ("a", UVar (Var (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var (TVar c) (Expr (TVar d) (EName "c"))))
-        , ("c", UVar (Var (TVar e) (Expr (TVar f) (EName "a"))))
+        [ ("a", UVar (Var (TVar t) (Expr (TVar u) (EName "b"))))
+        , ("b", UVar (Var (TVar v) (Expr (TVar w) (EName "c"))))
+        , ("c", UVar (Var (TVar x) (Expr (TVar y) (EName "a"))))
         ]
-        [ FailedToInferType (TVar g), FailedToInferType (TVar h)
-        , FailedToInferType (TVar i), FailedToInferType (TVar j)
-        , FailedToInferType (TVar k), FailedToInferType (TVar l)
+        [ FailedToInferType (TVar z)
         ]
-        = alleq [a, b, c, c, d, e, f, g, h, i, j, k, l]
+        = alleq [t, u, v, w, x, y, z]
       condition _ _ = False
       in test' "$ a = b; $ b = c; $ c = a" condition
 
     , let
       condition
-        [ ("a", UVar (Var (TVar a) (Expr (TVar b) (EName "b"))))
-        , ("b", UVar (Var (TVar c) (Expr (TVar d) (EName "c"))))
-        , ("c", UVar (Var (TVar e) (Expr (TVar f) (EName "b"))))
+        [ ("a", UVar (Var (TVar t) (Expr (TVar u) (EName "b"))))
+        , ("b", UVar (Var (TVar v) (Expr (TVar w) (EName "c"))))
+        , ("c", UVar (Var (TVar x) (Expr (TVar y) (EName "b"))))
         ]
-        [ FailedToInferType (TVar g), FailedToInferType (TVar h)
-        , FailedToInferType (TVar i), FailedToInferType (TVar j)
-        , FailedToInferType (TVar k), FailedToInferType (TVar l)
-        ]
-        = alleq [a, b, c, c, d, e, f, g, h, i, j, k, l]
+        [FailedToInferType (TVar z)]
+        = alleq [t, u, v, w, x, y, z]
       condition _ _ = False
       in test' "$ a = b; $ b = c; $ c = b" condition
 
@@ -149,7 +147,7 @@ tests = testGroup "typecheck"
         [ ("a", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 1)
         , ("b", UVar b)
         ]
-        [ RecursiveVariableDefinition $ Named "b" b]
+        [ RecursiveVariableDefinition "b"]
     ]
 
   , errorTest "$ a = true; $ a = false; $ b = a"

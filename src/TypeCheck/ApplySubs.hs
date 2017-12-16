@@ -1,5 +1,6 @@
 module TypeCheck.ApplySubs where
 
+import qualified Data.Set as S
 import qualified Data.Map as M
 
 import Ast.A2Constrained.Error
@@ -34,12 +35,12 @@ mapTVar f typ = let mapTVar' = mapTVar f in case typ of
 subTVar :: Substitutions -> TVar -> Type
 subTVar s x = case M.lookup x s of
   Nothing -> TVar x
-  Just (TVar y) -> TVar $ min x y
+  Just (TVar y) -> TVar y
   Just t -> t
 
 
 subErrors :: Substitutions -> Errors -> Errors
-subErrors = map . subError
+subErrors = S.map . subError
 
 subError :: Substitutions -> Error -> Error
 subError s = subError'

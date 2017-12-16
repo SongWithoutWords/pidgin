@@ -5,6 +5,8 @@ module TypeCheck.ErrorM
   , module Ast.A2Constrained.Error
   ) where
 
+import qualified Data.Set as S
+
 import Control.Monad.Writer
 
 import Ast.A2Constrained.Error
@@ -16,5 +18,5 @@ runErrorM :: ErrorM a -> (a, Errors)
 runErrorM (ErrorM w) = runWriter w
 
 raise :: Error -> ErrorM ()
-raise = ErrorM . tell . pure
+raise = ErrorM . tell . S.singleton
 
