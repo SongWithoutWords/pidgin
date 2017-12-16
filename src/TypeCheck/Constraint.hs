@@ -5,6 +5,8 @@ module TypeCheck.Constraint
 
 import Ast.A2Constrained.Type
 
+type Constraints = [Constraint]
+
 data Constraint
   = Type :$= Type -- constraint arising from value assignment
   deriving(Eq, Ord, Show)
