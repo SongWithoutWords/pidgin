@@ -23,7 +23,7 @@ test src = namedTest src src
 namedTest :: String -> String -> [(Name, Unit)] -> Errors -> TestTree
 namedTest name src units errors =
   let (ast, errors') = lexParseCheck src
-  in testCase name $ assertAst units ast >> assertErrors errors errors'
+  in testGroup name [testAst "ast" units ast, testErrors "errors" errors errors']
 
 test' :: String -> ([(Name, Unit)] -> Errors -> Bool) -> TestTree
 test' src = namedTest' src src
@@ -32,7 +32,7 @@ namedTest' :: String -> String -> ([(Name, Unit)] -> Errors -> Bool) -> TestTree
 namedTest' name src condition =
   let (ast, errors') = lexParseCheck src
   in testCase name $ unless (condition (multiToAscList ast) errors') $ assertFailure $
-    "test failed with ast:\n" ++ show ast ++ "\nand errors:\n" ++ show errors'
+    "test failed with ast:\n" ++ prettyShow ast ++ "\nand errors:\n" ++ prettyShow errors'
 
 errorTest :: String -> Errors -> TestTree
 errorTest src = namedErrorTest src src
@@ -40,16 +40,16 @@ errorTest src = namedErrorTest src src
 namedErrorTest :: String -> String -> Errors -> TestTree
 namedErrorTest name src errors =
   let (_, errors') = lexParseCheck src
-  in testCase name $ assertErrors errors errors'
+  in testErrors name errors errors'
 
-assertAst :: [(Name, Unit)] -> Ast -> Assertion
-assertAst units ast' =
+testAst :: String -> [(Name, Unit)] -> Ast -> TestTree
+testAst name units ast' =
   let ast = multiFromList units
-  in unless (ast' == ast) $ assertFailure $
+  in testCase name $ unless (ast' == ast) $ assertFailure $
     "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
-assertErrors :: Errors -> Errors -> Assertion
-assertErrors errors errors' =
+testErrors :: String -> Errors -> Errors -> TestTree
+testErrors name errors errors' = testCase name $
   unless (errors' == errors) $ assertFailure $
     "expected errors:\n" ++ prettyShow errors ++ "\nbut got:\n" ++ prettyShow errors'
 
