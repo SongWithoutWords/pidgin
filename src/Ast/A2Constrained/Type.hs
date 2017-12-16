@@ -29,7 +29,7 @@ data Type
   | TError
   | TVar TVar
 
-  deriving(Eq, Show)
+  deriving(Eq, Ord, Show)
 
 type TVar = Word
 
