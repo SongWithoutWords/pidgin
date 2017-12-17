@@ -82,9 +82,9 @@ genExpr (Expr typ expr) = case expr of
 
   EName n -> do
     locals <- gets bindings
-    return $ if M.member n locals
-      then localReference n typ
-      else globalReference n typ
+    return $ case M.lookup n locals of -- if M.member n locals
+      Just op -> op
+      Nothing -> globalReference n typ
 
   EIf (Cond ec) e1 e2 -> do
     ifTrue <- addBlock "if.true"
