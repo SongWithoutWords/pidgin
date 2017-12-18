@@ -7,8 +7,8 @@ import Test.Tasty
 import qualified Test.Tasty.HUnit as H
 
 import Ast.A0Parse
-import Lexer
-import Parser
+-- import Lexer
+-- import Parser
 
 test :: String -> Ast -> TestTree
 test src = namedTest src src
@@ -27,7 +27,8 @@ tests = testGroup "parser"
 
   , namedTest "op expr"
     "$ three = 1 + 2"
-    [ Named "three" $ UVar $ Var Imt Nothing $ EBinOp Add (EVal $ VInt 1) (EVal $ VInt 2) ]
+    [ Named "three" $ UVar $ Var Imt Nothing $ EApp
+      $ App (EName "+") $ Args Pure [EVal $ VInt 1, EVal $ VInt 2] ]
 
   , namedTest "if expr"
     [s|$ msg = "it works!" if true else "or not :("|]
@@ -57,11 +58,13 @@ factorial(Int n) -> Int =>
     [ Named "factorial" $ UFunc $ Func ( Sig Pure [Param Imt TInt "n"] $ Just TInt) ImplicitRet
       [ SExpr
         $ EIf
-          (Cond $ EBinOp (Cmp LesserEq) (EName "n") (EVal $ VInt 0))
+          (Cond $ EApp $ App (EName "==") $ Args Pure [EName "n", EVal $ VInt 0])
           (EVal $ VInt 1)
-          (EBinOp Mul
-              (EName "n")
-              $ EApp $ App (EName "factorial") $ Args Pure [EBinOp Sub (EName "n") (EVal $ VInt 1)]
+          (EApp $ App (EName "*") $ Args Pure
+           [ (EName "n")
+           , EApp $ App (EName "factorial") $ Args Pure
+             [EApp $ App (EName "-") $ Args Pure [EName "n", EVal $ VInt 1]]
+           ]
           )
       ]
     ]
@@ -131,14 +134,19 @@ quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>
       ) ImplicitRet
       [ SExpr
         $ ELambda $ Func
-            ( Sig Pure [Param Imt TFlt "x"] $ Just TFlt ) ImplicitRet
-            [ SExpr
-              $ EBinOp Add
-                ( EBinOp Mul (EName "a") $ EBinOp Mul (EName "x") (EName "x") )
-                $ EBinOp Add
-                  ( EBinOp Mul (EName "b") $ EName "x" )
-                  $ EName "c"
-            ]
+          ( Sig Pure [Param Imt TFlt "x"] $ Just TFlt ) ImplicitRet
+          [ SExpr
+            $ EApp $ App (EName "+") $ Args Pure
+              [ EApp $ App (EName "*") $ Args Pure
+                [ EName "a"
+                , EApp $ App (EName "*") $ Args Pure [EName "x", EName "x"]
+                ]
+              , EApp $ App (EName "+") $ Args Pure
+                [ EApp $ App (EName "*") $ Args Pure [EName "b", EName "x"]
+                , EName "c"
+                ]
+              ]
+          ]
       ]
     ]
 
@@ -155,11 +163,16 @@ quadratic(Flt a, Flt b, Flt c) =>
         $ ELambda $ Func
           ( Sig Pure [Param Imt TFlt "x"] Nothing) ImplicitRet
           [ SExpr
-            $ EBinOp Add
-              ( EBinOp Mul (EName "a") $ EBinOp Mul (EName "x") (EName "x") )
-              $ EBinOp Add
-                ( EBinOp Mul (EName "b") $ EName "x" )
-                $ EName "c"
+            $ EApp $ App (EName "+") $ Args Pure
+              [ EApp $ App (EName "*") $ Args Pure
+                [ EName "a"
+                , EApp $ App (EName "*") $ Args Pure [EName "x", EName "x"]
+                ]
+              , EApp $ App (EName "+") $ Args Pure
+                [ EApp $ App (EName "*") $ Args Pure [EName "b", EName "x"]
+                , EName "c"
+                ]
+              ]
           ]
       ]
     ]
@@ -172,10 +185,11 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
     [ Named "singleRoot" $ UFunc $ Func
       ( Sig Pure [Param Imt TFlt "a", Param Imt TFlt "b", Param Imt TFlt "c"] $ Just TFlt )
       ImplicitRet
-      [ SExpr
-        $ EBinOp Div
-          ( EBinOp Add
-            ( EUnOp Neg (EName "b") )
+      [ SExpr $ EApp $ App (EName "/") $ Args Pure
+        [ EApp $ App (EName "+") $ Args Pure
+          [ EApp $ App (EName "-") $ Args Pure [EName "b"]
+          , EApp $ App (ESelect $ Select (EName "math") "sqrt")
+           EBinOp Add
             $ EApp $ App
               (ESelect $ Select (EName "math") "sqrt" )
               $ Args
@@ -184,9 +198,26 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
                   (EBinOp Mul (EName "b") (EName "b"))
                   (EBinOp Mul (EVal $ VInt 4) $ EBinOp Mul (EName "a") (EName "c"))
                 ]
-          )
+          ]
+        ,
           (EBinOp Mul (EVal $ VInt 2) (EName "a"))
         ]
+
+      -- [ SExpr
+      --   $ EBinOp Div
+      --     ( EBinOp Add
+      --       ( EUnOp Neg (EName "b") )
+      --       $ EApp $ App
+      --         (ESelect $ Select (EName "math") "sqrt" )
+      --         $ Args
+      --           Pure
+      --           [ EBinOp Sub
+      --             (EBinOp Mul (EName "b") (EName "b"))
+      --             (EBinOp Mul (EVal $ VInt 4) $ EBinOp Mul (EName "a") (EName "c"))
+      --           ]
+      --     )
+      --     (EBinOp Mul (EVal $ VInt 2) (EName "a"))
+      --   ]
     ]
 
   , test "foo() => foo()"

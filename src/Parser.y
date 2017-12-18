@@ -2,10 +2,9 @@
 module Parser(parse) where
 
 import Ast.A0Parse
-import Parser.Error
 import qualified Lexer.Token as T
-import Util.Preface
-
+import Parser.Error
+import Parser.Util
 }
 
 %name parse
@@ -94,7 +93,6 @@ import Util.Preface
 
 -- If performance becomes a concern will need to parse sequences another way
 -- (see Happy docs)
-
 
 root : unitsOrNone { $1 }
 
@@ -232,22 +230,23 @@ cons
 op
   : "(" expr ")"            { $2 }
 
-  | "-" expr %prec prec_neg { EUnOp Neg $2 }
+  | "-" expr %prec prec_neg { eUnOp "-" $2 }
 
-  | expr "+" expr           { EBinOp Add $1 $3 }
-  | expr "-" expr           { EBinOp Sub $1 $3 }
-  | expr "*" expr           { EBinOp Mul $1 $3 }
-  | expr "/" expr           { EBinOp Div $1 $3 }
-  | expr "%" expr           { EBinOp Mod $1 $3 }
+  | expr "+" expr           { eBinOp $1 "+" $3 }
+  | expr "-" expr           { eBinOp $1 "-" $3 }
+  | expr "*" expr           { eBinOp $1 "*" $3 }
+  | expr "/" expr           { eBinOp $1 "/" $3 }
+  | expr "%" expr           { eBinOp $1 "%" $3 }
 
-  | expr ">" expr           { EBinOp (Cmp Greater) $1 $3 }
-  | expr "<" expr           { EBinOp (Cmp Lesser) $1 $3 }
-  | expr ">=" expr          { EBinOp (Cmp GreaterEq) $1 $3 }
-  | expr "<=" expr          { EBinOp (Cmp LesserEq) $1 $3 }
-  | expr "==" expr          { EBinOp (Cmp Equal) $1 $3 }
-  | expr "!=" expr          { EBinOp (Cmp NotEqual) $1 $3 }
+  | expr ">" expr           { eBinOp $1 ">" $3 }
+  | expr "<" expr           { eBinOp $1 "<" $3 }
+  | expr ">=" expr          { eBinOp $1 ">=" $3 }
+  | expr "<=" expr          { eBinOp $1 "<=" $3 }
+  | expr "==" expr          { eBinOp $1 "==" $3 }
+  | expr "!=" expr          { eBinOp $1 "!=" $3 }
 
-  | expr name expr          { EBinOp (OpUser $2) $1 $3 }
+  -- This is the cause of a ~30 shift-reduce conflicts
+  | expr name expr          { eBinOp $1 $2 $3 }
 
 lexpr
   : apply   { LApp $1 }

@@ -82,10 +82,6 @@ data Expr
   | ELambda Func
   | ECons Typename Args
 
-  -- Should be replaced by EApp?
-  | EUnOp UnOp Expr
-  | EBinOp BinOp Expr Expr
-
   | EVal Value
   deriving(Eq, Show)
 
