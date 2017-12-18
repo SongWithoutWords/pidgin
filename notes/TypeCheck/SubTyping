@@ -1,6 +1,6 @@
 What if, instead of trying to allow subtyping during type-checking, I did this as a post type-check step? 
   - Corollary: I would still need to select the best overloads based on the coercions that were available.
-  - That seems not to work. What if I were to add a layer of indirection between all assignments and passings?
+  - That seems not to work. What if I were to add a layer of indirection between all assignments and passings? Not sure this would help either.
 
 
 What if, with what I've learned, I made the switch back to more traditional, bidirectional type checking, and disallowed type inference for recursive functions?
@@ -12,4 +12,33 @@ what's our setup for this new style of unification?
     - While there are still constraints:
       - Visit each constraint. If it can be solved, solve it, emit a substitution for it, and apply this substitution to all other constraints.
   * Substitution
+
+
+Some code ideas for implicit referencing, dereferencing and mutability conversion
+
+unifyOne :: Constraint -> ErrorM Substitutions
+
+-- Thought to self:
+-- ^A <: ^B -> A <: B (reference assignment)
+-- ^A <:  B -> implicit dereference
+--  A <: ^B -> implicit reference
+
+-- ^A <: ^B -> A <: B (reference-reference assignment)
+unifyOne ((MType _ (TRef a)) ::< (MType _ (TRef b)))
+  = unifyOne $ a <: b
+
+-- ^A <: B -> A <: B (implicit dereference)
+unifyOne ((MType _ (TRef a)) ::< b)
+  = unifyOne $ a <: b
+
+--  A <: ^B -> A <: B (implicit referenced promotion)
+unifyOne (a ::< (MType _ (TRef b)))
+  = unifyOne $ a <: b
+
+-- A <: ~B -> Failure
+unifyOne constraint@((MType Imt _) ::< (MType Mut _))
+  = raise (FailedToUnify constraint) >> pure M.empty
+
+unifyOne ((MType _ a) ::< (MType _ b))
+  = unifyOne (a :< b)
 

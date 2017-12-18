@@ -1,0 +1,12 @@
+What if it was the Fluid programming language? Notional? Quaint? Light? Overload? Dry? Sym for Speak Your Mind? Clear? Clarity? Klar?
+
+Those examples for Sathish, try to come up with some challenging things to express in other languages to highlight the strengths of yours
+
+Other thoughts
+
+Could represent members as functions during type-checking and before code gen
+
+Could find the union of types in an if branch as the union of their supertypes
+
+Could create lists of what a name could be referring to during constraint-generation, and narrow it down during type-checking
+
