@@ -7,8 +7,8 @@ import Test.Tasty
 import qualified Test.Tasty.HUnit as H
 
 import Ast.A0Parse
--- import Lexer
--- import Parser
+import Lexer
+import Parser
 
 test :: String -> Ast -> TestTree
 test src = namedTest src src
@@ -58,7 +58,7 @@ factorial(Int n) -> Int =>
     [ Named "factorial" $ UFunc $ Func ( Sig Pure [Param Imt TInt "n"] $ Just TInt) ImplicitRet
       [ SExpr
         $ EIf
-          (Cond $ EApp $ App (EName "==") $ Args Pure [EName "n", EVal $ VInt 0])
+          (Cond $ EApp $ App (EName "<=") $ Args Pure [EName "n", EVal $ VInt 0])
           (EVal $ VInt 1)
           (EApp $ App (EName "*") $ Args Pure
            [ (EName "n")
@@ -188,36 +188,19 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
       [ SExpr $ EApp $ App (EName "/") $ Args Pure
         [ EApp $ App (EName "+") $ Args Pure
           [ EApp $ App (EName "-") $ Args Pure [EName "b"]
-          , EApp $ App (ESelect $ Select (EName "math") "sqrt")
-           EBinOp Add
-            $ EApp $ App
-              (ESelect $ Select (EName "math") "sqrt" )
-              $ Args
-                Pure
-                [ EBinOp Sub
-                  (EBinOp Mul (EName "b") (EName "b"))
-                  (EBinOp Mul (EVal $ VInt 4) $ EBinOp Mul (EName "a") (EName "c"))
+          , EApp $ App (ESelect $ Select (EName "math") "sqrt") $ Args Pure
+            [ EApp $ App (EName "-") $ Args Pure
+              [ EApp $ App (EName "*") $ Args Pure [EName "b", EName "b"]
+              , EApp $ App (EName "*") $ Args Pure
+                [ EVal $ VInt 4
+                , EApp $ App (EName "*") $ Args Pure [EName "a", EName "c"]
                 ]
+              ]
+            ]
           ]
-        ,
-          (EBinOp Mul (EVal $ VInt 2) (EName "a"))
+        , EApp $ App (EName "*") $ Args Pure [EVal $ VInt 2, EName "a"]
         ]
-
-      -- [ SExpr
-      --   $ EBinOp Div
-      --     ( EBinOp Add
-      --       ( EUnOp Neg (EName "b") )
-      --       $ EApp $ App
-      --         (ESelect $ Select (EName "math") "sqrt" )
-      --         $ Args
-      --           Pure
-      --           [ EBinOp Sub
-      --             (EBinOp Mul (EName "b") (EName "b"))
-      --             (EBinOp Mul (EVal $ VInt 4) $ EBinOp Mul (EName "a") (EName "c"))
-      --           ]
-      --     )
-      --     (EBinOp Mul (EVal $ VInt 2) (EName "a"))
-      --   ]
+      ]
     ]
 
   , test "foo() => foo()"
