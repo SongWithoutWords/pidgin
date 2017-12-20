@@ -6,5 +6,4 @@ packages:
 resolver: nightly-2017-09-29
 
 extra-deps:
-- monad-st-0.2.4.1
 
