@@ -3,7 +3,13 @@ extra-package-dbs: []
 packages:
 - '.'
 
-resolver: nightly-2017-09-29
+resolver: lts-9.20
 
 extra-deps:
+- llvm-hs-5.0.0
+- llvm-hs-pure-5.0.0
+
+nix:
+  enable: true
+  packages: [llvm_5]
 
