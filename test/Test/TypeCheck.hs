@@ -140,9 +140,11 @@ tests = testGroup "typecheck"
       condition _ _ = False
       in test' "$ a = b; $ b = c; $ c = b" condition
 
-    , let b = (Var TInt $ Expr TInt $ EBinOp Add
-            (Expr TInt $ EName "b")
-            (Expr TInt $ EName "a"))
+    , let b = (Var TInt $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+")
+               $ Args Pure
+            [ Expr TInt $ EName "b"
+            , Expr TInt $ EName "a"
+            ])
       in test "$ a = 1; $ b = b + a"
         [ ("a", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 1)
         , ("b", UVar b)
@@ -185,12 +187,15 @@ tests = testGroup "typecheck"
   -- TypeCheck operator tests
   , test "$ a = 3 + 7"
     [("a", UVar $ Var TInt $ Expr TInt
-       $ EBinOp Add (Expr TInt $ EVal $ VInt 3) (Expr TInt $ EVal $ VInt 7))]
+       $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+        [Expr TInt $ EVal $ VInt 3, Expr TInt $ EVal $ VInt 7]
+     )]
     []
 
   , test "$ a = b + c; $ b = 3; $ c = 7"
     [ ("a", UVar $ Var TInt $ Expr TInt
-        $ EBinOp Add (Expr TInt $ EName "b") (Expr TInt $ EName "c"))
+        $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+          [Expr TInt $ EName "b", Expr TInt $ EName "c"])
     , ("b", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 3)
     , ("c", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 7)]
     []
@@ -253,9 +258,8 @@ $ a = inc(1)
         (Sig Pure [Named "x" $ TInt] TInt) $ Block []
           (Just
             $ Expr TInt
-              $ EBinOp Add
-                (Expr TInt $ EName "x")
-                (Expr TInt $ EVal $ VInt 1)))
+              $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+                [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]))
     , ("a", UVar $ Var TInt
         $ Expr TInt
           $ EApp $ App
@@ -271,9 +275,8 @@ $ a = inc(inc(1))
     [ ("inc", UFunc $ Func
         (Sig Pure [Named "x" $ TInt] TInt ) $ Block []
           (Just $ Expr TInt
-            $ EBinOp Add
-              (Expr TInt $ EName "x")
-              $ Expr TInt $ EVal $ VInt 1))
+            $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+              [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]))
     , ("a", UVar $ Var TInt $ Expr TInt
         $ EApp $ App
           (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
@@ -307,10 +310,9 @@ $ a = inc(1)
     [ ("inc", UFunc $ Func
         (Sig Pure [Named "x" $ TInt] TInt) $ Block []
         (Just $ Expr TInt
-          $ EBinOp Add
-            (Expr TInt $ EName "x")
-            (Expr TInt $ EVal $ VInt 1))
-      )
+          $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+")
+            $ Args Pure [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]))
+
     , ("a", UVar $ Var TInt $ Expr TInt
         $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
@@ -324,10 +326,9 @@ $ a = inc("one")
     [ ("inc", UFunc $ Func
         (Sig Pure [Named "x" $ TInt] TInt) $ Block []
         (Just $ Expr TInt
-          $ EBinOp Add
-            (Expr TInt $ EName "x")
-            (Expr TInt $ EVal $ VInt 1))
-      )
+          $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+            [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]))
+
     , ("a", UVar $ Var TInt
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TStr $ EVal $ VStr "one"])
@@ -345,9 +346,8 @@ $ a = inc(1)
         (Sig Pure [Named "x" $ TInt] TInt ) $ Block
         [SVar $ Named "one" $ Var TInt (Expr TInt $ EVal $ VInt 1) ]
         (Just$ Expr TInt
-          $ EBinOp Add
-            (Expr TInt $ EName "x")
-            (Expr TInt $ EName "one")))
+          $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+            [Expr TInt $ EName "x", Expr TInt $ EName "one"]))
     , ("a", UVar $ Var TInt
         $ Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "inc")
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
@@ -382,9 +382,8 @@ inc(~Int x) =>
       [ ("mutableInc", UFunc $ Func
           (Sig Pure [Named "x" $ TRef $ TMut TInt] TNone) $ Block
           [SAssign (LExpr (TRef $ TMut TInt) $ LName "x") $ Expr TInt
-            $ EBinOp Add
-              (Expr (TRef $ TMut TInt) $ EName "x")
-              (Expr TInt $ EVal $ VInt 1)]
+            $ EApp $ App (Expr (TFunc Pure [TInt] TInt) $ EName "+") $ Args Pure
+              [Expr (TRef $ TMut TInt) $ EName "x", Expr TInt $ EVal $ VInt 1]]
           Nothing)
 
       , ("inc", UFunc $ Func

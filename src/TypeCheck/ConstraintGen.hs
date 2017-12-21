@@ -147,63 +147,6 @@ checkExpr expression = case expression of
 
     pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
 
-  A1.EUnOp op e -> let
-    checkUnOp :: UnOp -> A2.Type -> A2.Type -> ConstrainM ()
-    checkUnOp Neg tExpr tRes = do
-      TInt $= tExpr >> tRes $= TInt
-    in do
-      e'@(A2.Expr t _) <- checkExpr e
-      tRes <- getNextTypeVar
-      checkUnOp op t tRes
-      pure $ A2.Expr tRes $ A2.EUnOp op e'
-
-  A1.EBinOp op e1 e2 -> let
-
-    checkBinOp :: BinOp -> A2.Type -> A2.Type -> A2.Type -> ConstrainM ()
-
-    -- Int -> Int -> Int
-    checkBinOp Add a b r = do
-      mapM_ (TInt $=) [a, b]
-      r $= TInt
-
-    checkBinOp Sub a b r = do
-      mapM_ ($= TInt) [a, b]
-      r $= TInt
-
-    checkBinOp Mul a b r = do
-      mapM_ (TInt $=) [a, b]
-      r $= TInt
-
-    checkBinOp Div a b r = do
-      mapM_ (TInt $=) [a, b]
-      r $= TInt
-
-    checkBinOp Mod a b r = do
-      mapM_ (TInt $=) [a, b]
-      r $= TInt
-
-    -- Int -> Int -> Bln
-    checkBinOp (Cmp _) a b r = do
-      mapM_ (TInt $=) [a, b]
-      r $= TBln
-
-    -- Bln -> Bln -> Bln
-    checkBinOp And a b r = do
-      mapM_ (TBln $=) [a, b]
-      r $= TBln
-
-    checkBinOp Or a b r = do
-      mapM_ (TBln $=) [a, b]
-      r $= TBln
-
-    in do
-      e1'@(A2.Expr t1 _) <- checkExpr e1
-      e2'@(A2.Expr t2 _) <- checkExpr e2
-
-      tRes <- getNextTypeVar
-      checkBinOp op t1 t2 tRes
-
-      pure $ A2.Expr tRes $ A2.EBinOp op e1' e2'
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
     where

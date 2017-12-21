@@ -63,8 +63,6 @@ subAst' substitutions ast = multiMapM subUnit ast
       EIf (Cond ec) e1 e2 ->
         liftM3 A3.EIf (A3.Cond <$> subExp ec) (subExp e1) (subExp e2)
       ELambda f -> A3.ELambda <$> subFunc f
-      EUnOp op e1 -> (A3.EUnOp op) <$> (subExp e1)
-      EBinOp op e1 e2 -> liftM2 (A3.EBinOp op) (subExp e1) (subExp e2)
       EVal v -> pure $ A3.EVal v
 
     subLExpr :: LExpr -> ErrorM A3.LExpr

@@ -105,53 +105,6 @@ genExpr (Expr typ expr) = case expr of
     setBlock ifEnd
     phi (typeToLlvmType typ) [(e1', ifTrue), (e2', ifFalse)]
 
-  EUnOp op a@(Expr ta _) -> let
-
-    genUnOp :: UnOp -> Type -> A.Operand -> CodeGenM A.Operand
-
-    genUnOp Neg TInt = imul intWidth (A.ConstantOperand $ C.Int intWidth (-1))
-
-    in do
-      a' <- genExpr a
-      genUnOp op ta a'
-
-
-  EBinOp op e1@(Expr t1 _) e2@(Expr t2 _) -> let
-
-    genBinOp :: BinOp -> Type -> Type -> A.Operand -> A.Operand -> CodeGenM A.Operand
-
-    genBinOp Add TInt TInt = iadd intWidth
-    genBinOp Sub TInt TInt = isub intWidth
-    genBinOp Mul TInt TInt = imul intWidth
-    genBinOp Div TInt TInt = sdiv intWidth
-
-    genBinOp Mod TInt TInt = genMod
-      where
-        genMod a b = do
-          -- Mathematically correct modulus, a mod b,
-          -- implemented as ((a rem b) + b) rem b
-          aRemB <- srem intWidth a b
-          aRemBPlusB <- iadd intWidth aRemB b
-          srem intWidth aRemBPlusB b
-
-    genBinOp (Cmp Greater) TInt TInt = igreater
-    genBinOp (Cmp Lesser) TInt TInt = ilesser
-    genBinOp (Cmp GreaterEq) TInt TInt = igreaterEq
-    genBinOp (Cmp LesserEq) TInt TInt = ilesserEq
-
-    genBinOp (Cmp Equal) TInt TInt = iequal
-    genBinOp (Cmp NotEqual) TInt TInt = inotEqual
-
-    genBinOp Add TFlt TFlt = fadd T.FloatFP
-
-    genBinOp oper ta tb = error $
-      "genBinOp " ++ show oper ++ " " ++ show ta ++ " " ++ show tb
-
-    in do
-      e1' <- genExpr e1
-      e2' <- genExpr e2
-      genBinOp op t1 t2 e1' e2'
-
   EVal v -> case v of
     VBln b -> return $ A.ConstantOperand $ C.Int 1 $ case b of True -> 1; False -> 0
     VInt i -> return $ A.ConstantOperand $ C.Int intWidth $ toInteger i
