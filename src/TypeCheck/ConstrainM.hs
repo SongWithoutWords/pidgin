@@ -72,16 +72,17 @@ getNextTypeVar = do
   modify $ \s -> s{nextTypeId = (val + 1)}
   pure $ TVar val
 
+intrinsicsByName :: MultiMap Name Intrinsic
+intrinsicsByName = multiFromList $ zip (nameOfIntrinsic <$> intrinsics) intrinsics
+
 lookupKinds :: Name -> ConstrainM [Kind]
-lookupKinds name = do
-  locals <- gets scopes
-  global <- ask
+lookupKinds name =
   let
-    lookupKinds' :: Scopes -> [Kind]
-    lookupKinds' [] = map kindOfUnit $ multiLookup name global
-    lookupKinds' (l:ls) = case M.lookup name l of
+    lookupLocal :: Scopes -> [Kind]
+    lookupLocal [] = []
+    lookupLocal (l:ls) = case M.lookup name l of
       Just k -> [k]
-      Nothing -> lookupKinds' ls
+      Nothing -> lookupLocal ls
 
     kindOfUnit :: Unit -> Kind
     kindOfUnit u = case u of
@@ -90,5 +91,12 @@ lookupKinds name = do
       UFunc f -> KVar $ typeOfFunc f
       UVar (Var t _) -> KVar t
 
-  pure $ lookupKinds' locals
+    kindOfIntrinsic :: Intrinsic -> Kind
+    kindOfIntrinsic = KVar . typeOfIntrinsic
+
+  in do
+    let intrins = multiLookup name intrinsicsByName
+    globals <- multiLookup name <$> ask
+    locals <- lookupLocal <$> gets scopes
+    pure $ (kindOfIntrinsic <$> intrins) <> (kindOfUnit <$> globals) <> locals
 

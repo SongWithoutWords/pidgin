@@ -36,7 +36,10 @@ data Intrinsic
 
   | BEql
   | BNeq
-  deriving(Eq, Ord, Show)
+  deriving(Enum, Eq, Ord, Show)
+
+intrinsics :: [Intrinsic]
+intrinsics = [IAdd ..]
 
 nameOfIntrinsic :: Intrinsic -> Name
 nameOfIntrinsic f = case f of
