@@ -41,5 +41,26 @@ tests = testGroup "Unification"
     [TVar 0 :$= TFunc Pure [TVar 1] (TVar 2), TVar 1 :$= TVar 2, TVar 2 :$= TInt]
     [(0, TFunc Pure [TInt] TInt), (1, TInt), (2, TInt)]
     []
+
+  , unifyTest "simple overload"
+    [TFunc Pure [TInt, TInt] (TVar 0) :$= TOver
+     [ TFunc Pure [TInt, TInt] TInt
+     , TFunc Pure [TFlt, TFlt] TFlt]]
+    [(0, TInt)]
+    []
+
+  , unifyTest "another overload"
+    [ TVar 0 :$= TOver [TFunc Pure [TInt, TInt] TInt, TFunc Pure [TFlt, TFlt] TFlt]
+    , TFunc Pure [TInt, TInt] (TVar 1) :$= TVar 0
+    ]
+    [(0, TFunc Pure [TInt, TInt] TInt), (1, TInt)]
+    []
+
+  , unifyTest "overload selection with subtyping"
+    [ TVar 0 :$= TOver [TFunc Pure [TInt, TInt] TInt, TFunc Pure [TFlt, TFlt] TFlt]
+    , TFunc Pure [TInt, TFlt] (TVar 1) :$= TVar 0
+    ]
+    [(0, TFunc Pure [TFlt, TFlt] TFlt), (1, TFlt)]
+    []
   ]
 
