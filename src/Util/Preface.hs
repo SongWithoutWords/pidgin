@@ -71,6 +71,10 @@ maybeLast [] = Nothing
 maybeLast [x] = Just x
 maybeLast (_:xs) = maybeLast xs
 
+zipWithResult :: (a -> b) -> [a] -> [(a, b)]
+zipWithResult _ [] = []
+zipWithResult f (a:as) = (a, f a) : zipWithResult f as
+
 
 -- Functions
 ----------------------------------------------------------------
