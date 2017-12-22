@@ -5,14 +5,14 @@ module Ast.A2Constrained
   ( module Ast.A2Constrained
   , module Ast.A2Constrained.Type
   , module Ast.Common.Access
-  , module Ast.Common.Op
+  , module Ast.Common.Intrinsic
   , module Ast.Common.Table
   , module Ast.Common.Value
   ) where
 
 import Ast.A2Constrained.Type
 import Ast.Common.Access
-import Ast.Common.Op
+import Ast.Common.Intrinsic
 import Ast.Common.Table
 import Ast.Common.Value
 

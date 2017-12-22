@@ -40,7 +40,6 @@ library
                     Ast.Common.Intrinsic
                     Ast.Common.Mutability
                     Ast.Common.Name
-                    Ast.Common.Op
                     Ast.Common.Purity
                     Ast.Common.Table
                     Ast.Common.Value

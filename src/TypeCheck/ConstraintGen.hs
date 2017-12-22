@@ -9,7 +9,6 @@ import qualified Ast.A1PostParse as A1
 import qualified Ast.A2Constrained as A2
 import Ast.A2Constrained.Error
 import Ast.Common.Name
-import Ast.Common.Op
 import TypeCheck.Constraint
 import TypeCheck.ConstrainM
 import TypeCheck.Kind

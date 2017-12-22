@@ -6,7 +6,6 @@ module Ast.A1PostParse
   , module Ast.A0Parse.Sig
   , module Ast.A0Parse.Type
   , module Ast.Common.Access
-  , module Ast.Common.Op
   , module Ast.Common.Table
   , module Ast.Common.Value
   ) where
@@ -14,7 +13,6 @@ module Ast.A1PostParse
 import Ast.A0Parse.Sig
 import Ast.A0Parse.Type
 import Ast.Common.Access
-import Ast.Common.Op
 import Ast.Common.Table
 import Ast.Common.Value
 

@@ -26,8 +26,6 @@ data Error
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
   | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
 
-  | UndefinedOperator BinOp Type Type
-
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
 

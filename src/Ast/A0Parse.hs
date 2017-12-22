@@ -7,7 +7,6 @@ module Ast.A0Parse
   , module Ast.A0Parse.Type
   , module Ast.Common.Access
   , module Ast.Common.Name
-  , module Ast.Common.Op
   , module Ast.Common.Value
   ) where
 
@@ -15,7 +14,6 @@ import Ast.A0Parse.Sig
 import Ast.A0Parse.Type
 import Ast.Common.Access
 import Ast.Common.Name
-import Ast.Common.Op
 import Ast.Common.Value
 
 -- Finite number of steps friend!
