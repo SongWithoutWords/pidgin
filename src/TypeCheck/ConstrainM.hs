@@ -6,6 +6,7 @@ module TypeCheck.ConstrainM
   , pushNewScope
   , popScope
   , addLocalBinding
+  , getNextTVar
   , getNextTypeVar
   , lookupKinds
   ) where
@@ -66,11 +67,14 @@ modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 addLocalBinding :: Named Type -> ConstrainM ()
 addLocalBinding (Named n t) = modifyCurrentScope $ M.insert n $ KVar t
 
+getNextTVar :: ConstrainM TVar
+getNextTVar = do
+  tvar <- (gets nextTypeId)
+  modify $ \s -> s{nextTypeId = (tvar + 1)}
+  pure tvar
+
 getNextTypeVar :: ConstrainM Type
-getNextTypeVar = do
-  val <- (gets nextTypeId)
-  modify $ \s -> s{nextTypeId = (val + 1)}
-  pure $ TVar val
+getNextTypeVar = TVar <$> getNextTVar
 
 intrinsicsByName :: MultiMap Name Intrinsic
 intrinsicsByName = multiFromList $ zip (nameOfIntrinsic <$> intrinsics) intrinsics
