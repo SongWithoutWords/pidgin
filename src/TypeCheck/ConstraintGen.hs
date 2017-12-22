@@ -107,8 +107,6 @@ checkLExpr lexpr = case lexpr of
 
 checkName :: Name -> ConstrainM Type
 checkName name = do
-  kinds <- lookupKinds name
-
   let typeOfKind k = case k of
         KNamespace -> Nothing
         KType -> Nothing
