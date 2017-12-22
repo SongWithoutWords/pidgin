@@ -1,11 +1,13 @@
 module TypeCheck.Unify
   ( unify
+  , matchByVal
   , module Ast.A2Constrained.Error
   , module TypeCheck.Constraint
   , module TypeCheck.Substitution
   ) where
 
 import Control.Monad.RWS
+import Data.List(sort)
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -29,10 +31,16 @@ execUnifyM unifyM =
   in (substitutions, subErrors substitutions errors)
 
 raise :: Error -> UnifyM ()
-raise err = tell $ S.singleton err
+raise = tell . S.singleton
 
-sub :: TVar -> Type -> UnifyM ()
-sub tvar t = modify (M.insert tvar t)
+raiseAll :: [Error] -> UnifyM ()
+raiseAll = tell . S.fromList
+
+substitute :: TVar -> Type -> UnifyM ()
+substitute tvar t = modify (M.insert tvar t)
+
+substituteAll :: Substitutions -> UnifyM ()
+substituteAll = modify . M.union
 
 
 unorderedEq :: (Eq a, Ord a) => [a] -> [a] -> Bool
@@ -54,60 +62,115 @@ applySubs c = do
 
 
 unifyOne :: Constraint -> UnifyM Constraints
-unifyOne ((TMut a) :$= (TMut b)) = unifyOne (a :$= b)
-unifyOne (a :$= (TMut b)) = unifyOne (a :$= b)
-unifyOne c@(TMut _ :$= _) = raise (FailedToUnify c) >> pure mempty
+unifyOne c = case c of
+  a :$= b -> unifyOne' (matchByVal a b)
+  a :&= b -> unifyOne' (matchByRef a b)
+  where
+    unifyOne' :: Match -> UnifyM Constraints
+    unifyOne' m = case m of
+      Match errs@(_:_) _ _  subs -> raiseAll errs >> substituteAll subs >> pure []
 
-unifyOne c@(a :$= b)
+      Match [] _ Complete subs -> substituteAll subs >> pure []
 
-  -- equality
-  | a == b = pure []
-
-  -- var := any
-  | TVar a' <- a = sub a' b >> pure []
-
-  -- any := tvar
-  | TVar _ <- b = pure [c]
-
-  -- error :$= any
-  | TError <- a = pure []
-
-  -- any :$= error
-  | TError <- b = pure []
-
-  -- ref :$= ref
-  | TRef a' <- a
-  , TRef b' <- b
-    = unifyOne $ a' :$= b'
-
-  -- function :$= function
-  | TFunc _ aParams aRet <- a
-  , TFunc _ bParams bRet <- b = do
-      paramConstraints <- constrainParams aParams bParams
-      concatMapM unifyOne $ (aRet :$= bRet) : paramConstraints
-
-  -- function :$= non-function
-  | TFunc _ _ _ <- a = raise (NonApplicable b) >> pure []
-
-  -- non-function :$= function
-  | TFunc _ _ _ <- b = raise (NonApplicable a) >> pure []
+      Match [] _ Incomplete  _ -> pure [c]
 
 
-  -- TODO: Should probably replace with determination of whether the types may be unifiable
+-- The distance in implicit conversions
+newtype Distance = Distance Word deriving(Eq, Ord, Show)
 
-  -- inequality
-  | not (typeIsKnown b) = pure [c]
-  | otherwise = raise (FailedToUnify c) >> pure []
+instance Monoid Distance where
+  mempty = Distance 0
+  mappend (Distance a) (Distance b) = Distance (a + b)
 
-constrainParams :: [Type] -> [Type] -> UnifyM [Constraint]
-constrainParams xs ys = if length xs == length ys
-  then pure $ zipWith (:$=) ys xs
-  else raise (WrongNumArgs (length ys) (length xs)) >> pure []
+data Status
+  = Complete
+  | Incomplete
+  deriving(Eq, Ord, Show)
 
-typeIsKnown :: Type -> Bool
-typeIsKnown (TMut t) = typeIsKnown t
-typeIsKnown (TFunc _ params ret) = all typeIsKnown (ret : params)
-typeIsKnown (TRef t) = typeIsKnown t
-typeIsKnown (TVar _) = False
-typeIsKnown _ = True
+instance Monoid Status where
+  mempty = Complete
+  mappend Complete Complete = Complete
+  mappend _ _ = Incomplete
+
+data Match
+  = Match [Error] Distance Status Substitutions
+  deriving(Eq, Show)
+
+-- Ordered from best to worst match
+instance Ord Match where
+  compare
+    (Match errs1 dist1 stat1 subs1)
+    (Match errs2 dist2 stat2 subs2)
+      =  compare (length errs1) (length errs2)
+      <> compare errs1 errs2
+      <> compare dist1 dist2
+      <> compare stat1 stat2
+      <> compare subs1 subs2
+
+
+instance Monoid Match where
+  mempty = Match [] (Distance 0) mempty mempty
+  mappend
+    (Match errs1 dist1 stat1 subs1)
+    (Match errs2 dist2 stat2 subs2)
+    = Match (errs1 <> errs2) (dist1 <> dist2) (stat1 <> stat2) (subs1 <> subs2)
+
+
+union = Match [] (Distance 0) Complete mempty
+substitution tvar typ = Match [] (Distance 0) Complete (M.singleton tvar typ)
+unknown = Match [] (Distance 0) Incomplete mempty
+conversion = Match [] (Distance 1) Complete mempty
+conflict err = Match [err] (Distance 0) Complete mempty
+
+
+matchByVal :: Type -> Type -> Match
+
+-- All combinations of mutability are allowed under pass by value
+matchByVal (TMut a) (TMut b) = matchByVal a b
+matchByVal a (TMut b) = matchByVal a b
+matchByVal (TMut a) b = matchByVal a b
+
+-- All combinations of reference are allowed under pass by value
+matchByVal (TRef a) (TRef b) = matchByRef a b
+matchByVal a (TRef b) = matchByRef a b -- Implicit de-reference
+matchByVal (TRef a) b = matchByRef a b -- Implicit reference
+
+
+matchByVal a b
+
+  | a == b = union
+
+  | TVar a' <- a = substitution a' b
+
+  | TVar _ <- b = unknown
+
+  | TError <- a = union
+
+  | TError <- b = union
+
+  | TFunc aPure aParams aRet <- a
+  , TFunc bPure bParams bRet <- b
+    =  (if aPure <= bPure then union else conflict $ WrongPurity aPure bPure)
+    <> (if length bParams == length aParams then
+          union else conflict $ WrongNumArgs (length bParams) (length aParams))
+    <> (mconcat $ zipWith matchByVal bParams aParams)
+    <> (matchByVal aRet bRet)
+
+  | TOver bs <- b = case bs of
+      [] -> conflict NoOverloadMatchesArgs
+      _ -> head $ sort $ map (matchByVal a) bs -- Choose the best match
+
+  | TFunc _ _ _ <- a = conflict $ NonApplicable b
+
+  | TFunc _ _ _ <- b = conflict $ NonApplicable a
+
+  | otherwise = conflict $ FailedToUnify (a :$= b)
+
+
+matchByRef :: Type -> Type -> Match
+
+-- Immutable is not subtype of mutable under pass by reference
+matchByRef (TMut a) (TMut b) = matchByRef a b
+matchByRef a (TMut b) = matchByRef a b
+matchByRef (TMut _) _ = conflict WrongMutability
 

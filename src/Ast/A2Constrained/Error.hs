@@ -24,7 +24,9 @@ data Error
 
   | NonApplicable Type
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
+  | WrongMutability
   | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
+  | NoOverloadMatchesArgs
 
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
   | CompetingDefinitions
