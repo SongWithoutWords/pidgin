@@ -36,6 +36,7 @@ data Intrinsic
 
   | BEql
   | BNeq
+  deriving(Eq, Ord, Show)
 
 nameOfIntrinsic :: Intrinsic -> Name
 nameOfIntrinsic f = case f of

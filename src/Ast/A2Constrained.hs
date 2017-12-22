@@ -77,6 +77,7 @@ data Expr'
   = EApp App
   | ESelect Select
   | EName Name
+  | EIntr Intrinsic
 
   | EIf Cond Expr Expr
 
