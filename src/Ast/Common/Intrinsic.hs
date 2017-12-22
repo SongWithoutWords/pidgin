@@ -73,9 +73,6 @@ nameOfIntrinsic f = case f of
   BNeq -> "!="
   BNot -> "not"
 
-(~>) :: [Type] -> Type -> Type
-(~>) args ret = TFunc Pure args ret
-
 typeOfIntrinsic :: Intrinsic -> Type
 typeOfIntrinsic f = case f of
 
@@ -110,4 +107,7 @@ typeOfIntrinsic f = case f of
   BEql -> [TBln, TBln] ~> TBln
   BNeq -> [TBln, TBln] ~> TBln
   BNot -> [TBln] ~> TBln
+  where
+    (~>) :: [Type] -> Type -> Type
+    (~>) args ret = TFunc Pure args ret
 
