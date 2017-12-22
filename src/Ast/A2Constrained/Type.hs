@@ -7,12 +7,17 @@ module Ast.A2Constrained.Type
 import Ast.Common.Mutability
 import Ast.Common.Purity
 
+type Types = [Type]
+
 data Type
   -- = TUser Typename
   = TMut Type
 
   -- Neither caller nor callee care about left-most mutability of param and return types
-  | TFunc Purity [Type] Type
+  | TFunc Purity Types Type
+
+  -- Types associated with an overloaded name
+  | TOver Types
 
   | TRef Type
 
