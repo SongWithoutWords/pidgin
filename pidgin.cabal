@@ -37,6 +37,7 @@ library
                     Ast.A3Typed
 
                     Ast.Common.Access
+                    Ast.Common.Intrinsic
                     Ast.Common.Mutability
                     Ast.Common.Name
                     Ast.Common.Op

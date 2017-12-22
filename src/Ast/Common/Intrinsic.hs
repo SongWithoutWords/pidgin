@@ -1,4 +1,4 @@
-module Ast.Common.BuiltInFunction where
+module Ast.Common.Intrinsic where
 
 import Ast.A2Constrained.Type
 import Ast.Common.Name
