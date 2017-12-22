@@ -4,6 +4,7 @@ module TypeCheck.ConstraintGen
   ) where
 
 import Control.Monad(when)
+import Data.Maybe(mapMaybe)
 
 import qualified Ast.A1PostParse as A1
 import qualified Ast.A2Constrained as A2
@@ -106,16 +107,19 @@ checkLExpr lexpr = case lexpr of
 
 checkName :: Name -> ConstrainM Type
 checkName name = do
-    kinds <- lookupKinds name
-    case kinds of
-      [KVar t] -> pure t
-      _ -> do
-        raise $ case kinds of
-          [] -> UnknownId name
-          [KType] -> NeedExprFoundType
-          [KNamespace] -> NeedExprFoundNamespace
-          _ -> CompetingDefinitions
-        pure TError
+  kinds <- lookupKinds name
+
+  let typeOfKind k = case k of
+        KNamespace -> Nothing
+        KType -> Nothing
+        KVar t -> Just t
+
+  types <- mapMaybe typeOfKind <$> (lookupKinds name)
+
+  case types of
+    [] -> (raise $ UnknownId name) >> pure TError
+    [t] -> pure t
+    ts -> pure $ TOver ts
 
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of
