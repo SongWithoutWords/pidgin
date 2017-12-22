@@ -20,23 +20,35 @@ subConstraint = mapConstraint . subType
 
 
 subType :: Substitutions -> Type -> Type
-subType s = mapTVar $ subTVar s
-
-replaceTVar :: TVar -> Type -> Type -> Type
-replaceTVar tvar t = mapTVar (\tvar' -> if tvar' == tvar then t else TVar tvar')
-
-mapTVar :: (TVar -> Type) -> Type -> Type
-mapTVar f typ = let mapTVar' = mapTVar f in case typ of
-  TVar t -> f t
-  TFunc p param ret -> TFunc p (mapTVar' <$> param) (mapTVar' ret)
-  TRef t -> TRef $ mapTVar' t
+subType s typ = let subType' = subType s in case typ of-- mapTVar $ subTVar s
+  x@(TVar tvar) -> case M.lookup tvar s of
+    Nothing -> x
+    Just y -> y
+  x@(TOver tvar _) -> case M.lookup tvar s of
+    Nothing -> x
+    Just y -> y
+  TFunc p param ret -> TFunc p (subType' <$> param) (subType' ret)
+  TMut t -> TMut $ subType' t
+  TRef t -> TMut $ subType' t
   t -> t
 
-subTVar :: Substitutions -> TVar -> Type
-subTVar s x = case M.lookup x s of
-  Nothing -> TVar x
-  Just (TVar y) -> TVar y
-  Just t -> t
+
+-- replaceTVar :: TVar -> Type -> Type -> Type
+-- replaceTVar tvar t = mapTVar (\tvar' -> if tvar' == tvar then t else TVar tvar')
+
+-- mapTVar :: (TVar -> Type) -> Type -> Type
+-- mapTVar f typ = let mapTVar' = mapTVar f in case typ of
+--   TVar t -> f t
+--   TOver t _ -> f t
+--   TFunc p param ret -> TFunc p (mapTVar' <$> param) (mapTVar' ret)
+--   TRef t -> TRef $ mapTVar' t
+--   t -> t
+
+-- subTVar :: Substitutions -> TVar -> Type
+-- subTVar s x = case M.lookup x s of
+--   Nothing -> TVar x
+--   Just (TVar y) -> TVar y
+--   Just t -> t
 
 
 subErrors :: Substitutions -> Errors -> Errors

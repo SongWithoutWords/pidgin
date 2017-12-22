@@ -117,7 +117,7 @@ checkName name = do
   case types of
     [] -> (raise $ UnknownId name) >> pure TError
     [t] -> pure t
-    ts -> pure $ TOver ts
+    ts -> (flip TOver) ts <$> getNextTVar
 
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of

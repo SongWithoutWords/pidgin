@@ -17,7 +17,7 @@ data Type
   | TFunc Purity Types Type
 
   -- Types associated with an overloaded name
-  | TOver Types
+  | TOver TVar Types
 
   | TRef Type
 

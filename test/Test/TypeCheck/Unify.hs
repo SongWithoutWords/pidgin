@@ -42,25 +42,24 @@ tests = testGroup "Unification"
     [(0, TFunc Pure [TInt] TInt), (1, TInt), (2, TInt)]
     []
 
-  , unifyTest "simple overload"
-    [TFunc Pure [TInt, TInt] (TVar 0) :$= TOver
-     [ TFunc Pure [TInt, TInt] TInt
-     , TFunc Pure [TFlt, TFlt] TFlt]]
-    [(0, TInt)]
+  , unifyTest "overload-ish"
+    [TFunc Pure [TInt, TInt] (TVar 0) :$= TOver 1 [ TFunc Pure [TInt, TInt] TInt]]
+    [(0, TInt), (1, TFunc Pure [TInt, TInt] TInt)]
     []
 
-  , unifyTest "another overload"
-    [ TVar 0 :$= TOver [TFunc Pure [TInt, TInt] TInt, TFunc Pure [TFlt, TFlt] TFlt]
-    , TFunc Pure [TInt, TInt] (TVar 1) :$= TVar 0
-    ]
-    [(0, TFunc Pure [TInt, TInt] TInt), (1, TInt)]
+  , unifyTest "simple overload"
+    [TFunc Pure [TInt, TInt] (TVar 0) :$= TOver 1
+     [ TFunc Pure [TInt, TInt] TInt
+     , TFunc Pure [TFlt, TFlt] TFlt]]
+    [(0, TInt), (1, TFunc Pure [TInt, TInt] TInt)]
     []
 
   , unifyTest "overload selection with subtyping"
-    [ TVar 0 :$= TOver [TFunc Pure [TInt, TInt] TInt, TFunc Pure [TFlt, TFlt] TFlt]
-    , TFunc Pure [TInt, TFlt] (TVar 1) :$= TVar 0
+    [ TFunc Pure [TInt, TFlt] (TVar 0) :$= TOver 1
+      [ TFunc Pure [TInt, TInt] TInt
+      , TFunc Pure [TFlt, TFlt] TFlt]
     ]
-    [(0, TFunc Pure [TFlt, TFlt] TFlt), (1, TFlt)]
+    [(0, TFlt), (1, TFunc Pure [TFlt, TFlt] TFlt)]
     []
   ]
 

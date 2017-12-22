@@ -1,13 +1,17 @@
 module TypeCheck.Unify
   ( unify
-  , matchByVal
   , module Ast.A2Constrained.Error
   , module TypeCheck.Constraint
   , module TypeCheck.Substitution
+
+  -- for testing
+  , unifyOne
+  , matchByVal
   ) where
 
 import Control.Monad.RWS
-import Data.List(sort)
+import Data.List(sortBy)
+import Data.Ord(comparing)
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -51,7 +55,8 @@ unifyAll [] = pure ()
 unifyAll cs = do
   cs' <- concatMapM (applySubs >=> unifyOne) cs
   modify reduceSubs
-  if unorderedEq cs cs'
+  -- cs'' <- mapM applySubs cs'
+  if unorderedEq cs cs' --cs''
     then raise $ FailedUnification cs
     else unifyAll cs'
 
@@ -73,6 +78,8 @@ unifyOne c = case c of
       Match [] _ Complete subs -> substituteAll subs >> pure []
 
       Match [] _ Incomplete  _ -> pure [c]
+      -- _ -> error $ "Constraint: " ++ show c
+        -- ++ "Produced unhandled match: " ++ show m
 
 
 -- The distance in implicit conversions
@@ -156,9 +163,12 @@ matchByVal a b
     <> (mconcat $ zipWith matchByVal bParams aParams)
     <> (matchByVal aRet bRet)
 
-  | TOver bs <- b = case bs of
+  | TOver tvar bs <- b = case bs of
       [] -> conflict NoOverloadMatchesArgs
-      _ -> head $ sort $ map (matchByVal a) bs -- Choose the best match
+      _ -> let
+          matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (matchByVal a) bs
+          bestMatch = head matchesByCompatibility
+        in (snd $ bestMatch) <> substitution tvar (fst bestMatch)
 
   | TFunc _ _ _ <- a = conflict $ NonApplicable b
 
