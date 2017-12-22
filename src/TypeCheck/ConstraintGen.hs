@@ -165,7 +165,7 @@ checkApp (A1.App expr (A1.Args purity args)) = do
     expr'@(A2.Expr tExpr _) <- checkExpr expr
     args' <- traverse checkExpr args
 
-    let argTypes = (\(A2.Expr t _) -> t) <$> args'
+    let argTypes = typeOfExpr <$> args'
 
     TFunc purity argTypes tRet $= tExpr
 
@@ -190,11 +190,6 @@ checkType typ = case  typ of
     return $ TFunc purity params' ret'
 
   A1.TRef m t -> A2.TRef . (applyMut m) <$> checkType t
-  -- TPersRef m t -> checkAndRet TPersRef m t
-
-  -- TOption m t -> checkAndRet TOption m t
-  -- TZeroPlus m t -> checkAndRet TZeroPlus m t
-  -- TOnePlus m t -> checkAndRet TOnePlus m t
 
   A1.TBln -> return TBln
   A1.TChr -> return TChr
