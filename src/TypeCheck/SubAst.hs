@@ -96,8 +96,10 @@ subAst' substitutions ast = multiMapM subUnit ast
       x@(TVar tvar) -> case M.lookup tvar substitutions of
         Nothing -> raise (FailedToInferType x) >> pure x
         Just y -> pure y
-      x@(TOver tvar _) -> case M.lookup tvar substitutions of
-        Nothing -> raise (FailedToInferType x) >> pure x
+      (TOver tvar ts) -> case M.lookup tvar substitutions of
+        Nothing -> do
+          x <- TOver tvar <$> mapM subType' ts
+          raise (FailedToInferType x) >> pure x
         Just y -> pure y
       TFunc p paramTypes retType ->
         liftM2 (A3.TFunc p) (mapM subType' paramTypes) (subType' retType)
