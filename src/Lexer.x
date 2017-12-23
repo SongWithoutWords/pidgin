@@ -28,7 +28,7 @@ $quote                   = \"
 @string                  = ( \\ $quote | [^ $quote \n]) *
 @litString               = $quote @string $quote
 
-@litInt                  = (0 | [1-9][0-9]*)
+@litInt                  = (0 | [\-]? [1-9] [0-9]*)
 @litFlt                  = @litInt \. [0-9]+
 
 @nameLower               = $alphaLower $alphaNumeral*
