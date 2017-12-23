@@ -2,14 +2,13 @@
 
 module CodeGen(codeGen) where
 
+import Control.Monad.State(gets)
 import qualified Data.Map as M
 import Data.String
-import Control.Monad.State(gets)
 
 import qualified LLVM.AST as A
 import qualified LLVM.AST.Constant as C
 import qualified LLVM.AST.Global as G
-import qualified LLVM.AST.Type as T
 
 import Ast.A3Typed
 import CodeGen.Instructions
@@ -64,11 +63,14 @@ genStmt stmt = case stmt of
     oper <- genExpr e
     addBinding name oper
 
-intWidth = 64
 
 -- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr -> CodeGenM A.Operand
 genExpr (Expr typ expr) = case expr of
+
+  EApp (App (Expr _ (EIntr i)) (Args _ args)) -> do
+    args' <- mapM genExpr args
+    genIntrinsic i args'
 
   EApp (App e (Args _ args)) -> do
 
