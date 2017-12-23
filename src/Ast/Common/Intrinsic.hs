@@ -4,11 +4,13 @@ import Ast.A2Constrained.Type
 import Ast.Common.Name
 
 data Intrinsic
-  = IAdd
+  = INeg
+  | IAdd
   | ISub
   | IMul
   | IDiv
-  | INeg
+  | IRem
+  | IMod
 
   | IEql
   | INeq
@@ -17,11 +19,11 @@ data Intrinsic
   | IGeq
   | ILeq
 
+  | FNeg
   | FAdd
   | FSub
   | FMul
   | FDiv
-  | FNeg
 
   | FEql
   | FNeq
@@ -30,9 +32,9 @@ data Intrinsic
   | FGeq
   | FLeq
 
+  | BNot
   | BAnd
   | BOrr
-  | BNot
 
   | BEql
   | BNeq
@@ -44,11 +46,13 @@ intrinsics = [IAdd ..]
 nameOfIntrinsic :: Intrinsic -> Name
 nameOfIntrinsic f = case f of
 
+  INeg -> "-"
   IAdd -> "+"
   ISub -> "-"
   IMul -> "*"
   IDiv -> "/"
-  INeg -> "-"
+  IRem -> "rem"
+  IMod -> "%"
 
   IEql -> "=="
   INeq -> "!="
@@ -57,33 +61,35 @@ nameOfIntrinsic f = case f of
   IGeq -> ">="
   ILeq -> "<="
 
+  FNeg -> "-"
   FAdd -> "+"
   FSub -> "-"
   FMul -> "*"
   FDiv -> "/"
-  FNeg -> "-"
 
   FEql -> "=="
-  FNeq -> "-"
+  FNeq -> "!="
   FGrt -> ">"
   FLsr -> "<"
   FGeq -> ">="
   FLeq -> "<="
 
+  BNot -> "not"
   BAnd -> "and"
   BOrr -> "or"
   BEql -> "=="
   BNeq -> "!="
-  BNot -> "not"
 
 typeOfIntrinsic :: Intrinsic -> Type
 typeOfIntrinsic f = case f of
 
+  INeg -> [TInt] ~> TInt
   IAdd -> [TInt, TInt] ~> TInt
   ISub -> [TInt, TInt] ~> TInt
   IMul -> [TInt, TInt] ~> TInt
   IDiv -> [TInt, TInt] ~> TInt
-  INeg -> [TInt] ~> TInt
+  IRem -> [TInt, TInt] ~> TInt
+  IMod -> [TInt, TInt] ~> TInt
 
   IEql -> [TInt, TInt] ~> TBln
   INeq -> [TInt, TInt] ~> TBln
@@ -92,11 +98,11 @@ typeOfIntrinsic f = case f of
   IGeq -> [TInt, TInt] ~> TBln
   ILeq -> [TInt, TInt] ~> TBln
 
+  FNeg -> [TFlt] ~> TFlt
   FAdd -> [TFlt, TFlt] ~> TFlt
   FSub -> [TFlt, TFlt] ~> TFlt
   FMul -> [TFlt, TFlt] ~> TFlt
   FDiv -> [TFlt, TFlt] ~> TFlt
-  FNeg -> [TFlt] ~> TFlt
 
   FEql -> [TFlt, TFlt] ~> TBln
   FNeq -> [TFlt, TFlt] ~> TBln
@@ -105,11 +111,11 @@ typeOfIntrinsic f = case f of
   FGeq -> [TFlt, TFlt] ~> TBln
   FLeq -> [TFlt, TFlt] ~> TBln
 
+  BNot -> [TBln] ~> TBln
   BAnd -> [TBln, TBln] ~> TBln
   BOrr -> [TBln, TBln] ~> TBln
   BEql -> [TBln, TBln] ~> TBln
   BNeq -> [TBln, TBln] ~> TBln
-  BNot -> [TBln] ~> TBln
   where
     (~>) :: [Type] -> Type -> Type
     (~>) args ret = TFunc Pure args ret
