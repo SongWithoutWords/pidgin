@@ -40,5 +40,7 @@ subError s = subError'
     subError' (FailedToUnify c) = FailedToUnify $ subConstraint s c
     subError' (FailedToInferType t) = FailedToInferType $ subType s t
     subError' (NonApplicable t) = NonApplicable $ subType s t
+    subError' (EquallyViableOverloads t ts) =
+      EquallyViableOverloads (subType s t) (subType s <$> ts)
     subError' e = e
 
