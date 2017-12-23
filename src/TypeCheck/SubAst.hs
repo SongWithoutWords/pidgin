@@ -3,13 +3,14 @@ module TypeCheck.SubAst
   ) where
 
 import Control.Monad.Writer
-import Data.Map as M
+import qualified Data.Map as M
 
 import Ast.A2Constrained as A2
 import qualified Ast.A3Typed as A3
 import TypeCheck.ApplySubs
 import TypeCheck.ErrorM
 import TypeCheck.Substitution
+import TypeCheck.Util
 import Util.MultiMap
 import Util.Preface
 
@@ -53,17 +54,24 @@ subAst' substitutions ast = multiMapM subUnit ast
       SApp app -> A3.SApp <$> subApp app
 
     subExpr :: Expr -> ErrorM A3.Expr
-    subExpr (Expr t e) = liftM2 A3.Expr (subType' t) (subExpr' e)
+    subExpr (Expr typ expr) = do
+      typ' <- subType' typ
 
-    subExpr' :: Expr' -> ErrorM A3.Expr'
-    subExpr' expr = let subExp = subExpr in case expr of
-      EApp app -> A3.EApp <$> subApp app
-      ESelect sel -> A3.ESelect <$> subSelect sel
-      EName n -> pure $ A3.EName n
-      EIf (Cond ec) e1 e2 ->
-        liftM3 A3.EIf (A3.Cond <$> subExp ec) (subExp e1) (subExp e2)
-      ELambda f -> A3.ELambda <$> subFunc f
-      EVal v -> pure $ A3.EVal v
+      A3.Expr typ' <$> case expr of
+        EApp app -> A3.EApp <$> subApp app
+        ESelect sel -> A3.ESelect <$> subSelect sel
+        EName n -> pure $ A3.EName n
+        EIntr i -> pure $ EIntr i
+        EIf (Cond ec) e1 e2 ->
+          liftM3 A3.EIf (A3.Cond <$> subExpr ec) (subExpr e1) (subExpr e2)
+        ELambda f -> A3.ELambda <$> subFunc f
+        EVal v -> pure $ A3.EVal v
+        EOver es -> do
+          es' <- mapM subExpr es
+          pure $ case filter ((==typ') . typeOfExpr) es' of
+            [A3.Expr _ e] -> e
+            es'' -> EOver es''
+
 
     subLExpr :: LExpr -> ErrorM A3.LExpr
     subLExpr (LExpr t l) = liftM2 A3.LExpr (subType' t) (subLExpr' l)

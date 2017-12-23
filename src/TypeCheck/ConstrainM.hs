@@ -65,7 +65,7 @@ modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
 modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 
 addLocalBinding :: Named Type -> ConstrainM ()
-addLocalBinding (Named n t) = modifyCurrentScope $ M.insert n $ KVar t
+addLocalBinding (Named n t) = modifyCurrentScope $ M.insert n $ KExpr $ Expr t $ EName n
 
 getNextTVar :: ConstrainM TVar
 getNextTVar = do
@@ -92,11 +92,11 @@ lookupKinds name =
     kindOfUnit u = case u of
       UNamespace _ -> KNamespace
       UClass _ -> KType
-      UFunc f -> KVar $ typeOfFunc f
-      UVar (Var t _) -> KVar t
+      UFunc f -> KExpr $ Expr (typeOfFunc f) $ EName name
+      UVar (Var t _) -> KExpr $ Expr t $ EName name
 
     kindOfIntrinsic :: Intrinsic -> Kind
-    kindOfIntrinsic = KVar . typeOfIntrinsic
+    kindOfIntrinsic i = KExpr $ Expr (typeOfIntrinsic i) $ EIntr i
 
   in do
     let intrins = multiLookup name intrinsicsByName

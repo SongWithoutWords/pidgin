@@ -1,9 +1,9 @@
 module TypeCheck.Kind where
 
-import Ast.A2Constrained.Type
+import Ast.A2Constrained
 
 data Kind
   = KNamespace
   | KType
-  | KVar Type
+  | KExpr Expr
 

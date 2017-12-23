@@ -102,30 +102,36 @@ checkVar (A1.Var mut optType expr) = do
 checkLExpr :: A1.LExpr -> ConstrainM A2.LExpr
 checkLExpr lexpr = case lexpr of
   A1.LName name -> do
-    t <- checkName name
-    pure $ A2.LExpr t $ A2.LName name
+    e <- checkName name
+    case e of
+      (A2.Expr t (A2.EName _)) -> pure $ A2.LExpr t $ A2.LName name
+      _ -> error "Unhandled case: should restructure Ast for better sharing between LExps and Exps"
 
-checkName :: Name -> ConstrainM Type
+checkName :: Name -> ConstrainM A2.Expr
 checkName name = do
-  let typeOfKind k = case k of
+  let exprOfKind k = case k of
         KNamespace -> Nothing
         KType -> Nothing
-        KVar t -> Just t
+        KExpr e -> Just e
+  let foundError err = (raise err) >> (pure $ A2.Expr TError $ A2.EName name)
 
-  types <- mapMaybe typeOfKind <$> (lookupKinds name)
-
-  case types of
-    [] -> (raise $ UnknownId name) >> pure TError
-    [t] -> pure t
-    ts -> (flip TOver) ts <$> getNextTVar
+  kinds <- lookupKinds name
+  case kinds of
+    [] -> foundError $ UnknownId name
+    [KNamespace] -> foundError NeedExprFoundNamespace
+    [KType] -> foundError NeedExprFoundType
+    ks -> case mapMaybe exprOfKind ks of
+      [] -> foundError (NoExpressionWithName name)
+      [e] -> pure e
+      es -> do
+        let ts = map typeOfExpr es
+        t <- (flip TOver ts) <$> getNextTVar
+        pure $ A2.Expr t $ A2.EOver es
 
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of
 
-  A1.EName name -> do
-    t <- checkName name
-    pure $ A2.Expr t $ A2.EName name
-
+  A1.EName name -> checkName name
 
   A1.ELambda f -> do
     f' <- checkFunc f

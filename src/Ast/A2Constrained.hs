@@ -78,6 +78,7 @@ data Expr'
   | ESelect Select
   | EName Name
   | EIntr Intrinsic
+  | EOver [Expr] -- Expression representing an overloaded name
 
   | EIf Cond Expr Expr
 

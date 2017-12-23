@@ -33,6 +33,7 @@ data Error
 
   | NeedExprFoundType
   | NeedExprFoundNamespace
+  | NoExpressionWithName Name
 
   | RecursiveVariableDefinition Name
   | AssignmentToImmutableValue
