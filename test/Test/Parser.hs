@@ -1,20 +1,25 @@
 {-# language QuasiQuotes #-}
 module Test.Parser(tests) where
 
+import Control.Monad(unless)
 import Data.String.QQ
 
 import Test.Tasty
-import qualified Test.Tasty.HUnit as H
+import Test.Tasty.HUnit
 
 import Ast.A0Parse
 import Lexer
 import Parser
+import Util.PrettyShow
 
 test :: String -> Ast -> TestTree
 test src = namedTest src src
 
 namedTest :: String -> String -> Ast -> TestTree
-namedTest name input expected = H.testCase name $ (parse $ scanTokens input) H.@?= expected
+namedTest name src ast =
+  let ast' = parse $ scanTokens src
+  in testCase name $ unless (ast' == ast) $ assertFailure $
+    "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
 tests :: TestTree
 tests = testGroup "parser"
@@ -53,7 +58,7 @@ negate(Bln b) -> Bln =>
   , namedTest "factorial"
     [s|
 factorial(Int n) -> Int =>
-    1 if n <= 0 else n * factorial(n-1)
+    1 if n <= 0 else n * factorial(n - 1)
     |]
     [ Named "factorial" $ UFunc $ Func ( Sig Pure [Param Imt TInt "n"] $ Just TInt) ImplicitRet
       [ SExpr
@@ -218,6 +223,23 @@ foo() =>
       (Sig Pure [] Nothing)
       ImplicitRet
       [SExpr $ EApp $ App (EName "foo") $ Args Pure []]
+    ]
+
+  , namedTest "array" [s|
+f() =>
+    ~$ arr = Array(2, 0)
+    arr(0) = 1
+    arr(1) = 2
+    arr(0)
+|]
+    [ Named "f" $ UFunc $ Func
+      (Sig Pure [] Nothing) ImplicitRet
+      [ SVar $ Named "arr" $ Var Mut Nothing $ ECons "Array" $ Args Pure
+        [EVal $ VInt 2, EVal $ VInt 0]
+      , SAssign (LApp $ App (EName "arr") $ Args Pure [EVal $ VInt 0]) (EVal $ VInt 1)
+      , SAssign (LApp $ App (EName "arr") $ Args Pure [EVal $ VInt 1]) (EVal $ VInt 2)
+      , SExpr $ EApp $ App (EName "arr") $ Args Pure [EVal $ VInt 0]
+      ]
     ]
   ]
 
