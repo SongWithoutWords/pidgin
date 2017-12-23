@@ -26,10 +26,10 @@ data Error
   | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
   | WrongMutability
   | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
-  | NoOverloadMatchesArgs
+  | NoViableOverload
 
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
-  | CompetingDefinitions
+  | EquallyViableOverloads Type Types
 
   | NeedExprFoundType
   | NeedExprFoundNamespace

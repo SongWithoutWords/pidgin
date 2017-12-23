@@ -11,7 +11,7 @@ module TypeCheck.Unify
 
 import Control.Monad.RWS
 import Data.List(sortBy)
-import Data.Ord(comparing)
+import Data.Ord(comparing, Ordering(..))
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -106,14 +106,21 @@ data Match
 -- Ordered from best to worst match
 instance Ord Match where
   compare
-    (Match errs1 dist1 stat1 subs1)
-    (Match errs2 dist2 stat2 subs2)
+    (Match errs1 dist1 stat1 _)
+    (Match errs2 dist2 stat2 _)
       =  compare (length errs1) (length errs2)
-      <> compare errs1 errs2
+      -- <> compare errs1 errs2
       <> compare dist1 dist2
       <> compare stat1 stat2
-      <> compare subs1 subs2
+      -- <> compare subs1 subs2
 
+betterMatch :: Match -> Match -> Ordering
+betterMatch
+  (Match errs1 dist1 stat1 _)
+  (Match errs2 dist2 stat2 _)
+    =  compare (length errs1) (length errs2)
+    <> compare dist1 dist2
+    <> compare stat1 stat2
 
 instance Monoid Match where
   mempty = Match [] (Distance 0) mempty mempty
@@ -147,6 +154,18 @@ matchByVal a b
 
   | a == b = union
 
+  | TOver tvar bs <- b = let
+    matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (matchByVal a) bs
+    firstMatch = head matchesByCompatibility
+    in case snd firstMatch of
+      (Match _ _ Complete _) -> let
+        bestMatches = firstMatch : (takeWhile ((==EQ) . (comparing snd) firstMatch) $ tail matchesByCompatibility)
+        in case bestMatches of
+          [] -> conflict NoViableOverload <> substitution tvar TError
+          [bestMatch] -> (snd $ bestMatch) <> substitution tvar (fst bestMatch)
+          matches -> conflict (EquallyViableOverloads a $ fst <$> matches) <> substitution tvar TError
+      _ -> unknown
+
   | TVar a' <- a = substitution a' b
 
   | TVar _ <- b = unknown
@@ -163,12 +182,6 @@ matchByVal a b
     <> (mconcat $ zipWith matchByVal bParams aParams)
     <> (matchByVal aRet bRet)
 
-  | TOver tvar bs <- b = case bs of
-      [] -> conflict NoOverloadMatchesArgs
-      _ -> let
-          matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (matchByVal a) bs
-          bestMatch = head matchesByCompatibility
-        in (snd $ bestMatch) <> substitution tvar (fst bestMatch)
 
   | TFunc _ _ _ <- a = conflict $ NonApplicable b
 

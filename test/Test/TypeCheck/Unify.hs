@@ -61,5 +61,10 @@ tests = testGroup "Unification"
     ]
     [(0, TFlt), (1, TFunc Pure [TFlt, TFlt] TFlt)]
     []
+
+  , unifyTest "equally viable overload 1"
+    [ TVar 0 :$= TOver 1 [TBln, TFlt] ]
+    []
+    [EquallyViableOverloads (TVar 0) [TBln, TFlt]]
   ]
 
