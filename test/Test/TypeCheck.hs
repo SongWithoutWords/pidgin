@@ -153,10 +153,10 @@ tests = testGroup "typecheck"
     ]
 
   , errorTest "$ a = true; $ a = false; $ b = a"
-    [CompetingDefinitions]
+    [EquallyViableOverloads (TVar 2) [TBln, TBln]]
 
   , errorTest "$ a = true; a() => true; $ b = a"
-    [CompetingDefinitions]
+    [EquallyViableOverloads (TVar 2) [TBln, TFunc Pure [] TBln]]
 
   , test "$ a = true; $ b = a"
     [ ("a", UVar $ Var TBln $ Expr TBln $ EVal $ VBln True)
@@ -353,6 +353,58 @@ $ a = inc(1)
           $ Args Pure [Expr TInt $ EVal $ VInt 1])
     ]
     []
+
+  , namedTest "factorial-explicit" [s|
+fact(Int n) -> Int =>
+    1 if n <= 1 else n * fact(n - 1)
+|]
+   [("fact", UFunc $ Func
+     (Sig Pure [Named "n" $ TInt] TInt) $ Block []
+      $ Just $ Expr TInt
+        $ EIf
+          (Cond $ Expr TBln $ EApp $ App
+            (Expr (TFunc Pure [TInt, TInt] TBln) $ EIntr ILeq) $ Args Pure
+            [Expr TInt $ EName "n", Expr TInt $ EVal $ VInt 1])
+          (Expr TInt $ EVal $ VInt 1)
+          (Expr TInt $ EApp $ App
+            (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr IMul) $ Args Pure
+            [Expr TInt $ EName "n"
+            , Expr TInt $ EApp $ App
+              (Expr (TFunc Pure [TInt] TInt) $ EName "fact") $ Args Pure
+                [Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr ISub) $ Args Pure
+                  [Expr TInt $ EName "n", Expr TInt $ EVal $ VInt 1]
+                ]
+            ]
+          )
+     )
+   ]
+   []
+
+  , namedTest "factorial-implicit" [s|
+fact(Int n) =>
+    1 if n <= 1 else n * fact(n - 1)
+|]
+   [("fact", UFunc $ Func
+     (Sig Pure [Named "n" $ TInt] TInt) $ Block []
+      $ Just $ Expr TInt
+        $ EIf
+          (Cond $ Expr TBln $ EApp $ App
+            (Expr (TFunc Pure [TInt, TInt] TBln) $ EIntr ILeq) $ Args Pure
+            [Expr TInt $ EName "n", Expr TInt $ EVal $ VInt 1])
+          (Expr TInt $ EVal $ VInt 1)
+          (Expr TInt $ EApp $ App
+            (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr IMul) $ Args Pure
+            [Expr TInt $ EName "n"
+            , Expr TInt $ EApp $ App
+              (Expr (TFunc Pure [TInt] TInt) $ EName "fact") $ Args Pure
+                [Expr TInt $ EApp $ App (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr ISub) $ Args Pure
+                  [Expr TInt $ EName "n", Expr TInt $ EVal $ VInt 1]
+                ]
+            ]
+          )
+     )
+   ]
+   []
 
   , testGroup "implicit conversions"
     [ test "Flt a = 5"
