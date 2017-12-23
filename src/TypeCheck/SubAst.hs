@@ -94,11 +94,5 @@ subAst' substitutions ast = multiMapM subUnit ast
       TFunc p paramTypes retType ->
         liftM2 (A3.TFunc p) (mapM subType' paramTypes) (subType' retType)
       TRef t -> A3.TRef <$> subType' t
-      -- TVar tvar -> subTypeVar tvar
       t -> pure t
-      -- where
-        -- subTypeVar :: TVar -> ErrorM A3.Type
-        -- subTypeVar tvar = case subTVar substitutions tvar of
-          -- t@(TVar _) -> raise (FailedToInferType t) >> pure t
-          -- t -> pure t
 
