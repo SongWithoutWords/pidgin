@@ -154,6 +154,9 @@ matchByVal a b
 
   | a == b = union
 
+  -- Temporary hard-coded implicit conversion
+  | TFlt <- a, TInt <- b = conversion
+
   | TOver tvar bs <- b = let
     matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (matchByVal a) bs
     firstMatch = head matchesByCompatibility
