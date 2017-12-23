@@ -430,7 +430,6 @@ inc(~Int x) =>
     mutableInc(x)
     x
 |]
-
       [ ("mutableInc", UFunc $ Func
           (Sig Pure [Named "x" $ TRef $ TMut TInt] TNone) $ Block
           [SAssign (LExpr (TRef $ TMut TInt) $ LName "x") $ Expr TInt
@@ -442,11 +441,10 @@ inc(~Int x) =>
           (Sig Pure [Named "x" $ TMut TInt] TInt ) $ Block
           [SApp $ App
            (Expr (TFunc Pure [TRef $ TMut TInt] TNone) $ EName "mutableInc")
-           $ Args Pure [Expr TInt $ EName "x"]
+           $ Args Pure [Expr (TMut TInt) $ EName "x"]
           ]
-          (Just$ Expr TInt $ EName "x" ))
+          (Just $ Expr (TMut TInt) $ EName "x" ))
       ]
-
       []
 
     ]
