@@ -1,0 +1,4 @@
+With respect to arrays, you could:
+  - Start with array application returning a reference that can then be assigned to.
+  - Start with stack allocated arrays.
+  - That should be enough to get you started.
