@@ -10,3 +10,14 @@ Could find the union of types in an if branch as the union of their supertypes
 
 Could create lists of what a name could be referring to during constraint-generation, and narrow it down during type-checking
 
+
+Three signatures of functions:
+  - Unadorned main function indicates impurity (could compare with something else mundane)
+  - What for mutability/immutability? A random class? A string class?
+  - Dictionary lookup representing failure to place constraints on existence
+
+Three example programs/problems
+  - Express dimensional analysis in a language (somewhat meta, expect Haskell, Rust to be incapable; C++ and my language to be capable)
+  - Identify continuous regions (expect Haskell to be very elegant, though I'll need to implement a 2d-array)
+  - Particle simulation with gravity (expect C++ to shine, Haskell to be a bit clumsy)
+  - Simple interpreter (expect C++ to flounder representing an Ast, visitor pattern?)
