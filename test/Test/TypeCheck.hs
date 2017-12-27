@@ -448,5 +448,30 @@ inc(~Int x) =>
       []
 
     ]
+
+    , testGroup "arrays"
+    [ namedTest "array" [s|
+f() =>
+    ~$ arr = Array(2, 0)
+    arr(0) = 1
+    arr(0)
+|]
+        [ ("f", UFunc $ Func (Sig Pure [] TInt) $ Block
+            [ SVar $ Named "arr" $ Var (TMut $ TArray TInt)
+              $ Expr (TMut $ TArray TInt) $ ECons "Array" $ Args Pure
+                [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
+            , SAssign
+              (LExpr
+               (TRef $ TMut TInt) $ LApp $ App (Expr (TMut $ TArray TInt) $ EName "arr")
+                $ Args Pure [Expr TInt $ EVal $ VInt 0])
+                $ Expr TInt $ EVal $ VInt 1
+            ]
+            $ Just $ Expr (TRef $ TMut TInt)
+              $ EApp $ App (Expr (TMut $ TArray TInt) $ EName "arr") $ Args Pure
+                [Expr TInt $ EVal $ VInt 0]
+          )
+        ]
+        []
+    ]
   ]
 
