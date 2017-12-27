@@ -20,6 +20,7 @@ data Type
   | TOver TVar Types
 
   | TRef Type
+  | TArray Type
 
   | TUser Typename
   | TBln
