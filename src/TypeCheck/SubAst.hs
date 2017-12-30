@@ -104,5 +104,6 @@ subAst' substitutions ast = multiMapM subUnit ast
       TFunc p paramTypes retType ->
         liftM2 (A3.TFunc p) (mapM subType' paramTypes) (subType' retType)
       TRef t -> A3.TRef <$> subType' t
+      TArray t -> A3.TArray <$> subType' t
       t -> pure t
 

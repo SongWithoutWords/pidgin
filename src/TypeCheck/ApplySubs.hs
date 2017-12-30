@@ -19,7 +19,7 @@ subConstraint :: Substitutions -> Constraint -> Constraint
 subConstraint = mapConstraint . subType
 
 subType :: Substitutions -> Type -> Type
-subType s typ = let subType' = subType s in case typ of-- mapTVar $ subTVar s
+subType s typ = let subType' = subType s in case typ of
   x@(TVar tvar) -> case M.lookup tvar s of
     Nothing -> x
     Just y -> y
@@ -28,7 +28,8 @@ subType s typ = let subType' = subType s in case typ of-- mapTVar $ subTVar s
     Just y -> y
   TFunc p param ret -> TFunc p (subType' <$> param) (subType' ret)
   TMut t -> TMut $ subType' t
-  TRef t -> TMut $ subType' t
+  TRef t -> TRef $ subType' t
+  TArray t -> TArray $ subType' t
   t -> t
 
 subErrors :: Substitutions -> Errors -> Errors
