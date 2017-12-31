@@ -67,9 +67,14 @@ tests = testGroup "Unification"
     []
     [EquallyViableOverloads (TVar 0) [TBln, TFlt]]
 
-  , unifyTest "array (template inference)"
+  , unifyTest "array construction"
     [TFunc Pure [TInt, TInt] (TVar 0) :$= TFunc Pure [TInt, TVar 1] (TArray $ TVar 1)]
     [(0, TArray TInt), (1, TInt)]
+    []
+
+  , unifyTest "array access"
+    [TFunc Pure [TArray TInt, TInt] (TVar 0) :$= TFunc Pure [TArray $ TVar 1, TInt] (TVar 1)]
+    [(0, TInt), (1, TInt)]
     []
   ]
 
