@@ -6,7 +6,7 @@ module TypeCheck.Unify
 
   -- for testing
   , unifyOne
-  , matchByVal
+  , match
   ) where
 
 import Control.Monad.RWS
@@ -68,8 +68,8 @@ applySubs c = do
 
 unifyOne :: Constraint -> UnifyM Constraints
 unifyOne c = case c of
-  a :$= b -> unifyOne' (matchByVal a b)
-  a :&= b -> unifyOne' (matchByRef a b)
+  a :$= b -> unifyOne' (match ByVal a b)
+  a :&= b -> unifyOne' (match ByRef a b)
   where
     unifyOne' :: Match -> UnifyM Constraints
     unifyOne' m = case m of
@@ -114,14 +114,6 @@ instance Ord Match where
       <> compare stat1 stat2
       -- <> compare subs1 subs2
 
-betterMatch :: Match -> Match -> Ordering
-betterMatch
-  (Match errs1 dist1 stat1 _)
-  (Match errs2 dist2 stat2 _)
-    =  compare (length errs1) (length errs2)
-    <> compare dist1 dist2
-    <> compare stat1 stat2
-
 instance Monoid Match where
   mempty = Match [] (Distance 0) mempty mempty
   mappend
@@ -129,74 +121,83 @@ instance Monoid Match where
     (Match errs2 dist2 stat2 subs2)
     = Match (errs1 <> errs2) (dist1 <> dist2) (stat1 <> stat2) (subs1 <> subs2)
 
-
 union = Match [] (Distance 0) Complete mempty
 substitution tvar typ = Match [] (Distance 0) Complete (M.singleton tvar typ)
 unknown = Match [] (Distance 0) Incomplete mempty
 conversion = Match [] (Distance 1) Complete mempty
 conflict err = Match [err] (Distance 0) Complete mempty
 
+data MatchType = ByRef | ByVal
 
-matchByVal :: Type -> Type -> Match
+match :: MatchType -> Type -> Type -> Match
 
--- All combinations of mutability are allowed under pass by value
-matchByVal (TMut a) (TMut b) = matchByVal a b
-matchByVal a (TMut b) = matchByVal a b
-matchByVal (TMut a) b = matchByVal a b
+-- Mutability
+match mt (TMut a) (TMut b) = match mt a b
+match mt a (TMut b) = match mt a b
+match ByVal (TMut a) b = match ByVal a b
 
--- All combinations of reference are allowed under pass by value
-matchByVal (TRef a) (TRef b) = matchByRef a b
-matchByVal a (TRef b) = matchByRef a b -- Implicit de-reference
-matchByVal (TRef a) b = matchByRef a b -- Implicit reference
+-- Is this at all necessary? Isn't it handled by inequality?
+-- match ByRef (TMut a) b = conflict WrongMutability
 
+-- References
+match _ (TRef a) (TRef b) = match ByRef a b
 
-matchByVal a b
-
-  | a == b = union
-
-  -- Temporary hard-coded implicit conversion
-  | TFlt <- a, TInt <- b = conversion
-
-  | TOver tvar bs <- b = let
-    matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (matchByVal a) bs
-    firstMatch = head matchesByCompatibility
-    in case snd firstMatch of
-      (Match _ _ Complete _) -> let
-        bestMatches = firstMatch : (takeWhile ((==EQ) . (comparing snd) firstMatch) $ tail matchesByCompatibility)
-        in case bestMatches of
-          [] -> conflict NoViableOverload <> substitution tvar TError
-          [bestMatch] -> (snd $ bestMatch) <> substitution tvar (fst bestMatch)
-          matches -> conflict (EquallyViableOverloads a $ fst <$> matches) <> substitution tvar TError
-      _ -> unknown
-
-  | TVar a' <- a = substitution a' b
-
-  | TVar _ <- b = unknown
-
-  | TError <- a = union
-
-  | TError <- b = union
-
-  | TFunc aPure aParams aRet <- a
-  , TFunc bPure bParams bRet <- b
-    =  (if aPure <= bPure then union else conflict $ WrongPurity aPure bPure)
-    <> (if length bParams == length aParams then
-          union else conflict $ WrongNumArgs (length bParams) (length aParams))
-    <> (mconcat $ zipWith matchByVal bParams aParams)
-    <> (matchByVal aRet bRet)
+  -- Do the rules for the following cases need to be more sophisticated?
+  -- Does mutability come into play?
+match ByVal a (TRef b) = match ByVal a b -- Implicit dereference
+match ByVal (TRef a) b = match ByVal a b -- Implicit reference
 
 
-  | TFunc _ _ _ <- a = conflict $ NonApplicable b
+-- Arrays
+match _ (TArray a) (TArray b) = match ByRef a b
+-- match mt (TArray a) (TArray b)
 
-  | TFunc _ _ _ <- b = conflict $ NonApplicable a
+-- Implicit conversions
+match ByVal TFlt TInt = conversion
 
-  | otherwise = conflict $ FailedToUnify (a :$= b)
+-- Errors
+match _ TError _ = union
+match _ _ TError = union
 
+-- Overloads
+match mt a (TOver tvar bs) = let
+  matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (match mt a) bs
+  firstMatch = head matchesByCompatibility
+  in case snd firstMatch of
+    (Match _ _ Complete _) -> let
+      bestMatches = firstMatch :
 
-matchByRef :: Type -> Type -> Match
+      -- takeWhileInclusive ((==EQ) . (comparing snd) firstMatch) matchesByCompatibility?
+        (takeWhile ((==EQ) . (comparing snd) firstMatch) $ tail matchesByCompatibility)
 
--- Immutable is not subtype of mutable under pass by reference
-matchByRef (TMut a) (TMut b) = matchByRef a b
-matchByRef a (TMut b) = matchByRef a b
-matchByRef (TMut _) _ = conflict WrongMutability
+      in case bestMatches of
+        [] -> conflict NoViableOverload <> substitution tvar TError
+        [bestMatch] -> (snd $ bestMatch) <> substitution tvar (fst bestMatch)
+        matches
+          -> conflict (EquallyViableOverloads a $ fst <$> matches)
+          <> substitution tvar TError
+    _ -> unknown
+
+-- Type-vars
+match _ (TVar a) (TVar b) = if a == b then union else substitution a (TVar b)
+match _ (TVar a) b = substitution a b
+match _ _ (TVar _) = unknown
+
+-- Functions
+match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
+  =  (if aPure <= bPure then union else conflict $ WrongPurity aPure bPure)
+  <> (if length bParams == length aParams then
+        union else conflict $ WrongNumArgs (length bParams) (length aParams))
+  <> (mconcat $ zipWith (match mt) bParams aParams)
+  <> (match mt aRet bRet)
+
+match _ (TFunc _ _ _) b = conflict $ NonApplicable b
+
+-- I'm not sure this is needed
+-- match mt a (TFunc _ _ _) = conflict $ NonApplicable b
+
+-- Equality/inequality
+
+match _ a b = if a == b then union
+  else conflict $ FailedToUnify (a :$= b)
 
