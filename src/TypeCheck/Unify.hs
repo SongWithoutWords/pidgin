@@ -191,7 +191,7 @@ match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
   <> (mconcat $ zipWith (match mt) bParams aParams)
   <> (match mt aRet bRet)
 
-match _ (TFunc _ _ _) b = conflict $ NonApplicable b
+match _ (TFunc _ _ (TVar res)) b = conflict (NonApplicable b) <> substitution res TError
 
 -- I'm not sure this is needed
 -- match mt a (TFunc _ _ _) = conflict $ NonApplicable b

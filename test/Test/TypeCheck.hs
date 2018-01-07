@@ -223,10 +223,10 @@ tests = testGroup "typecheck"
     [FailedToUnify $ TInt :$= TStr]
 
   , errorTest "$ a = 5(1)"
-    [NonApplicable TInt, FailedToInferType $ TVar 0, FailedToInferType $ TVar 0]
+    [NonApplicable TInt]
 
   , errorTest "$ a = (3 + 2)(1)"
-    [NonApplicable TInt, FailedToInferType $ TVar 0, FailedToInferType $ TVar 0]
+    [NonApplicable TInt]
 
   , namedTest "one explicit" [s|
 one() -> Int => 1
