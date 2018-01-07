@@ -3,7 +3,7 @@
 
 module Util.Preface where
 
-import Control.Monad(liftM2)
+import Control.Monad(liftM, liftM2)
 import Data.Monoid((<>))
 
 -- Might like to change this operator to ×
@@ -74,6 +74,12 @@ maybeLast (_:xs) = maybeLast xs
 zipWithResult :: (a -> b) -> [a] -> [(a, b)]
 zipWithResult _ [] = []
 zipWithResult f (a:as) = (a, f a) : zipWithResult f as
+
+zipWithResultM :: Monad m => (a -> m b) -> [a] -> m [(a, b)]
+zipWithResultM _ [] = pure []
+zipWithResultM f (a:as) = do
+  a' <- f a
+  liftM ((a, a') :) $ zipWithResultM f as
 
 
 -- Functions
