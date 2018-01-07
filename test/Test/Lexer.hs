@@ -147,7 +147,7 @@ drawWidget(~@, Nat width, Nat height):
     , RParen, Colon
     , Indent
       , Dollar, Name "w", Equal
-        , Typename "Widget", LParen, Name "width", Comma, Name "height", RParen
+        , Name "Widget", LParen, Name "width", Comma, Name "height", RParen
       , Eol
       , If, Name "w", Dot, Name "exists", Colon
       , Indent

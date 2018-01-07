@@ -78,7 +78,6 @@ data Expr
   | EIf Cond Expr Expr
 
   | ELambda Func
-  | ECons Typename
 
   | EVal Value
   deriving(Eq, Show)

@@ -31,8 +31,7 @@ $quote                   = \"
 @litInt                  = (0 | [\-]? [1-9] [0-9]*)
 @litFlt                  = @litInt \. [0-9]+
 
-@nameLower               = $alphaLower $alphaNumeral*
-@nameUpper               = $alphaUpper $alphaNumeral*
+@name                    = $alpha $alphaNumeral*
 
 tokens                   :-
 
@@ -106,8 +105,7 @@ pri                      { appendTokenAction T.Pri }
 @litFlt                  { lexTokenAction $ T.LitFlt . read }
 @litString               { lexTokenAction $ T.LitStr . init . tail }
 
-@nameLower               { lexTokenAction $ T.Name }
-@nameUpper               { lexTokenAction $ T.Typename }
+@name                    { lexTokenAction $ T.Name }
 
 
 {

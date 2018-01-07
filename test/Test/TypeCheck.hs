@@ -459,7 +459,7 @@ f() =>
         [ ("f", UFunc $ Func (Sig Pure [] TInt) $ Block
             [ SVar $ Named "arr" $ Var (TMut $ TArray TInt)
               $ Expr (TMut $ TArray TInt) $ EApp $ App
-                (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ ECons "Array") $ Args Pure
+                (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EName "Array") $ Args Pure
                 [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
             , SAssign
               (LExpr

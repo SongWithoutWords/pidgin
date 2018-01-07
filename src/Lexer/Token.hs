@@ -73,7 +73,6 @@ data Token
   | LitStr String
 
   | Name String
-  | Typename String
 
   deriving (Eq, Show)
 

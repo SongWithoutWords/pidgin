@@ -64,7 +64,6 @@ needsSpace t = case t of
   LitStr _ -> true
 
   Name _ -> true
-  Typename _ -> true
 
   _ -> false
 
@@ -141,5 +140,4 @@ formatToken token indent =
     LitStr s -> "\"" ++ s ++  "\""
 
     Name n -> n
-    Typename t -> t
 

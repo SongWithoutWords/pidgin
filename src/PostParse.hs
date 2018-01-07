@@ -102,8 +102,6 @@ mapExpr expr = case expr of
     e2' <- mapExpr e2
     return $ A1.EIf (A1.Cond cond') e1' e2'
 
-  A0.ECons typ -> pure $ A1.ECons typ
-
   A0.EVal v -> return $ A1.EVal v
 
 mapApp :: A0.App -> ErrorM A1.App

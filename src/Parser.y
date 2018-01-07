@@ -81,8 +81,7 @@ import Parser.Util
   litInt        { T.LitInt $$ }
   litStr        { T.LitStr $$ }
 
-  name          { T.Name $$ }
-  typename      { T.Typename $$ }
+  name      { T.Name $$ }
 
 %right "<" ">" "<=" ">=" "==" "!="
 %right "+" "-" 
@@ -118,7 +117,7 @@ namespace
   : tknNamespace name indentedUnits { Named $2 $3 }
 
 namedClass
-  : tknClass typename indentedMembers  { Named $2 $ Class $3 } 
+  : tknClass name indentedMembers  { Named $2 $ Class $3 } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -208,8 +207,6 @@ expr
   | select    { ESelect $1 }
   | apply     { EApp $1 }
 
-  | typename  { ECons $1 }
-
   | eIf       { $1 }
   | func      { ELambda $1 }
 
@@ -275,7 +272,7 @@ maybeType
   | type  { Just $1 }
 
 type
-  : typename  { TUser $1 }
+  : name  { TUser $1 }
   | funcType  { $1 }
   | "^" mut type { TRef $2 $3 }
   -- | "&" mut type { TPersRef $2 $3 }
