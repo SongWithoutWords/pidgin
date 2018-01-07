@@ -121,7 +121,7 @@ typeOfIntrinsic f = case f of
   BEql -> [TBln, TBln] ~> TBln
   BNeq -> [TBln, TBln] ~> TBln
 
-  ArrayCons -> [TInt, TInt] ~> TArray TInt
+  ArrayCons -> TParam ["a"] ([TInt, TUser "a"] ~> TArray (TUser "a"))
 
   where
     (~>) :: [Type] -> Type -> Type
