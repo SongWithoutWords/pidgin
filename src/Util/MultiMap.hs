@@ -28,6 +28,9 @@ multiToAscList m = concatMap split $ M.toAscList m
     split :: (k, [a]) -> [(k, a)]
     split (k, as) = map (\a -> (k, a)) as
 
+multiValues :: Ord k => M.Map k [a] -> [a]
+multiValues = concat . M.elems
+
 multiMap :: Ord k => (a -> b) -> MultiMap k a -> MultiMap k b
 multiMap f m = M.map (map f) m
 
