@@ -472,7 +472,7 @@ f() =>
       [ ("f", UFunc $ Func (Sig Pure [] TNone) $ Block
           [ SVar $ Named "arr" $ Var (TArray TBln)
             $ Expr (TArray TBln) $ EApp
-              (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
+              (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
               [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
           ]
           Nothing
