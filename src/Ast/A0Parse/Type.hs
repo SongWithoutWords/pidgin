@@ -14,6 +14,7 @@ data Type
   | TFunc Purity [Type] Type
 
   | TRef Mut Type
+  | TArray Type
 
   -- Parameterized type
   | TParam [Typename] Type
