@@ -179,7 +179,7 @@ stmts
 
 stmt
   : expr            { SExpr $1 }
-  | lexpr eqExpr    { SAssign $1 $2 }
+  | expr eqExpr     { SAssign $1 $2 }
   | namedVar        { SVar $1 }
   | ret expr        { SRet $2 }
   | ifBranch        { SIf $1 }
@@ -203,9 +203,9 @@ exprs
   | expr "," exprs  { $1 : $3 }
 
 expr
-  : name      { EName $1 }
-  | select    { ESelect $1 }
-  | apply     { EApp $1 }
+  : name              { EName $1 }
+  | expr "." name     { ESelect $1 $3 }
+  | expr "(" args ")" { EApp $1 (fst $3) (snd $3) }
 
   | eIf       { $1 }
   | func      { ELambda $1 }
@@ -242,22 +242,12 @@ op
   -- This is the cause of ~30 shift-reduce conflicts
   | expr name expr          { eBinOp $1 $2 $3 }
 
-lexpr
-  : apply   { LApp $1 }
-  | select  { LSelect $1 } 
-  | name    { LName $1 }
-
-apply
-  : expr "(" args ")" { App $1 $3 }
-
+-- TODO: What if I try making exprs inclusive of none? Might simplify args
 args
-  : {- none -}        { Args Pure [] }
-  | exprs             { Args Pure $1 }
-  | purity            { Args $1 [] }
-  | purity "," exprs  { Args $1 $3 }
-
-select
-  : expr "." name   { Select $1 $3 }
+  : {- none -}        { (Pure, []) }
+  | exprs             { (Pure, $1) }
+  | purity            { ($1, []) }
+  | purity "," exprs  { ($1, $3) }
 
 litBln
   : true  { True }

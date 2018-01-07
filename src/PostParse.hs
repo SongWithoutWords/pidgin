@@ -57,9 +57,9 @@ mapBlock retNotation stmts = do
 
       A0.SExpr expr -> case expr of
         -- Application can be significant without being returned
-        A0.EApp app -> do
-          app' <- mapApp app
-          xMapBlock' rest rn (A1.SApp app' : xs)
+        e@A0.EApp{} -> do
+          e' <- mapExpr e
+          xMapBlock' rest rn (A1.SExpr e' : xs)
         -- All other expressions are insignificant when not returned
         _ -> do
           raise UselessExpression
@@ -75,24 +75,22 @@ mapBlock retNotation stmts = do
         var' <- mapM mapVar var
         xMapBlock' rest rn (A1.SVar var' : xs)
 
-      A0.SAssign lexpr expr -> do
-        lexpr' <- mapLexpr lexpr
-        expr' <- mapExpr expr
-        xMapBlock' rest rn (A1.SAssign lexpr' expr' : xs)
+      A0.SAssign e1 e2 -> do
+        e1' <- mapExpr e1
+        e2' <- mapExpr e2
+        xMapBlock' rest rn (A1.SAssign e1' e2' : xs)
 
 
 mapVar :: A0.Var -> ErrorM A1.Var
 mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ
 
-mapLexpr :: A0.LExpr -> ErrorM A1.LExpr
-mapLexpr lexpr = case lexpr of
-  A0.LApp app -> A1.LApp <$> mapApp app
-  A0.LName name -> pure $ A1.LName name
-
 mapExpr :: A0.Expr -> ErrorM A1.Expr
 mapExpr expr = case expr of
 
-  A0.EApp app -> mapApp app >>= return . A1.EApp
+  A0.EApp e purity args -> do
+    e' <- mapExpr e
+    args' <- mapM mapExpr args
+    return $ A1.EApp e' purity args'
 
   A0.EName n -> return $ A1.EName n
 
@@ -103,13 +101,4 @@ mapExpr expr = case expr of
     return $ A1.EIf (A1.Cond cond') e1' e2'
 
   A0.EVal v -> return $ A1.EVal v
-
-mapApp :: A0.App -> ErrorM A1.App
-mapApp (A0.App e args) = do
-    e' <- mapExpr e
-    args' <- mapArgs args
-    return $ A1.App e' args'
-
-mapArgs :: A0.Args -> ErrorM A1.Args
-mapArgs (A0.Args purity exprs) = A1.Args purity <$> mapM mapExpr exprs
 

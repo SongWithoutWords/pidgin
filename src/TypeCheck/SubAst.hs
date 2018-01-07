@@ -49,17 +49,22 @@ subAst' substitutions ast = multiMapM subUnit ast
 
     subStmt :: Stmt -> ErrorM A3.Stmt
     subStmt stmt = case stmt of
-      SAssign lexpr expr -> liftM2 A3.SAssign (subLExpr lexpr) (subExpr expr)
+      SAssign a b -> liftM2 A3.SAssign (subExpr a) (subExpr b)
       SVar namedVar -> A3.SVar <$> mapM subVar namedVar
-      SApp app -> A3.SApp <$> subApp app
+      SExpr e -> A3.SExpr <$> subExpr e
 
     subExpr :: Expr -> ErrorM A3.Expr
     subExpr (Expr typ expr) = do
       typ' <- subType' typ
 
       A3.Expr typ' <$> case expr of
-        EApp app -> A3.EApp <$> subApp app
-        ESelect sel -> A3.ESelect <$> subSelect sel
+        EApp e p args -> do
+          e' <- subExpr e
+          args' <- mapM subExpr args
+          pure $ A3.EApp e' p args'
+        ESelect e name -> do
+          e' <- subExpr e
+          pure $ A3.ESelect e name
         EName n -> pure $ A3.EName n
         EIntr i -> pure $ EIntr i
         EIf (Cond ec) e1 e2 ->
@@ -71,25 +76,6 @@ subAst' substitutions ast = multiMapM subUnit ast
           pure $ case filter ((==typ') . typeOfExpr) es' of
             [A3.Expr _ e] -> e
             es'' -> EOver es''
-
-
-    subLExpr :: LExpr -> ErrorM A3.LExpr
-    subLExpr (LExpr t l) = liftM2 A3.LExpr (subType' t) (subLExpr' l)
-
-    subLExpr' :: LExpr' -> ErrorM A3.LExpr'
-    subLExpr' l = case l of
-      LApp app -> A3.LApp <$> subApp app
-      LSelect sel -> A3.LSelect <$> subSelect sel
-      LName n -> pure $ A3.LName n
-
-    subApp :: App -> ErrorM A3.App
-    subApp (App e args) = liftM2 A3.App (subExpr e) (subArgs args)
-
-    subArgs :: Args -> ErrorM A3.Args
-    subArgs (Args purity exprs) = (A3.Args purity) <$> (mapM subExpr exprs)
-
-    subSelect :: Select -> ErrorM A3.Select
-    subSelect (Select e name) = subExpr e >>= \e' -> pure $ A3.Select e' name
 
     subType' :: Type -> ErrorM A3.Type
     subType' typ = case typ of

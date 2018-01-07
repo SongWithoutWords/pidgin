@@ -68,11 +68,11 @@ genStmt stmt = case stmt of
 genExpr :: Expr -> CodeGenM A.Operand
 genExpr (Expr typ expr) = case expr of
 
-  EApp (App (Expr _ (EIntr i)) (Args _ args)) -> do
+  EApp (Expr _ (EIntr i)) _ args -> do
     args' <- mapM genExpr args
     genIntrinsic i args'
 
-  EApp (App e (Args _ args)) -> do
+  EApp e _ args -> do
 
     let retType = case typ of
           TFunc _ _ ret -> ret

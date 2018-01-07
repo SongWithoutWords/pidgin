@@ -44,10 +44,10 @@ data Block = Block [Stmt] (Maybe Expr)
   deriving(Eq, Show)
 
 data Stmt
-  = SAssign LExpr Expr
+  = SAssign Expr Expr
   | SVar (Named Var)
   | SIf IfBranch
-  | SApp App
+  | SExpr Expr
   deriving(Eq, Show)
 
 data IfBranch
@@ -64,8 +64,8 @@ data Var = Var Mut (Maybe Type) Expr
 
 data Expr
 
-  = EApp App
-  | ESelect Select
+  = EApp Expr Purity [Expr]
+  | ESelect Expr Name
   | EName Name
 
   | EIf Cond Expr Expr
@@ -76,21 +76,5 @@ data Expr
   deriving(Eq, Show)
 
 newtype Cond = Cond Expr
-  deriving(Eq, Show)
-
--- LExpr are a subset of Expr that can appear on the left side of an assignment
-data LExpr
-  = LApp App
-  | LSelect Select
-  | LName Name
-  deriving(Eq, Show)
-
-data App = App Expr Args
-  deriving(Eq, Show)
-
-data Args = Args Purity [Expr]
-  deriving(Eq, Show)
-
-data Select = Select Expr Name
   deriving(Eq, Show)
 

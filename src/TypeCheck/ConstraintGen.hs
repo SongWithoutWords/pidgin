@@ -67,7 +67,8 @@ checkStmt stmt = case stmt of
 
   -- TODO: will need to account for mutations in future
   A1.SAssign lhs rhs -> do
-    lhs'@(A2.LExpr tLhs _) <- checkLExpr lhs
+    lhs'@(A2.Expr tLhs _) <- checkExpr lhs
+
     case tLhs of
       TMut _ -> pure ()
       _ -> raise AssignmentToImmutableValue
@@ -83,7 +84,7 @@ checkStmt stmt = case stmt of
 
   A1.SIf ifBranch -> undefined
 
-  A1.SApp app -> A2.SApp . fst <$> checkApp app
+  A1.SExpr e -> A2.SExpr <$> checkExpr e
 
 
 checkVar :: A1.Var -> ConstrainM A2.Var
@@ -98,14 +99,6 @@ checkVar (A1.Var mut optType expr) = do
   tVar $= (typeOfExpr expr')
   return $ A2.Var (applyMut mut tVar) expr'
 
-
-checkLExpr :: A1.LExpr -> ConstrainM A2.LExpr
-checkLExpr lexpr = case lexpr of
-  A1.LName name -> do
-    e <- checkName name
-    case e of
-      (A2.Expr t (A2.EName _)) -> pure $ A2.LExpr t $ A2.LName name
-      _ -> error "Unhandled case: should restructure Ast for better sharing between LExps and Exps"
 
 checkName :: Name -> ConstrainM A2.Expr
 checkName name = do
@@ -138,9 +131,17 @@ checkExpr expression = case expression of
     pure $ A2.Expr (typeOfFunc f') $ A2.ELambda f'
 
 
-  A1.EApp app -> do
-    (app', t) <- checkApp app
-    pure $ A2.Expr t $ A2.EApp app'
+  A1.EApp expr purity args -> do
+    tRet <- getNextTypeVar
+
+    expr'@(A2.Expr tExpr _) <- checkExpr expr
+    args' <- traverse checkExpr args
+
+    let argTypes = typeOfExpr <$> args'
+
+    TFunc purity argTypes tRet $= tExpr
+
+    pure $ A2.Expr tRet $ A2.EApp expr' purity args'
 
 
   A1.EIf (A1.Cond cond) e1 e2 -> do
@@ -163,19 +164,6 @@ checkExpr expression = case expression of
         A1.VFlt _ -> TFlt
         A1.VInt _ -> TInt
         A1.VStr _ -> TStr
-
-checkApp :: A1.App -> ConstrainM (A2.App, A2.Type)
-checkApp (A1.App expr (A1.Args purity args)) = do
-    tRet <- getNextTypeVar
-
-    expr'@(A2.Expr tExpr _) <- checkExpr expr
-    args' <- traverse checkExpr args
-
-    let argTypes = typeOfExpr <$> args'
-
-    TFunc purity argTypes tRet $= tExpr
-
-    pure (A2.App expr' (A2.Args purity args'), tRet)
 
 applyMut :: Mut -> Type -> Type
 applyMut Mut = TMut

@@ -32,8 +32,8 @@ tests = testGroup "parser"
 
   , namedTest "op expr"
     "$ three = 1 + 2"
-    [ Named "three" $ UVar $ Var Imt Nothing $ EApp
-      $ App (EName "+") $ Args Pure [EVal $ VInt 1, EVal $ VInt 2] ]
+    [ Named "three" $ UVar $ Var Imt Nothing
+      $ EApp (EName "+") Pure [EVal $ VInt 1, EVal $ VInt 2] ]
 
   , namedTest "if expr"
     [s|$ msg = "it works!" if true else "or not :("|]
@@ -63,12 +63,12 @@ factorial(Int n) -> Int =>
     [ Named "factorial" $ UFunc $ Func ( Sig Pure [Param Imt TInt "n"] $ Just TInt) ImplicitRet
       [ SExpr
         $ EIf
-          (Cond $ EApp $ App (EName "<=") $ Args Pure [EName "n", EVal $ VInt 0])
+          (Cond $ EApp (EName "<=") Pure [EName "n", EVal $ VInt 0])
           (EVal $ VInt 1)
-          (EApp $ App (EName "*") $ Args Pure
+          (EApp (EName "*") Pure
            [ (EName "n")
-           , EApp $ App (EName "factorial") $ Args Pure
-             [EApp $ App (EName "-") $ Args Pure [EName "n", EVal $ VInt 1]]
+           , EApp (EName "factorial") Pure
+             [EApp (EName "-") Pure [EName "n", EVal $ VInt 1]]
            ]
           )
       ]
@@ -82,9 +82,9 @@ clothing(Weather w) -> Clothing =>
     [ Named "clothing" $ UFunc $ Func
       ( Sig Pure [Param Imt (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
       [ SExpr
-        $ EIf (Cond $ ESelect $ Select (EName "w") "isRaining") (EName "rainCoat")
-        $ EIf (Cond $ ESelect $ Select (EName "w") "isCold") (EName "coat")
-        $ EIf (Cond $ ESelect $ Select (EName "w") "isSunny") (EName "tShirt")
+        $ EIf (Cond $ ESelect (EName "w") "isRaining") (EName "rainCoat")
+        $ EIf (Cond $ ESelect (EName "w") "isCold") (EName "coat")
+        $ EIf (Cond $ ESelect (EName "w") "isSunny") (EName "tShirt")
         $ EName "jacket"
       ]
     ]
@@ -100,9 +100,9 @@ clothing(Weather w) -> Clothing =>
     [ Named "clothing" $ UFunc $ Func
       ( Sig Pure [Param Imt (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
       [ SExpr
-        $ EIf (Cond $ ESelect $ Select (EName "w") "isRaining") (EName "rainCoat")
-        $ EIf (Cond $ ESelect $ Select (EName "w") "isCold") (EName "coat")
-        $ EIf (Cond $ ESelect $ Select (EName "w") "isSunny") (EName "tShirt")
+        $ EIf (Cond $ ESelect (EName "w") "isRaining") (EName "rainCoat")
+        $ EIf (Cond $ ESelect (EName "w") "isCold") (EName "coat")
+        $ EIf (Cond $ ESelect (EName "w") "isSunny") (EName "tShirt")
         $ EName "jacket"
       ]
     ]
@@ -118,13 +118,13 @@ drawWidget(~@, Nat width, Nat height):
       ( Sig PWrite [Param Imt TNat "width", Param Imt TNat "height"] $ Nothing )
       ExplicitRet
       [ SVar
-        $ Named "w" $ Var Imt Nothing $ EApp $ App (EName "Widget") $ Args Pure
+        $ Named "w" $ Var Imt Nothing $ EApp (EName "Widget") Pure
           [EName "width", EName "height"]
       , SIf
         $ If
           $ CondBlock
-            ( ESelect $ Select (EName "w") "exists" )
-            [ SExpr $ EApp $ App (ESelect $ Select (EName "w") "draw") $ Args PWrite [] ]
+            ( ESelect (EName "w") "exists" )
+            [ SExpr $ EApp (ESelect (EName "w") "draw") PWrite [] ]
       ]
     ]
 
@@ -142,13 +142,13 @@ quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>
         $ ELambda $ Func
           ( Sig Pure [Param Imt TFlt "x"] $ Just TFlt ) ImplicitRet
           [ SExpr
-            $ EApp $ App (EName "+") $ Args Pure
-              [ EApp $ App (EName "*") $ Args Pure
+            $ EApp (EName "+") Pure
+              [ EApp (EName "*") Pure
                 [ EName "a"
-                , EApp $ App (EName "*") $ Args Pure [EName "x", EName "x"]
+                , EApp (EName "*") Pure [EName "x", EName "x"]
                 ]
-              , EApp $ App (EName "+") $ Args Pure
-                [ EApp $ App (EName "*") $ Args Pure [EName "b", EName "x"]
+              , EApp (EName "+") Pure
+                [ EApp (EName "*") Pure [EName "b", EName "x"]
                 , EName "c"
                 ]
               ]
@@ -169,13 +169,13 @@ quadratic(Flt a, Flt b, Flt c) =>
         $ ELambda $ Func
           ( Sig Pure [Param Imt TFlt "x"] Nothing) ImplicitRet
           [ SExpr
-            $ EApp $ App (EName "+") $ Args Pure
-              [ EApp $ App (EName "*") $ Args Pure
+            $ EApp (EName "+") Pure
+              [ EApp (EName "*") Pure
                 [ EName "a"
-                , EApp $ App (EName "*") $ Args Pure [EName "x", EName "x"]
+                , EApp (EName "*") Pure [EName "x", EName "x"]
                 ]
-              , EApp $ App (EName "+") $ Args Pure
-                [ EApp $ App (EName "*") $ Args Pure [EName "b", EName "x"]
+              , EApp (EName "+") Pure
+                [ EApp (EName "*") Pure [EName "b", EName "x"]
                 , EName "c"
                 ]
               ]
@@ -191,20 +191,20 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
     [ Named "singleRoot" $ UFunc $ Func
       ( Sig Pure [Param Imt TFlt "a", Param Imt TFlt "b", Param Imt TFlt "c"] $ Just TFlt )
       ImplicitRet
-      [ SExpr $ EApp $ App (EName "/") $ Args Pure
-        [ EApp $ App (EName "+") $ Args Pure
-          [ EApp $ App (EName "-") $ Args Pure [EName "b"]
-          , EApp $ App (ESelect $ Select (EName "math") "sqrt") $ Args Pure
-            [ EApp $ App (EName "-") $ Args Pure
-              [ EApp $ App (EName "*") $ Args Pure [EName "b", EName "b"]
-              , EApp $ App (EName "*") $ Args Pure
+      [ SExpr $ EApp (EName "/") Pure
+        [ EApp (EName "+") Pure
+          [ EApp (EName "-") Pure [EName "b"]
+          , EApp (ESelect (EName "math") "sqrt") Pure
+            [ EApp (EName "-") Pure
+              [ EApp (EName "*") Pure [EName "b", EName "b"]
+              , EApp (EName "*") Pure
                 [ EVal $ VInt 4
-                , EApp $ App (EName "*") $ Args Pure [EName "a", EName "c"]
+                , EApp (EName "*") Pure [EName "a", EName "c"]
                 ]
               ]
             ]
           ]
-        , EApp $ App (EName "*") $ Args Pure [EVal $ VInt 2, EName "a"]
+        , EApp (EName "*") Pure [EVal $ VInt 2, EName "a"]
         ]
       ]
     ]
@@ -213,7 +213,7 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
     [ Named "foo" $ UFunc $ Func
       (Sig Pure [] Nothing)
       ImplicitRet
-      [SExpr $ EApp $ App (EName "foo") $ Args Pure []]
+      [SExpr $ EApp (EName "foo") Pure []]
     ]
 
   , test [s|
@@ -223,7 +223,7 @@ foo() =>
     [ Named "foo" $ UFunc $ Func
       (Sig Pure [] Nothing)
       ImplicitRet
-      [SExpr $ EApp $ App (EName "foo") $ Args Pure []]
+      [SExpr $ EApp (EName "foo") Pure []]
     ]
 
   , namedTest "array" [s|
@@ -235,11 +235,11 @@ f() =>
 |]
     [ Named "f" $ UFunc $ Func
       (Sig Pure [] Nothing) ImplicitRet
-      [ SVar $ Named "arr" $ Var Mut Nothing $ EApp $ App (EName "Array") $ Args Pure
+      [ SVar $ Named "arr" $ Var Mut Nothing $ EApp (EName "Array") Pure
         [EVal $ VInt 2, EVal $ VInt 0]
-      , SAssign (LApp $ App (EName "arr") $ Args Pure [EVal $ VInt 0]) (EVal $ VInt 1)
-      , SAssign (LApp $ App (EName "arr") $ Args Pure [EVal $ VInt 1]) (EVal $ VInt 2)
-      , SExpr $ EApp $ App (EName "arr") $ Args Pure [EVal $ VInt 0]
+      , SAssign (EApp (EName "arr") Pure [EVal $ VInt 0]) (EVal $ VInt 1)
+      , SAssign (EApp (EName "arr") Pure [EVal $ VInt 1]) (EVal $ VInt 2)
+      , SExpr $ EApp (EName "arr") Pure [EVal $ VInt 0]
       ]
     ]
   ]
