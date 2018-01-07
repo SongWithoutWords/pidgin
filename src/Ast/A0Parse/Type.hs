@@ -15,6 +15,9 @@ data Type
 
   | TRef Mut Type
 
+  -- Parameterized type
+  | TParam [Typename] Type
+
   | TBln
   | TChr
   | TFlt

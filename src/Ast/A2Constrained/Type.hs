@@ -22,9 +22,6 @@ data Type
   | TRef Type
   | TArray Type
 
-  -- Parameterized type
-  | TParam [Typename] Type
-
   | TUser Typename
   | TBln
   | TChr
