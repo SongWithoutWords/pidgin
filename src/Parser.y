@@ -204,16 +204,16 @@ exprs
   | expr "," exprs  { $1 : $3 }
 
 expr
-  : name   { EName $1 }
-  | select { ESelect $1 }
-  | apply  { EApp $1 }
+  : name      { EName $1 }
+  | select    { ESelect $1 }
+  | apply     { EApp $1 }
 
-  | cons   { $1 }
+  | typename  { ECons $1 }
 
-  | eIf    { $1 }
-  | func   { ELambda $1 }
+  | eIf       { $1 }
+  | func      { ELambda $1 }
 
-  | op     { $1 }
+  | op        { $1 }
 
   | litBln { EVal $ VBln $1 }
   | litChr { EVal $ VChr $1 }
@@ -223,9 +223,6 @@ expr
 
 eIf
   : expr if expr else optEol expr { EIf (Cond $3) $1 $6 }
-
-cons
-  : typename "(" args ")" { ECons $1 $3 }
 
 op
   : "(" expr ")"            { $2 }
@@ -245,7 +242,7 @@ op
   | expr "==" expr          { eBinOp $1 "==" $3 }
   | expr "!=" expr          { eBinOp $1 "!=" $3 }
 
-  -- This is the cause of a ~30 shift-reduce conflicts
+  -- This is the cause of ~30 shift-reduce conflicts
   | expr name expr          { eBinOp $1 $2 $3 }
 
 lexpr

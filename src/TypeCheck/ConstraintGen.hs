@@ -154,6 +154,13 @@ checkExpr expression = case expression of
 
     pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
 
+  A1.ECons typename -> do
+    kinds <- lookupKinds typename
+    case kinds of
+      [] -> do
+        raise (UnknownTypeName typename)
+        pure $ A2.Expr TError $ A2.ECons typename
+      _ -> undefined
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
     where

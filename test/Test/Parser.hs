@@ -118,7 +118,8 @@ drawWidget(~@, Nat width, Nat height):
       ( Sig PWrite [Param Imt TNat "width", Param Imt TNat "height"] $ Nothing )
       ExplicitRet
       [ SVar
-        $ Named "w" $ Var Imt Nothing $ ECons "Widget" $ Args Pure [EName "width", EName "height"]
+        $ Named "w" $ Var Imt Nothing $ EApp $ App (ECons "Widget") $ Args Pure
+          [EName "width", EName "height"]
       , SIf
         $ If
           $ CondBlock
@@ -234,7 +235,7 @@ f() =>
 |]
     [ Named "f" $ UFunc $ Func
       (Sig Pure [] Nothing) ImplicitRet
-      [ SVar $ Named "arr" $ Var Mut Nothing $ ECons "Array" $ Args Pure
+      [ SVar $ Named "arr" $ Var Mut Nothing $ EApp $ App (ECons "Array") $ Args Pure
         [EVal $ VInt 2, EVal $ VInt 0]
       , SAssign (LApp $ App (EName "arr") $ Args Pure [EVal $ VInt 0]) (EVal $ VInt 1)
       , SAssign (LApp $ App (EName "arr") $ Args Pure [EVal $ VInt 1]) (EVal $ VInt 2)
