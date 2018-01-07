@@ -3,7 +3,6 @@ module TypeCheck.ConstraintGen
   , module TypeCheck.Constraint
   ) where
 
-import Control.Monad(when)
 import Data.Maybe(mapMaybe)
 
 import qualified Ast.A1PostParse as A1
@@ -15,7 +14,6 @@ import TypeCheck.ConstrainM
 import TypeCheck.Kind
 import TypeCheck.Util
 import Util.MultiMap
-import Util.Preface
 
 
 constrainAst :: A1.Ast -> (A2.Ast, [Constraint], Errors)
@@ -104,7 +102,7 @@ checkName :: Name -> ConstrainM A2.Expr
 checkName name = do
   let exprOfKind k = case k of
         KNamespace -> Nothing
-        KType -> Nothing
+        KType _ -> Nothing
         KExpr e -> Just e
   let foundError err = (raise err) >> (pure $ A2.Expr TError $ A2.EName name)
 
@@ -112,7 +110,7 @@ checkName name = do
   case kinds of
     [] -> foundError $ UnknownId name
     [KNamespace] -> foundError NeedExprFoundNamespace
-    [KType] -> foundError NeedExprFoundType
+    [KType _] -> foundError NeedExprFoundType
     ks -> case mapMaybe exprOfKind ks of
       [] -> foundError (NoExpressionWithName name)
       [e] -> pure e
@@ -165,32 +163,5 @@ checkExpr expression = case expression of
         A1.VInt _ -> TInt
         A1.VStr _ -> TStr
 
-applyMut :: Mut -> Type -> Type
-applyMut Mut = TMut
-applyMut _ = identity
 
-checkType :: A1.Type -> ConstrainM A2.Type
-checkType typ = case  typ of
-  A1.TUser typeName -> do
-    kinds <- lookupKinds typeName
-    case kinds of
-      [] -> raise (UnknownTypeName typeName) >> pure TError
-      [KType] -> return $ TUser typeName
-      _ -> raise (AmbiguousTypeName typeName) >> pure TError
-
-  A1.TFunc purity params ret -> do
-    params' <- mapM checkType params
-    ret' <- checkType ret
-    return $ TFunc purity params' ret'
-
-  A1.TRef m t -> A2.TRef . (applyMut m) <$> checkType t
-
-  A1.TBln -> return TBln
-  A1.TChr -> return TChr
-  A1.TFlt -> return TFlt
-  A1.TInt -> return TInt
-  A1.TNat -> return TNat
-  A1.TStr -> return TStr
-
-  A1.TNone -> return TNone
 

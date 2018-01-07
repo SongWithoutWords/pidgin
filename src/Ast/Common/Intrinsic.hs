@@ -1,6 +1,6 @@
 module Ast.Common.Intrinsic where
 
-import Ast.A2Constrained.Type
+import Ast.A0Parse.Type
 import Ast.Common.Name
 
 data Intrinsic

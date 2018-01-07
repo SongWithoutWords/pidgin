@@ -1,3 +1,5 @@
+{-# language LambdaCase #-}
+
 module TypeCheck.ConstrainM
   ( ConstrainM
   , runConstrainM
@@ -9,32 +11,43 @@ module TypeCheck.ConstrainM
   , getNextTVar
   , getNextTypeVar
   , lookupKinds
+
+  , checkType
+  , applyMut
   ) where
 
 import Control.Monad.RWS
 import qualified Data.Map as M
+import Data.Maybe(mapMaybe)
 import qualified Data.Set as S
 
+import qualified Ast.A0Parse.Type as A1
 import Ast.A2Constrained
 import Ast.A2Constrained.Error
 import TypeCheck.Constraint
 import TypeCheck.Kind
 import TypeCheck.Util
 import Util.MultiMap
+import Util.Preface
 
 
 type Scope = M.Map Name Kind
 type Scopes = [Scope]
 
+type IntrinsicTable = MultiMap Name (Intrinsic, Type)
+
 data ConstrainState = ConstrainState
-  { scopes :: Scopes
+  { intrinsicTable :: IntrinsicTable
+  , scopes :: Scopes
   , nextTypeId :: TVar
   , errors :: Errors
   }
+  deriving(Show)
 
 initialState :: ConstrainState
 initialState = ConstrainState
-  { scopes = []
+  { intrinsicTable = M.empty
+  , scopes = []
   , nextTypeId = 0
   , errors = S.empty
   }
@@ -43,8 +56,16 @@ type ConstrainM a = RWS Ast [Constraint] ConstrainState a
 
 runConstrainM :: ConstrainM a -> Ast -> (a, [Constraint], Errors)
 runConstrainM constrainM ast =
-  let (x, s, constraints) = runRWS constrainM ast initialState
+  let (x, s, constraints) = runRWS (gatherIntrinsics >> constrainM) ast initialState
   in (x, constraints, errors s)
+
+
+gatherIntrinsics :: ConstrainM ()
+gatherIntrinsics = do
+  typedIntrinsics <- zipWithResultM (checkType . typeOfIntrinsic) intrinsics
+  let table = multiFromListCalcKey (nameOfIntrinsic . fst) typedIntrinsics
+  modify $ \s -> s{intrinsicTable = table}
+
 
 ($=) :: Type -> Type -> ConstrainM ()
 x $= y = tell [x :$= y]
@@ -76,8 +97,6 @@ getNextTVar = do
 getNextTypeVar :: ConstrainM Type
 getNextTypeVar = TVar <$> getNextTVar
 
-intrinsicsByName :: MultiMap Name Intrinsic
-intrinsicsByName = multiFromList $ zip (nameOfIntrinsic <$> intrinsics) intrinsics
 
 lookupKinds :: Name -> ConstrainM [Kind]
 lookupKinds name =
@@ -91,16 +110,59 @@ lookupKinds name =
     kindOfUnit :: Unit -> Kind
     kindOfUnit u = case u of
       UNamespace _ -> KNamespace
-      UClass _ -> KType
+      UClass _ -> KType $ TUser name
       UFunc f -> KExpr $ Expr (typeOfFunc f) $ EName name
       UVar (Var t _) -> KExpr $ Expr t $ EName name
 
-    kindOfIntrinsic :: Intrinsic -> Kind
-    kindOfIntrinsic i = KExpr $ Expr (typeOfIntrinsic i) $ EIntr i
+    kindOfIntrinsic :: (Intrinsic, Type) -> Kind
+    kindOfIntrinsic i = KExpr $ Expr (snd i) $ EIntr $ fst i
 
   in do
-    let intrins = multiLookup name intrinsicsByName
+    intrins <- multiLookup name <$> gets intrinsicTable
     globals <- multiLookup name <$> ask
     locals <- lookupLocal <$> gets scopes
     pure $ (kindOfIntrinsic <$> intrins) <> (kindOfUnit <$> globals) <> locals
+
+type TypeParamSubs = M.Map Typename TVar
+
+checkType :: A1.Type -> ConstrainM Type
+checkType = checkType' M.empty
+  where
+  checkType' :: TypeParamSubs -> A1.Type -> ConstrainM Type
+  checkType' subs typ = let checkType'' = checkType' subs in case typ of
+    A1.TUser typename -> do
+      let typeParamSub = M.lookup typename subs
+      kinds <- lookupKinds typename
+      let types = (case typeParamSub of Nothing -> []; Just tvar -> [TVar tvar])
+                ++ mapMaybe (\case KType t -> Just t; _ -> Nothing) kinds
+      case types of
+        [] -> raise (UnknownTypeName typename) >> pure TError
+        [t] -> return t
+        _ -> raise (AmbiguousTypeName typename) >> pure TError
+
+    A1.TFunc purity params ret -> do
+      params' <- mapM checkType'' params
+      ret' <- checkType'' ret
+      return $ TFunc purity params' ret'
+
+    A1.TRef m t -> TRef . (applyMut m) <$> checkType'' t
+    A1.TArray t -> TArray <$> checkType'' t
+
+    -- Convert named template parameters into type variables
+    A1.TParam names t -> do
+      newSubs <- M.fromList <$> mapM (\n -> do tvar <- getNextTVar; pure (n, tvar)) names
+      checkType' (subs <> newSubs) t
+
+    A1.TBln -> return TBln
+    A1.TChr -> return TChr
+    A1.TFlt -> return TFlt
+    A1.TInt -> return TInt
+    A1.TNat -> return TNat
+    A1.TStr -> return TStr
+
+    A1.TNone -> return TNone
+
+applyMut :: Mut -> Type -> Type
+applyMut Mut = TMut
+applyMut _ = identity
 

@@ -4,6 +4,7 @@ import Ast.A2Constrained
 
 data Kind
   = KNamespace
-  | KType
+  | KType Type
   | KExpr Expr
+  deriving(Show)
 
