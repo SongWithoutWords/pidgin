@@ -155,9 +155,6 @@ match _ (TArray a) (TArray b) = match ByRef a b
 -- Implicit conversions
 match ByVal TFlt TInt = conversion
 
--- Errors
-match _ TError _ = union
-match _ _ TError = union
 
 -- Overloads
 match mt a (TOver tvar bs) = let
@@ -182,6 +179,10 @@ match mt a (TOver tvar bs) = let
 match _ (TVar a) (TVar b) = if a == b then union else substitution a (TVar b)
 match _ (TVar a) b = substitution a b
 match _ _ (TVar _) = unknown
+
+-- Errors
+match _ TError _ = union
+match _ _ TError = union
 
 -- Functions
 match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
