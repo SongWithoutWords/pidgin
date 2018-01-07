@@ -38,32 +38,32 @@ mapFunc (A0.Func sig retNotation block) = A1.Func sig <$> mapBlock retNotation b
 
 mapBlock :: A0.RetNotation -> A0.Block -> ErrorM A1.Block
 mapBlock retNotation stmts = do
-  (A1.Block stmts' ret) <- xMapBlock' stmts retNotation []
+  (A1.Block stmts' ret) <- mapBlock' stmts retNotation []
   return $ A1.Block (reverse stmts') ret
 
   where
-    xMapBlock' :: [A0.Stmt] -> A0.RetNotation -> [A1.Stmt] -> ErrorM A1.Block
+    mapBlock' :: [A0.Stmt] -> A0.RetNotation -> [A1.Stmt] -> ErrorM A1.Block
 
     -- No statements left => no ret value
-    xMapBlock' [] rn xs = do
+    mapBlock' [] rn xs = do
       when (rn == A0.ImplicitRet) $ raise ImplicitRetWithoutFinalExpr
       return $ A1.Block xs Nothing
 
     -- One remaining expr + implicit ret => ret value
-    xMapBlock' [A0.SExpr e] A0.ImplicitRet xs =
+    mapBlock' [A0.SExpr e] A0.ImplicitRet xs =
       A1.Block xs . Just <$> mapExpr e
 
-    xMapBlock' (s : rest) rn xs = case s of
+    mapBlock' (s : rest) rn xs = case s of
 
       A0.SExpr expr -> case expr of
         -- Application can be significant without being returned
         e@A0.EApp{} -> do
           e' <- mapExpr e
-          xMapBlock' rest rn (A1.SExpr e' : xs)
+          mapBlock' rest rn (A1.SExpr e' : xs)
         -- All other expressions are insignificant when not returned
         _ -> do
           raise UselessExpression
-          xMapBlock' rest rn xs
+          mapBlock' rest rn xs
 
       -- Ret statement => ret value
       A0.SRet expr -> do
@@ -73,12 +73,12 @@ mapBlock retNotation stmts = do
 
       A0.SVar var -> do
         var' <- mapM mapVar var
-        xMapBlock' rest rn (A1.SVar var' : xs)
+        mapBlock' rest rn (A1.SVar var' : xs)
 
       A0.SAssign e1 e2 -> do
         e1' <- mapExpr e1
         e2' <- mapExpr e2
-        xMapBlock' rest rn (A1.SAssign e1' e2' : xs)
+        mapBlock' rest rn (A1.SAssign e1' e2' : xs)
 
 
 mapVar :: A0.Var -> ErrorM A1.Var
