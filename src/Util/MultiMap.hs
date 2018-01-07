@@ -22,6 +22,9 @@ multiEmpty = M.empty
 multiFromList :: Ord k => [(k, a)] -> M.Map k [a]
 multiFromList pairs = foldl (\m (k, v) -> multiInsert k v m) (M.empty) pairs
 
+multiFromListCalcKey :: Ord k => (a -> k) -> [a] -> M.Map k [a]
+multiFromListCalcKey f vals = foldl (\m v -> multiInsert (f v) v m) (M.empty) vals
+
 multiToAscList :: Ord k => M.Map k [a] -> [(k, a)]
 multiToAscList m = concatMap split $ M.toAscList m
   where
