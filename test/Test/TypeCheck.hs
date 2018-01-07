@@ -450,7 +450,37 @@ inc(~Int x) =>
     ]
 
     , testGroup "arrays"
-    [ namedTest "array" [s|
+    [ namedTest "array cons int" [s|
+f() =>
+    $ arr = Array(2, 0)
+|]
+      [ ("f", UFunc $ Func (Sig Pure [] TNone) $ Block
+          [ SVar $ Named "arr" $ Var (TArray TInt)
+            $ Expr (TArray TInt) $ EApp
+              (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
+              [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
+          ]
+          Nothing
+        )
+      ]
+      []
+
+    , namedTest "array cons bln" [s|
+f() =>
+    $ arr = Array(2, false)
+|]
+      [ ("f", UFunc $ Func (Sig Pure [] TNone) $ Block
+          [ SVar $ Named "arr" $ Var (TArray TBln)
+            $ Expr (TArray TBln) $ EApp
+              (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
+              [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
+          ]
+          Nothing
+        )
+      ]
+      []
+
+    , namedTest "array" [s|
 f() =>
     ~$ arr = Array(2, 0)
     arr(0) = 1
