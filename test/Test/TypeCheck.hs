@@ -456,23 +456,23 @@ f() =>
     arr(0) = 1
     arr(0)
 |]
-        [ ("f", UFunc $ Func (Sig Pure [] TInt) $ Block
-            [ SVar $ Named "arr" $ Var (TMut $ TArray TInt)
-              $ Expr (TMut $ TArray TInt) $ EApp
-                (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EName "Array") Pure
-                [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
-            , SAssign
-              (Expr
-               (TRef $ TMut TInt) $ EApp (Expr (TMut $ TArray TInt) $ EName "arr")
-                Pure [Expr TInt $ EVal $ VInt 0])
-                $ Expr TInt $ EVal $ VInt 1
-            ]
-            $ Just $ Expr (TRef $ TMut TInt)
-              $ EApp (Expr (TMut $ TArray TInt) $ EName "arr") Pure
-                [Expr TInt $ EVal $ VInt 0]
-          )
-        ]
-        []
+      [ ("f", UFunc $ Func (Sig Pure [] TInt) $ Block
+          [ SVar $ Named "arr" $ Var (TMut $ TArray TInt)
+            $ Expr (TMut $ TArray TInt) $ EApp
+              (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EName "Array") Pure
+              [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
+          , SAssign
+            (Expr
+              (TRef $ TMut TInt) $ EApp (Expr (TMut $ TArray TInt) $ EName "arr")
+              Pure [Expr TInt $ EVal $ VInt 0])
+              $ Expr TInt $ EVal $ VInt 1
+          ]
+          $ Just $ Expr (TRef $ TMut TInt)
+            $ EApp (Expr (TMut $ TArray TInt) $ EName "arr") Pure
+              [Expr TInt $ EVal $ VInt 0]
+        )
+      ]
+      []
     ]
   ]
 
