@@ -38,6 +38,8 @@ data Intrinsic
 
   | BEql
   | BNeq
+
+  | ArrayCons
   deriving(Enum, Eq, Ord, Show)
 
 intrinsics :: [Intrinsic]
@@ -80,6 +82,8 @@ nameOfIntrinsic f = case f of
   BEql -> "=="
   BNeq -> "!="
 
+  ArrayCons -> "Array"
+
 typeOfIntrinsic :: Intrinsic -> Type
 typeOfIntrinsic f = case f of
 
@@ -116,6 +120,9 @@ typeOfIntrinsic f = case f of
   BOrr -> [TBln, TBln] ~> TBln
   BEql -> [TBln, TBln] ~> TBln
   BNeq -> [TBln, TBln] ~> TBln
+
+  ArrayCons -> [TInt, TInt] ~> TArray TInt
+
   where
     (~>) :: [Type] -> Type -> Type
     (~>) args ret = TFunc Pure args ret
