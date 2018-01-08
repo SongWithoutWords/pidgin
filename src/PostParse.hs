@@ -75,6 +75,7 @@ mapBlock retNotation stmts = do
         var' <- mapM mapVar var
         mapBlock' rest rn (A1.SVar var' : xs)
 
+      -- TODO: enforce proper assignment, syntax sugar for a(b) = c
       A0.SAssign e1 e2 -> do
         e1' <- mapExpr e1
         e2' <- mapExpr e2
