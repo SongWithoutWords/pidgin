@@ -446,59 +446,69 @@ inc(~Int x) =>
           (Just $ Expr (TMut TInt) $ EName "x" ))
       ]
       []
-
     ]
 
-    , testGroup "arrays"
-    [ namedTest "array cons int" [s|
-f() =>
-    $ arr = Array(2, 0)
-|]
-      [ ("f", UFunc $ Func (Sig Pure [] TNone) $ Block
-          [ SVar $ Named "arr" $ Var (TArray TInt)
-            $ Expr (TArray TInt) $ EApp
-              (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
-              [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
-          ]
-          Nothing
-        )
-      ]
-      []
+  , testGroup "arrays"
+  [ test "$ arr = Array(2, 0)"
+    [ ("arr", UVar $ Var (TArray TInt)
+      $ Expr (TArray TInt) $ EApp
+        (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0])
+    ]
+    []
 
-    , namedTest "array cons bln" [s|
-f() =>
-    $ arr = Array(2, false)
-|]
-      [ ("f", UFunc $ Func (Sig Pure [] TNone) $ Block
-          [ SVar $ Named "arr" $ Var (TArray TBln)
-            $ Expr (TArray TBln) $ EApp
-              (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
-              [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
-          ]
-          Nothing
-        )
-      ]
-      []
+  , test "$ arr = Array(2, true)"
+    [ ("arr", UVar $ Var (TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
+    ]
+    []
 
-    , namedTest "array" [s|
-f() =>
-    ~$ arr = Array(2, 0)
-    arr(0) = 1
+  , test "$ arr = Array(2, 0); $ a = arr.apply(0)"
+    [ ("arr", UVar $ Var (TArray TInt)
+      $ Expr (TArray TInt) $ EApp
+        (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0])
+    , ("a", UVar $ Var (TRef TInt)
+        $ Expr (TRef TInt) $ EApp
+          (Expr (TFunc Pure [TArray TInt] TInt) $ EName "apply") Pure
+          [Expr (TArray TInt) $ EName "arr", Expr TInt $ EVal $ VInt 0])
+    ]
+    []
+
+  , test "$ arr = Array(2, 0); $ a = arr(0)"
+    [ ("arr", UVar $ Var (TArray TInt)
+      $ Expr (TArray TInt) $ EApp
+        (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0])
+    , ("a", UVar $ Var (TRef TInt)
+        $ Expr (TRef TInt) $ EApp
+          (Expr (TFunc Pure [TArray TInt] TInt) $ EName "apply") Pure
+          [Expr (TArray TInt) $ EName "arr", Expr TInt $ EVal $ VInt 0])
+    ]
+    []
+
+
+    , namedTest "array assignment" [s|
+f() -> Bln =>
+    ~$ arr = Array(2, false)
+    arr(0) = true
     arr(0)
 |]
-      [ ("f", UFunc $ Func (Sig Pure [] TInt) $ Block
+      [ ("f", UFunc $ Func (Sig Pure [] TBln) $ Block
           [ SVar $ Named "arr" $ Var (TMut $ TArray TInt)
             $ Expr (TMut $ TArray TInt) $ EApp
               (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EName "Array") Pure
-              [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0]
+              [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
           , SAssign
             (Expr
               (TRef $ TMut TInt) $ EApp (Expr (TMut $ TArray TInt) $ EName "arr")
               Pure [Expr TInt $ EVal $ VInt 0])
-              $ Expr TInt $ EVal $ VInt 1
+            $ Expr TBln $ EVal $ VBln True
           ]
-          $ Just $ Expr (TRef $ TMut TInt)
-            $ EApp (Expr (TMut $ TArray TInt) $ EName "arr") Pure
+          $ Just $ Expr (TRef $ TMut TBln)
+            $ EApp (Expr (TMut $ TArray TBln) $ EName "arr") Pure
               [Expr TInt $ EVal $ VInt 0]
         )
       ]
