@@ -465,27 +465,39 @@ inc(~Int x) =>
     ]
     []
 
-  , test "$ arr = Array(2, 0); $ a = arr.apply(0)"
-    [ ("arr", UVar $ Var (TArray TInt)
-      $ Expr (TArray TInt) $ EApp
-        (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
-        [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0])
+  , test "$ arr = Array(2, true); $ a = apply(arr, 0)"
+    [ ("arr", UVar $ Var (TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
     , ("a", UVar $ Var (TRef TInt)
-        $ Expr (TRef TInt) $ EApp
-          (Expr (TFunc Pure [TArray TInt] TInt) $ EName "apply") Pure
-          [Expr (TArray TInt) $ EName "arr", Expr TInt $ EVal $ VInt 0])
+        $ Expr (TRef TBln) $ EApp
+          (Expr (TFunc Pure [TArray TBln, TInt] TBln) $ EName "apply") Pure
+          [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
 
-  , test "$ arr = Array(2, 0); $ a = arr(0)"
-    [ ("arr", UVar $ Var (TArray TInt)
-      $ Expr (TArray TInt) $ EApp
-        (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
-        [Expr TInt $ EVal $ VInt 2, Expr TInt $ EVal $ VInt 0])
+  , test "$ arr = Array(2, true); $ a = arr.apply(0)"
+    [ ("arr", UVar $ Var (TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
     , ("a", UVar $ Var (TRef TInt)
-        $ Expr (TRef TInt) $ EApp
-          (Expr (TFunc Pure [TArray TInt] TInt) $ EName "apply") Pure
-          [Expr (TArray TInt) $ EName "arr", Expr TInt $ EVal $ VInt 0])
+        $ Expr (TRef TBln) $ EApp
+          (Expr (TFunc Pure [TArray TBln, TInt] TBln) $ EName "apply") Pure
+          [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
+    ]
+    []
+
+  , test "$ arr = Array(2, true); $ a = arr(0)"
+    [ ("arr", UVar $ Var (TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
+    , ("a", UVar $ Var (TRef TInt)
+        $ Expr (TRef TBln) $ EApp
+          (Expr (TFunc Pure [TArray TBln, TInt] TBln) $ EName "apply") Pure
+          [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
 
