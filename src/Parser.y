@@ -81,8 +81,9 @@ import Parser.Util
   litInt        { T.LitInt $$ }
   litStr        { T.LitStr $$ }
 
-  name      { T.Name $$ }
+  name          { T.Name $$ }
 
+%right prec_name
 %right "<" ">" "<=" ">=" "==" "!="
 %right "+" "-" 
 %right "*" "/" "%"
@@ -203,27 +204,20 @@ exprs
   | expr "," exprs  { $1 : $3 }
 
 expr
-  : name              { EName $1 }
-  | expr "." name     { ESelect $1 $3 }
-  | expr "(" args ")" { EApp $1 (fst $3) (snd $3) }
+  : name                            { EName $1 }
+  | expr "." name                   { ESelect $1 $3 }
 
-  | eIf       { $1 }
+  | expr "(" ")"                    { EApp $1 Pure [] }
+  | expr "(" exprs ")"              { EApp $1 Pure $3 }
+  | expr "(" purity ")"             { EApp $1 $3 [] }
+  | expr "(" purity "," exprs ")"   { EApp $1 $3 $5 }
+
+  | expr if expr else optEol expr { EIf (Cond $3) $1 $6 }
   | func      { ELambda $1 }
 
-  | op        { $1 }
+  | "(" expr ")"            { $2 }
 
-  | litBln { EVal $ VBln $1 }
-  | litChr { EVal $ VChr $1 }
-  | litFlt { EVal $ VFlt $1 }
-  | litInt { EVal $ VInt $1 }
-  | litStr { EVal $ VStr $1 }
-
-eIf
-  : expr if expr else optEol expr { EIf (Cond $3) $1 $6 }
-
-op
-  : "(" expr ")"            { $2 }
-
+  -- ops
   | "-" expr %prec prec_neg { eUnOp "-" $2 }
 
   | expr "+" expr           { eBinOp $1 "+" $3 }
@@ -239,19 +233,13 @@ op
   | expr "==" expr          { eBinOp $1 "==" $3 }
   | expr "!=" expr          { eBinOp $1 "!=" $3 }
 
-  -- This is the cause of ~30 shift-reduce conflicts
-  | expr name expr          { eBinOp $1 $2 $3 }
-
--- TODO: What if I try making exprs inclusive of none? Might simplify args
-args
-  : {- none -}        { (Pure, []) }
-  | exprs             { (Pure, $1) }
-  | purity            { ($1, []) }
-  | purity "," exprs  { ($1, $3) }
-
-litBln
-  : true  { True }
-  | false { False }
+  -- Values
+  | true   { EVal $ VBln True }
+  | false  { EVal $ VBln False }
+  | litChr { EVal $ VChr $1 }
+  | litFlt { EVal $ VFlt $1 }
+  | litInt { EVal $ VInt $1 }
+  | litStr { EVal $ VStr $1 }
 
 types
   : type            { [$1] }
