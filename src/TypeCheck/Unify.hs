@@ -89,6 +89,8 @@ instance Monoid Distance where
   mempty = Distance 0
   mappend (Distance a) (Distance b) = Distance (a + b)
 
+-- TODO: Could I replace the status with matches that emit new constraints?
+-- An incomplete match could simply re-emit itself?
 data Status
   = Complete
   | Incomplete
@@ -139,13 +141,6 @@ match ByVal (TMut a) b = match ByVal a b
 -- Is this at all necessary? Isn't it handled by inequality?
 -- match ByRef (TMut a) b = conflict WrongMutability
 
--- References
-match _ (TRef a) (TRef b) = match ByRef a b
-
-  -- Do the rules for the following cases need to be more sophisticated?
-  -- Does mutability come into play?
-match ByVal a (TRef b) = match ByVal a b -- Implicit dereference
-match ByVal (TRef a) b = match ByVal a b -- Implicit reference
 
 
 -- Arrays
@@ -180,14 +175,23 @@ match mt a (TOver tvar bs) = let
           -> conflict (EquallyViableOverloads a $ S.fromList $ fst <$> matches) <> subForError
     _ -> unknown
 
--- Type-vars
+-- TVar after TOver: better to resolve overload in one place than many
 match _ (TVar a) (TVar b) = if a == b then union else substitution a (TVar b)
 match _ (TVar a) b = substitution a b
 match _ _ (TVar _) = unknown
 
--- Errors
+-- TError after TVar: need a chance to substitute TError for TVar
 match _ TError _ = union
 match _ _ TError = union
+
+
+-- TRef after TVar: need a chance to substitute TRef for TVar
+match _ (TRef a) (TRef b) = match ByRef a b
+
+  -- Do the rules for the following cases need to be more sophisticated?
+  -- Does mutability come into play?
+match ByVal a (TRef b) = match ByVal a b -- Implicit dereference
+match ByVal (TRef a) b = match ByVal a b -- Implicit reference
 
 -- Functions
 match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
@@ -197,6 +201,7 @@ match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
   <> (mconcat $ zipWith (match mt) bParams aParams)
   <> (match mt aRet bRet)
 
+-- TODO: Should fall back on overload of syntactic sugar for application
 match _ (TFunc _ _ (TVar res)) b = conflict (NonApplicable b) <> substitution res TError
 
 -- I'm not sure this is needed
