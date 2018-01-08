@@ -518,8 +518,33 @@ inc(~Int x) =>
     ]
     []
 
+    , namedTest "array update desugared" [s|
+f() -> Bln =>
+    ~$ arr = Array(2, false)
+    update(arr, 0, true)
+    apply(arr, 0)
+|]
+      [ ("f", UFunc $ Func (Sig Pure [] TBln) $ Block
+          [ SVar $ Named "arr" $ Var (TMut $ TArray TBln)
+            $ Expr (TArray TBln) $ EApp
+              (Expr (TFunc Pure [TInt, TBln] $ TArray TInt) $ EIntr ArrayCons) Pure
+              [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
+          , SExpr
+            (Expr (TRef $ TMut TInt) $ EApp
+              (Expr (TFunc Pure [TRef $ TMut $ TArray TBln, TInt, TRef TBln] TNone) $ EIntr ArrayUpdate)
+              Pure
+              [ Expr (TMut $ TArray TBln) $ EName "arr"
+              , Expr TInt $ EVal $ VInt 0
+              , Expr TBln $ EVal $ VBln True])
+          ]
+          $ Just $ Expr (TRef $ TMut TBln)
+            $ EApp (Expr (TMut $ TArray TBln) $ EName "arr") Pure
+              [Expr TInt $ EVal $ VInt 0]
+        )
+      ]
+      []
 
-    , namedTest "array assignment" [s|
+    , namedTest "array update sugared" [s|
 f() -> Bln =>
     ~$ arr = Array(2, false)
     arr(0) = true
