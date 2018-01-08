@@ -72,6 +72,11 @@ tests = testGroup "Unification"
     [(0, TArray TInt), (1, TInt)]
     []
 
+  , unifyTest "mutable array construction"
+    [TFunc Pure [TInt, TBln] (TMut $ TVar 0) :$= TFunc Pure [TInt, TVar 1] (TArray $ TVar 1)]
+    [(0, TArray TBln), (1, TBln)]
+    []
+
   , unifyTest "array access"
     [TFunc Pure [TArray TInt, TInt] (TVar 0) :$= TFunc Pure [TArray $ TVar 1, TInt] (TVar 1)]
     [(0, TInt), (1, TInt)]
