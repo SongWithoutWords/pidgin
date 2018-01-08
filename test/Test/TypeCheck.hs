@@ -417,6 +417,15 @@ fact(Int n) =>
       ]
       []
 
+    , test "$ a = 5; $ b = 4.5; $ c = a + b"
+      [ ("a", UVar $ Var TInt $ Expr TInt $ EVal $ VInt 5)
+      , ("b", UVar $ Var TFlt $ Expr TFlt $ EVal $ VFlt 4.5)
+      , ("c", UVar $ Var TFlt $ Expr TFlt $ EApp
+          (Expr (TFunc Pure [TFlt, TFlt] TFlt) $ EIntr FAdd)
+          Pure [Expr TInt $ EName "a", Expr TFlt $ EName "b"])
+      ]
+      []
+
     -- Thought to self:
     -- ^A <: ~A -> implicit dereference
     -- A <: ^A -> implicit reference
