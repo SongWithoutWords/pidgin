@@ -474,6 +474,14 @@ inc(~Int x) =>
     ]
     []
 
+  , test "~$ arr = Array(2, true)"
+    [ ("arr", UVar $ Var (TMut $ TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
+    ]
+    []
+
   , test "$ arr = Array(2, true); $ a = apply(arr, 0)"
     [ ("arr", UVar $ Var (TArray TBln)
       $ Expr (TArray TBln) $ EApp
