@@ -29,7 +29,7 @@ data Error
   | NoViableOverload
 
   -- Multiple, competing, duplicate, overlapping, contrandictory?...
-  | EquallyViableOverloads Type Types
+  | EquallyViableOverloads Type (Set Type)
 
   | NeedExprFoundType
   | NeedExprFoundNamespace

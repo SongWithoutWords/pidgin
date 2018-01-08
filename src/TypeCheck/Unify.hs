@@ -160,19 +160,24 @@ match ByVal TFlt TInt = conversion
 match mt a (TOver tvar bs) = let
   matchesByCompatibility = sortBy (comparing snd) $ zipWithResult (match mt a) bs
   firstMatch = head matchesByCompatibility
+
+  subForError = substitution tvar TError
+    -- substitute TVar results of failed overloads, to reduce "FailedToInferType" messages
+    <> case a of TVar tRes -> substitution tRes TError; _ -> mempty
+
   in case snd firstMatch of
     (Match _ _ Complete _) -> let
       bestMatches = firstMatch :
-
       -- takeWhileInclusive ((==EQ) . (comparing snd) firstMatch) matchesByCompatibility?
         (takeWhile ((==EQ) . (comparing snd) firstMatch) $ tail matchesByCompatibility)
 
       in case bestMatches of
-        [] -> conflict NoViableOverload <> substitution tvar TError
+        [] -> conflict NoViableOverload <> subForError
+
         [bestMatch] -> (snd $ bestMatch) <> substitution tvar (fst bestMatch)
+
         matches
-          -> conflict (EquallyViableOverloads a $ fst <$> matches)
-          <> substitution tvar TError
+          -> conflict (EquallyViableOverloads a $ S.fromList $ fst <$> matches) <> subForError
     _ -> unknown
 
 -- Type-vars

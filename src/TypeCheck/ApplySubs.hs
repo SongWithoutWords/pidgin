@@ -42,6 +42,6 @@ subError s = subError'
     subError' (FailedToInferType t) = FailedToInferType $ subType s t
     subError' (NonApplicable t) = NonApplicable $ subType s t
     subError' (EquallyViableOverloads t ts) =
-      EquallyViableOverloads (subType s t) (subType s <$> ts)
+      EquallyViableOverloads (subType s t) (S.map (subType s) ts)
     subError' e = e
 

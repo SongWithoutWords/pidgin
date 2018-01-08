@@ -153,10 +153,10 @@ tests = testGroup "typecheck"
     ]
 
   , errorTest "$ a = true; $ a = false; $ b = a"
-    [EquallyViableOverloads (TVar 2) [TBln, TBln]]
+    [EquallyViableOverloads TError $ S.fromList [TBln, TBln]]
 
   , errorTest "$ a = true; a() => true; $ b = a"
-    [EquallyViableOverloads (TVar 2) [TBln, TFunc Pure [] TBln]]
+    [EquallyViableOverloads TError $ S.fromList [TBln, TFunc Pure [] TBln]]
 
   , test "$ a = true; $ b = a"
     [ ("a", UVar $ Var TBln $ Expr TBln $ EVal $ VBln True)

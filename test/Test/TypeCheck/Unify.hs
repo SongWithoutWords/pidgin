@@ -65,7 +65,7 @@ tests = testGroup "Unification"
   , unifyTest "equally viable overload 1"
     [ TVar 0 :$= TOver 1 [TBln, TFlt] ]
     []
-    [EquallyViableOverloads (TVar 0) [TBln, TFlt]]
+    [EquallyViableOverloads (TVar 0) $ S.fromList [TBln, TFlt]]
 
   , unifyTest "array construction"
     [TFunc Pure [TInt, TInt] (TVar 0) :$= TFunc Pure [TInt, TVar 1] (TArray $ TVar 1)]
