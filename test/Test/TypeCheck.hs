@@ -470,9 +470,9 @@ inc(~Int x) =>
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
         [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
-    , ("a", UVar $ Var (TRef TInt)
+    , ("a", UVar $ Var (TRef TBln)
         $ Expr (TRef TBln) $ EApp
-          (Expr (TFunc Pure [TArray TBln, TInt] TBln) $ EName "apply") Pure
+          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayApp) Pure
           [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
@@ -482,9 +482,9 @@ inc(~Int x) =>
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
         [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
-    , ("a", UVar $ Var (TRef TInt)
+    , ("a", UVar $ Var (TRef TBln)
         $ Expr (TRef TBln) $ EApp
-          (Expr (TFunc Pure [TArray TBln, TInt] TBln) $ EName "apply") Pure
+          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayApp) Pure
           [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
@@ -494,9 +494,9 @@ inc(~Int x) =>
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
         [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
-    , ("a", UVar $ Var (TRef TInt)
+    , ("a", UVar $ Var (TRef TBln)
         $ Expr (TRef TBln) $ EApp
-          (Expr (TFunc Pure [TArray TBln, TInt] TBln) $ EName "apply") Pure
+          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayApp) Pure
           [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []

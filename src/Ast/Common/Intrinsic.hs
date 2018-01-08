@@ -40,6 +40,7 @@ data Intrinsic
   | BNeq
 
   | ArrayCons
+  | ArrayApp
   deriving(Enum, Eq, Ord, Show)
 
 intrinsics :: [Intrinsic]
@@ -83,6 +84,7 @@ nameOfIntrinsic f = case f of
   BNeq -> "!="
 
   ArrayCons -> "Array"
+  ArrayApp -> "apply"
 
 typeOfIntrinsic :: Intrinsic -> Type
 typeOfIntrinsic f = case f of
@@ -122,6 +124,7 @@ typeOfIntrinsic f = case f of
   BNeq -> [TBln, TBln] ~> TBln
 
   ArrayCons -> TParam ["a"] ([TInt, TUser "a"] ~> TArray (TUser "a"))
+  ArrayApp -> TParam ["a"] ([TRef Imt $ TArray $ TUser "a", TInt] ~> TRef Imt (TUser "a"))
 
   where
     (~>) :: [Type] -> Type -> Type
