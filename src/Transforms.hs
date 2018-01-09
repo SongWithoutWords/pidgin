@@ -17,6 +17,7 @@ import Lexer
 import Parser
 import PostParse
 import TypeCheck
+import TypeCheck.ConstraintGen
 import CodeGen
 import LlvmUtil
 
@@ -31,6 +32,10 @@ astFromSource = fst . postParse . parseTreeFromSource
 
 astFromParseTree :: A0.Ast -> A1.Ast
 astFromParseTree = fst . postParse
+
+constraintsFromSource :: String -> [Constraint]
+constraintsFromSource src =
+  let (_, cons, _) = (constrainAst $ astFromSource src) in cons
 
 lexParseCheck :: String -> (A3.Ast, Errors)
 lexParseCheck = typeCheckAst . astFromSource
