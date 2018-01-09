@@ -19,11 +19,16 @@ unifyTest name constraints subs errors =
     ]
 
 tests :: TestTree
-tests = testGroup "Unification"
+tests = testGroup "unify"
   [ unifyTest "empty" [] [] []
 
   , unifyTest "single"
     [TVar 0 :$= TInt]
+    [(0, TInt)]
+    []
+
+  , unifyTest "assignment to mutable"
+    [TMut (TVar 0) :$= TInt]
     [(0, TInt)]
     []
 

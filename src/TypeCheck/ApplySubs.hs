@@ -23,7 +23,7 @@ subType s typ = let subType' = subType s in case typ of
   x@(TVar tvar) -> case M.lookup tvar s of
     Nothing -> x
     Just y -> y
-  (TOver tvar ts) -> case M.lookup tvar s of
+  TOver tvar ts -> case M.lookup tvar s of
     Nothing -> (TOver tvar $ subType' <$> ts)
     Just y -> y
   TFunc p param ret -> TFunc p (subType' <$> param) (subType' ret)

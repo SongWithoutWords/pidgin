@@ -86,6 +86,15 @@ tests = testGroup "typecheck"
     , test "$ a = b"
       [("a", UVar $ Var TError $ Expr TError $ EName "b")]
       [UnknownId "b"]
+
+    -- infer me some types, and some mutable ones
+    , test "$ a = true"
+      [("a", UVar $ Var TBln $ Expr TBln $ EVal $ VBln True)]
+      []
+
+    , test "~$ a = true"
+      [("a", UVar $ Var (TMut TBln) $ Expr TBln $ EVal $ VBln True)]
+      []
     ]
 
   , testGroup "recursive definitions"
