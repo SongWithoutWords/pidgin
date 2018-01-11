@@ -11,5 +11,5 @@ extra-deps:
 
 nix:
   enable: true
-  packages: [llvm_5]
+  packages: [emacs, llvm_5]
 

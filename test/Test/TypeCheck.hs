@@ -1,7 +1,7 @@
 {-# language QuasiQuotes #-}
 module Test.TypeCheck(tests) where
 
-import Control.Monad(unless)
+import Control.Monad(when, unless)
 import qualified Data.Set as S
 import Data.String.QQ
 
@@ -12,6 +12,7 @@ import qualified Test.TypeCheck.Unify as Unify
 
 import Ast.A3Typed
 import Ast.A2Constrained.Error
+import Ediff
 import TypeCheck.Constraint
 import Transforms
 import Util.MultiMap
@@ -49,8 +50,11 @@ namedErrorTest name src errors =
 testAst :: String -> [(Name, Unit)] -> Ast -> TestTree
 testAst name units ast' =
   let ast = multiFromList units
-  in testCase name $ unless (ast' == ast) $ assertFailure $
-    "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
+  in askOption $ \(Ediff ediffOption) -> testCase name $
+  unless (ast' == ast) $ do
+    when ediffOption $ ediff name (prettyShow ast) (prettyShow ast')
+    assertFailure $
+      "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
 testErrors :: String -> [Error] -> Errors -> TestTree
 testErrors name errorList errors' =
@@ -498,7 +502,7 @@ inc(~Int x) =>
         [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
     , ("a", UVar $ Var (TRef TBln)
         $ Expr (TRef TBln) $ EApp
-          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayApp) Pure
+          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayAppImt) Pure
           [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
@@ -510,7 +514,7 @@ inc(~Int x) =>
         [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
     , ("a", UVar $ Var (TRef TBln)
         $ Expr (TRef TBln) $ EApp
-          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayApp) Pure
+          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayAppImt) Pure
           [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
@@ -522,12 +526,12 @@ inc(~Int x) =>
         [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
     , ("a", UVar $ Var (TRef TBln)
         $ Expr (TRef TBln) $ EApp
-          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayApp) Pure
+          (Expr (TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln) $ EIntr ArrayAppImt) Pure
           [Expr (TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
     ]
     []
 
-    , namedTest "array update desugared" [s|
+    , namedTest "array-update-desugared" [s|
 f() -> Bln =>
     ~$ arr = Array(2, false)
     update(arr, 0, true)
@@ -536,10 +540,10 @@ f() -> Bln =>
       [ ("f", UFunc $ Func (Sig Pure [] TBln) $ Block
           [ SVar $ Named "arr" $ Var (TMut $ TArray TBln)
             $ Expr (TArray TBln) $ EApp
-              (Expr (TFunc Pure [TInt, TBln] $ TArray TInt) $ EIntr ArrayCons) Pure
+              (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
               [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
           , SExpr
-            (Expr (TRef $ TMut TInt) $ EApp
+            (Expr TNone $ EApp
               (Expr (TFunc Pure [TRef $ TMut $ TArray TBln, TInt, TRef TBln] TNone) $ EIntr ArrayUpdate)
               Pure
               [ Expr (TMut $ TArray TBln) $ EName "arr"

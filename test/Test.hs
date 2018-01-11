@@ -1,7 +1,11 @@
-import qualified Test.Tasty as T
+{-# language DeriveDataTypeable #-}
 
-import qualified Ast.A0Parse as A0
+import Data.Proxy
 
+import Test.Tasty
+import Test.Tasty.Options
+
+import Ediff
 import qualified Test.Lexer as Lexer
 import qualified Test.Parser as Parser
 import qualified Test.TypeCheck as TypeCheck
@@ -10,10 +14,14 @@ import qualified Test.CodeGen as CodeGen
 testTimeout_μs = 50000
 
 main :: IO ()
-main = T.defaultMain tests
+main = defaultMainWithIngredients ingredients tests
+  where
+    ingredients
+      = includingOptions [Option (Proxy :: Proxy Ediff)]
+      : defaultIngredients
 
-tests :: T.TestTree
-tests = T.localOption (T.mkTimeout testTimeout_μs) $ T.testGroup "tests"
+tests :: TestTree
+tests = localOption (mkTimeout testTimeout_μs) $ testGroup "tests"
     [ Lexer.tests
     , Parser.tests
     , TypeCheck.tests
