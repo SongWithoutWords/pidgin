@@ -487,6 +487,19 @@ inc(~Int x) =>
     ]
     []
 
+  , test "$ as = Array(2, true); $ bs = Array(2, \"\")"
+    [ ("as", UVar $ Var (TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
+
+    , ("bs", UVar $ Var (TArray TStr)
+      $ Expr (TArray TStr) $ EApp
+        (Expr (TFunc Pure [TInt, TStr] $ TArray TStr) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TStr $ EVal $ VStr ""])
+    ]
+    []
+
   , test "~$ arr = Array(2, true)"
     [ ("arr", UVar $ Var (TMut $ TArray TBln)
       $ Expr (TArray TBln) $ EApp
