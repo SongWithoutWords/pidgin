@@ -17,13 +17,15 @@ instance IsOption Ediff where
 
 ediff :: String -> String -> String -> IO ()
 ediff testName a b = do
-  a' <- writeSystemTempFile (testName ++ ".expected") a
-  b' <- writeSystemTempFile (testName ++ ".received") b
+  let a' = testName ++ "\nExpected:\n" ++ a
+  let b' = testName ++ "\nReceived:\n" ++ b
+  aPath <- writeSystemTempFile (".expected") a'
+  bPath <- writeSystemTempFile (".received") b'
   let quote s = "\"" ++ s ++ "\""
   callCommand $ "emacsclient"
     ++ " --create-frame"
     -- ++ " --no-wait"
-    ++ " --alternate-editor\"\""
-    ++ " --eval \'(ediff-files " ++ quote a' ++ quote b' ++ ")\'"
+    ++ " --alternate-editor \"\""
+    ++ " --eval \'(ediff-files " ++ quote aPath ++ " " ++ quote bPath ++ ")\'"
     ++ " &"
 
