@@ -444,7 +444,7 @@ fact(Int n) =>
     -- A <: ^A -> implicit reference
     -- ~^A <: ~^A -> reference assignment
 
-  , namedTest "mutableInc" [s|
+    , namedTest "mutableInc" [s|
 mutableInc(^~Int x):
     x = x + 1
 
