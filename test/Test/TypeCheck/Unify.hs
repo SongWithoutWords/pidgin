@@ -86,5 +86,17 @@ tests = testGroup "unify"
     [TFunc Pure [TArray TInt, TInt] (TVar 0) :$= TFunc Pure [TArray $ TVar 1, TInt] (TVar 1)]
     [(0, TInt), (1, TInt)]
     []
+
+  , unifyTest "array-access-overload"
+    [TFunc Pure [TArray TBln, TInt] (TVar 0) :$= TOver 1
+     [ TFunc Pure [TRef $ TArray $ TVar 2, TInt] $ TRef $ TVar 2
+     , TFunc Pure [TRef $ TMut $ TArray $ TVar 3, TInt] $ TRef $ TMut $ TVar 3
+     ]]
+    [ (0, TRef TBln)
+    , (1, TFunc Pure [TRef $ TArray TBln, TInt] $ TRef TBln)
+    , (2, TBln)
+    ]
+    []
+
   ]
 
