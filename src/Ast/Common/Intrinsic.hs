@@ -43,6 +43,7 @@ data Intrinsic
   | ArrayAppImt
   | ArrayAppMut
   | ArrayUpdate
+
   deriving(Enum, Eq, Ord, Show)
 
 intrinsics :: [Intrinsic]
@@ -128,9 +129,15 @@ typeOfIntrinsic f = case f of
   BNeq -> [TBln, TBln] ~> TBln
 
   ArrayCons -> TParam["a"] $ [TInt, TUser "a"] ~> TArray (TUser "a")
-  ArrayAppImt -> TParam["a"] $ [TRef Imt $ TArray $ TUser "a", TInt] ~> TRef Imt (TUser "a")
-  ArrayAppMut -> TParam["a"] $ [TRef Mut $ TArray $ TUser "a", TInt] ~> TRef Mut (TUser "a")
-  ArrayUpdate -> TParam["a"] $ [TRef Mut $ TArray $ TUser "a", TInt, TRef Imt (TUser "a")] ~> TNone
+
+  ArrayAppImt -> TParam["a"]
+    $ [TRef Imt $ TArray $ TUser "a", TInt] ~> TRef Imt (TUser "a")
+
+  ArrayAppMut -> TParam["a"]
+    $ [TRef Mut $ TArray $ TUser "a", TInt] ~> TRef Mut (TUser "a")
+
+  ArrayUpdate -> TParam["a"]
+    $ [TRef Mut $ TArray $ TUser "a", TInt, TRef Imt (TUser "a")] ~> TNone
 
   where
     (~>) :: [Type] -> Type -> Type
