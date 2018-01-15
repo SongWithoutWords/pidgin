@@ -34,11 +34,8 @@ import Util.Preface
 type Scope = M.Map Name Kind
 type Scopes = [Scope]
 
-type IntrinsicTable = MultiMap Name (Intrinsic, Type)
-
 data ConstrainState = ConstrainState
-  { intrinsicTable :: IntrinsicTable
-  , scopes :: Scopes
+  { scopes :: Scopes
   , nextTypeId :: TVar
   , errors :: Errors
   }
@@ -46,8 +43,7 @@ data ConstrainState = ConstrainState
 
 initialState :: ConstrainState
 initialState = ConstrainState
-  { intrinsicTable = M.empty
-  , scopes = []
+  { scopes = []
   , nextTypeId = 0
   , errors = S.empty
   }
@@ -56,16 +52,8 @@ type ConstrainM a = RWS Ast [Constraint] ConstrainState a
 
 runConstrainM :: ConstrainM a -> Ast -> (a, [Constraint], Errors)
 runConstrainM constrainM ast =
-  let (x, s, constraints) = runRWS (gatherIntrinsics >> constrainM) ast initialState
+  let (x, s, constraints) = runRWS constrainM ast initialState
   in (x, constraints, errors s)
-
-
-gatherIntrinsics :: ConstrainM ()
-gatherIntrinsics = do
-  typedIntrinsics <- zipWithResultM (checkType . typeOfIntrinsic) intrinsics
-  let table = multiFromListCalcKey (nameOfIntrinsic . fst) typedIntrinsics
-  modify $ \s -> s{intrinsicTable = table}
-
 
 ($=) :: Type -> Type -> ConstrainM ()
 x $= y = tell [x :$= y]
@@ -97,6 +85,8 @@ getNextTVar = do
 getNextTypeVar :: ConstrainM Type
 getNextTypeVar = TVar <$> getNextTVar
 
+intrinsicsByName :: MultiMap Name Intrinsic
+intrinsicsByName = multiFromList $ zip (nameOfIntrinsic <$> intrinsics) intrinsics
 
 lookupKinds :: Name -> ConstrainM [Kind]
 lookupKinds name =
@@ -114,14 +104,16 @@ lookupKinds name =
       UFunc f -> KExpr $ Expr (typeOfFunc f) $ EName name
       UVar (Var t _) -> KExpr $ Expr t $ EName name
 
-    kindOfIntrinsic :: (Intrinsic, Type) -> Kind
-    kindOfIntrinsic i = KExpr $ Expr (snd i) $ EIntr $ fst i
+    kindOfIntrinsic :: Intrinsic -> ConstrainM Kind
+    kindOfIntrinsic i = do
+      t <- checkType $ typeOfIntrinsic i
+      pure $ KExpr $ Expr t $ EIntr i
 
   in do
-    intrins <- multiLookup name <$> gets intrinsicTable
+    intrins <- mapM kindOfIntrinsic $ multiLookup name intrinsicsByName
     globals <- multiLookup name <$> ask
     locals <- lookupLocal <$> gets scopes
-    pure $ (kindOfIntrinsic <$> intrins) <> (kindOfUnit <$> globals) <> locals
+    pure $ intrins <> (kindOfUnit <$> globals) <> locals
 
 type TypeParamSubs = M.Map Typename TVar
 
