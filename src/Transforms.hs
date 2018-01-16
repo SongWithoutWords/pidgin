@@ -10,8 +10,9 @@ import LLVM.AST as A
 
 import qualified Ast.A0Parse as A0
 import qualified Ast.A1PostParse as A1
-import Ast.A2Constrained.Error
+import qualified Ast.A2Constrained as A2
 import qualified Ast.A3Typed as A3
+import Ast.A2Constrained.Error
 
 import Lexer
 import Parser
@@ -32,6 +33,9 @@ astFromSource = fst . postParse . parseTreeFromSource
 
 astFromParseTree :: A0.Ast -> A1.Ast
 astFromParseTree = fst . postParse
+
+constrainSource :: String -> (A2.Ast, [Constraint], Errors)
+constrainSource = constrainAst . astFromSource
 
 constraintsFromSource :: String -> [Constraint]
 constraintsFromSource src =
