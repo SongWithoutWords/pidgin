@@ -129,10 +129,6 @@ data MatchType = ByRef | ByVal
 
 match :: MatchType -> Type -> Type -> Match
 
--- Mutability
-match mt (TMut a) (TMut b) = match mt a b
-match mt a (TMut b) = match mt a b
-match ByVal (TMut a) b = match ByVal a b
 
 -- Is this at all necessary? Isn't it handled by inequality?
 -- match ByRef (TMut a) b = conflict WrongMutability
@@ -143,8 +139,6 @@ match ByVal (TMut a) b = match ByVal a b
 match _ (TArray a) (TArray b) = match ByRef a b
 -- match mt (TArray a) (TArray b)
 
--- Implicit conversions
-match ByVal TFlt TInt = conversion
 
 
 -- Overloads
@@ -189,6 +183,11 @@ match _ (TRef a) (TRef b) = match ByRef a b
 match ByVal a (TRef b) = match ByRef a b -- Implicit dereference
 match ByVal (TRef a) b = match ByRef a b -- Implicit reference
 
+-- Mutability after TRef: implicit references must maintain mutability
+match mt (TMut a) (TMut b) = match mt a b
+match mt a (TMut b) = conversion <> match mt a b
+match ByVal (TMut a) b = match ByVal a b
+
 -- Functions
 match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
   =  (if aPure <= bPure then union else conflict $ WrongPurity aPure bPure)
@@ -202,6 +201,9 @@ match _ (TFunc _ _ (TVar res)) b = conflict (NonApplicable b) <> substitution re
 
 -- I'm not sure this is needed
 -- match mt a (TFunc _ _ _) = conflict $ NonApplicable b
+
+-- Implicit conversions
+match ByVal TFlt TInt = conversion
 
 -- Equality/inequality
 
