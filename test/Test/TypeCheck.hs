@@ -25,7 +25,7 @@ test src = namedTest src src
 namedTest :: String -> String -> [(Name, Unit)] -> [Error] -> TestTree
 namedTest name src units errors =
   let (ast, errors') = lexParseCheck src
-  in testGroup name [testAst "ast" units ast, testErrors "errors" errors errors']
+  in testGroup name [testAst "ast" name units ast, testErrors "errors" errors errors']
 
 test' :: String -> ([(Name, Unit)] -> [Error] -> Bool) -> TestTree
 test' src = namedTest' src src
@@ -47,12 +47,12 @@ namedErrorTest name src errors =
   let (_, errors') = lexParseCheck src
   in testErrors name errors errors'
 
-testAst :: String -> [(Name, Unit)] -> Ast -> TestTree
-testAst name units ast' =
+testAst :: String -> String -> [(Name, Unit)] -> Ast -> TestTree
+testAst name ediffTitle units ast' =
   let ast = multiFromList units
-  in askOption $ \(Ediff ediffOption) -> testCase name $
+  in askOption $ \(Ediff ediffEnable) -> testCase name $
   unless (ast' == ast) $ do
-    when ediffOption $ ediff name (prettyShow ast) (prettyShow ast')
+    when ediffEnable $ ediff ediffTitle (prettyShow ast) (prettyShow ast')
     assertFailure $
       "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
