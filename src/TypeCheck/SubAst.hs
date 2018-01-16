@@ -64,7 +64,7 @@ subAst' substitutions ast = multiMapM subUnit ast
           pure $ A3.EApp e' p args'
         ESelect e name -> do
           e' <- subExpr e
-          pure $ A3.ESelect e name
+          pure $ A3.ESelect e' name
         EName n -> pure $ A3.EName n
         EIntr i -> pure $ EIntr i
         EIf (Cond ec) e1 e2 ->
