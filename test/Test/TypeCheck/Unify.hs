@@ -18,6 +18,11 @@ unifyTest name constraints subs errors =
     , testCase "errors" $ errorsActual @?= S.fromList errors
     ]
 
+matchTest :: String -> MatchType -> Type -> Type -> Match -> TestTree
+matchTest name mt t1 t2 expected =
+  let result = match mt t1 t2
+  in testCase name $ result @?= expected
+
 tests :: TestTree
 tests = testGroup "unify"
   [ unifyTest "empty" [] [] []
@@ -87,7 +92,7 @@ tests = testGroup "unify"
     [(0, TInt), (1, TInt)]
     []
 
-  , unifyTest "array-access-overload"
+  , unifyTest "array-app-overload-imt"
     [TFunc Pure [TArray TBln, TInt] (TVar 0) :$= TOver 1
      [ TFunc Pure [TRef $ TArray $ TVar 2, TInt] $ TRef $ TVar 2
      , TFunc Pure [TRef $ TMut $ TArray $ TVar 3, TInt] $ TRef $ TMut $ TVar 3
@@ -97,6 +102,29 @@ tests = testGroup "unify"
     , (2, TBln)
     ]
     []
+
+  , unifyTest "array-app-overload-mut"
+    [TFunc Pure [TMut $ TArray TBln, TInt] (TVar 0) :$= TOver 1
+     [ TFunc Pure [TRef $ TArray $ TVar 2, TInt] $ TRef $ TVar 2
+     , TFunc Pure [TRef $ TMut $ TArray $ TVar 3, TInt] $ TRef $ TMut $ TVar 3
+     ]]
+    [ (0, TRef $ TMut TBln)
+    , (1, TFunc Pure [TRef $ TMut $ TArray TBln, TInt] $ TRef $ TMut TBln)
+    , (3, TBln)
+    ]
+    []
+
+  , matchTest "match-array-and-app-imt"
+      ByVal
+      (TFunc Pure [TArray TBln, TInt] (TVar 0))
+      (TFunc Pure [TRef $ TArray $ TVar 1, TInt] $ TRef $ TVar 1)
+      (Match [] (Distance 0) Complete $ M.fromList [(0, TRef $ TVar 1), (1, TBln)])
+
+  , matchTest "match-array-and-app-mut"
+      ByVal
+      (TFunc Pure [TMut $ TArray TBln, TInt] (TVar 0))
+      (TFunc Pure [TRef $ TMut $ TArray $ TVar 1, TInt] $ TRef $ TMut $ TVar 1)
+      (Match [] (Distance 0) Complete $ M.fromList [(0, TRef $ TMut $ TVar 1), (1, TBln)])
 
   ]
 
