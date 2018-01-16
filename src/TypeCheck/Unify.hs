@@ -190,8 +190,8 @@ match _ (TRef a) (TRef b) = match ByRef a b
 
   -- Do the rules for the following cases need to be more sophisticated?
   -- Does mutability come into play?
-match ByVal a (TRef b) = match ByVal a b -- Implicit dereference
-match ByVal (TRef a) b = match ByVal a b -- Implicit reference
+match ByVal a (TRef b) = match ByRef a b -- Implicit dereference
+match ByVal (TRef a) b = match ByRef a b -- Implicit reference
 
 -- Functions
 match mt (TFunc aPure aParams aRet) (TFunc bPure bParams bRet)
