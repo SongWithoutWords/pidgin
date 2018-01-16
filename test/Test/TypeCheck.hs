@@ -471,7 +471,8 @@ inc(~Int x) =>
     ]
 
   , testGroup "arrays"
-  [ test "$ arr = Array(2, 0)"
+  [ namedTest "array-cons-int"
+    "$ arr = Array(2, 0)"
     [ ("arr", UVar $ Var (TArray TInt)
       $ Expr (TArray TInt) $ EApp
         (Expr (TFunc Pure [TInt, TInt] $ TArray TInt) $ EIntr ArrayCons) Pure
@@ -479,7 +480,8 @@ inc(~Int x) =>
     ]
     []
 
-  , test "$ arr = Array(2, true)"
+  , namedTest "array-cons-bln"
+    "$ arr = Array(2, true)"
     [ ("arr", UVar $ Var (TArray TBln)
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
@@ -487,7 +489,8 @@ inc(~Int x) =>
     ]
     []
 
-  , test "$ as = Array(2, true); $ bs = Array(2, \"\")"
+  , namedTest "array-cons-bln-and-str"
+    "$ as = Array(2, true); $ bs = Array(2, \"\")"
     [ ("as", UVar $ Var (TArray TBln)
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
@@ -500,7 +503,8 @@ inc(~Int x) =>
     ]
     []
 
-  , test "~$ arr = Array(2, true)"
+  , namedTest "mut-array-cons-bln"
+    "~$ arr = Array(2, true)"
     [ ("arr", UVar $ Var (TMut $ TArray TBln)
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
@@ -508,7 +512,8 @@ inc(~Int x) =>
     ]
     []
 
-  , test "$ arr = Array(2, true); $ a = apply(arr, 0)"
+  , namedTest "array-app-desugared"
+    "$ arr = Array(2, true); $ a = apply(arr, 0)"
     [ ("arr", UVar $ Var (TArray TBln)
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
@@ -520,7 +525,8 @@ inc(~Int x) =>
     ]
     []
 
-  , test "$ arr = Array(2, true); $ a = arr.apply(0)"
+  , namedTest "array-app-syntax-sugar-1"
+    "$ arr = Array(2, true); $ a = arr.apply(0)"
     [ ("arr", UVar $ Var (TArray TBln)
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
@@ -532,7 +538,8 @@ inc(~Int x) =>
     ]
     []
 
-  , test "$ arr = Array(2, true); $ a = arr(0)"
+  , namedTest "array-app-syntax-sugar-2"
+    "$ arr = Array(2, true); $ a = arr(0)"
     [ ("arr", UVar $ Var (TArray TBln)
       $ Expr (TArray TBln) $ EApp
         (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
@@ -570,7 +577,7 @@ f() -> Bln =>
       ]
       []
 
-    , namedTest "array update sugared" [s|
+    , namedTest "array-update-syntax-sugar" [s|
 f() -> Bln =>
     ~$ arr = Array(2, false)
     arr(0) = true
