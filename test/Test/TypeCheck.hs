@@ -525,6 +525,19 @@ inc(~Int x) =>
     ]
     []
 
+  , namedTest "array-app-mut-desugared"
+    "~$ arr = Array(2, true); $ a = apply(arr, 0)"
+    [ ("arr", UVar $ Var (TMut $ TArray TBln)
+      $ Expr (TArray TBln) $ EApp
+        (Expr (TFunc Pure [TInt, TBln] $ TArray TBln) $ EIntr ArrayCons) Pure
+        [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln True])
+    , ("a", UVar $ Var (TRef $ TMut TBln)
+        $ Expr (TRef $ TMut TBln) $ EApp
+          (Expr (TFunc Pure [TRef $ TMut $ TArray TBln, TInt] $ TRef $ TMut TBln) $ EIntr ArrayAppMut) Pure
+          [Expr (TMut $ TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0])
+    ]
+    []
+
   , namedTest "array-app-syntax-sugar-1"
     "$ arr = Array(2, true); $ a = arr.apply(0)"
     [ ("arr", UVar $ Var (TArray TBln)
