@@ -584,8 +584,8 @@ f() -> Bln =>
               , Expr TBln $ EVal $ VBln True])
           ]
           $ Just $ Expr (TRef $ TMut TBln)
-            $ EApp (Expr (TMut $ TArray TBln) $ EName "arr") Pure
-              [Expr TInt $ EVal $ VInt 0]
+            $ EApp (Expr (TFunc Pure [TRef $ TMut $ TArray TBln, TInt] $ TRef $ TMut TBln) $ EIntr ArrayAppMut) Pure
+              [Expr (TMut $ TArray TBln) $ EName "arr", Expr TInt $ EVal $ VInt 0]
         )
       ]
       []
