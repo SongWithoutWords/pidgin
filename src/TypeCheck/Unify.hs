@@ -1,12 +1,8 @@
 module TypeCheck.Unify
-  ( unify
+  ( module TypeCheck.Unify
   , module Ast.A2Constrained.Error
   , module TypeCheck.Constraint
   , module TypeCheck.Substitution
-
-  -- for testing
-  , unifyOne
-  , match
   ) where
 
 import Control.Monad.RWS
