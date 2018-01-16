@@ -71,11 +71,16 @@ subAst' substitutions ast = multiMapM subUnit ast
           liftM3 A3.EIf (A3.Cond <$> subExpr ec) (subExpr e1) (subExpr e2)
         ELambda f -> A3.ELambda <$> subFunc f
         EVal v -> pure $ A3.EVal v
-        EOver es -> do
-          es' <- mapM subExpr es
-          pure $ case filter ((==typ') . typeOfExpr) es' of
-            [A3.Expr _ e] -> e
-            es'' -> EOver es''
+
+        EOver exprs -> let
+          exprsAndErrs = runErrorM . subExpr <$> exprs
+          chosenExprsAndErrs = filter ((==typ') . typeOfExpr . fst) exprsAndErrs
+          in do
+            -- We only want to emit errors from viable overloads
+            chosenExprs <- mapM (\(e, errs) -> tell errs >> pure e) chosenExprsAndErrs
+            pure $ case chosenExprs of
+              [Expr _ e] -> e
+              overloads -> A3.EOver overloads
 
     subType' :: Type -> ErrorM A3.Type
     subType' typ = case typ of
