@@ -12,7 +12,7 @@ import Control.Monad.Writer
 import Ast.A2Constrained.Error
 
 newtype ErrorM a = ErrorM (Writer Errors a)
-  deriving(Functor, Applicative, Monad)
+  deriving(Functor, Applicative, Monad, MonadWriter Errors)
 
 runErrorM :: ErrorM a -> (a, Errors)
 runErrorM (ErrorM w) = runWriter w
