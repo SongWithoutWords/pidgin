@@ -136,5 +136,20 @@ main() => gcd(18, 24)
 
   , test "main() => 6 if false else -1" (-1)
 
+  , testGroup "arrays"
+    [ namedTest "array-update-desugared" [s|
+main() -> Int =>
+    ~$ arr = Array(1, 0)
+    update(arr, 0, 7)
+    apply(arr, 0)
+|] 7
+    , namedTest "array-element-sum" [s|
+main() -> Int =>
+    ~$ arr = Array(2, 0)
+    update(arr, 0, 7)
+    update(arr, 1, 6)
+    apply(arr, 0) + apply(arr, 1)
+|] 13
+    ]
   ]
 
