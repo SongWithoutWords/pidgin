@@ -115,12 +115,17 @@ nextOperandId = do
   modify $ \s -> s { operandCount = OperandId $ i + 1 }
   return nextId
 
+action :: A.Instruction -> CodeGenM ()
+action ins = do
+  block <- curBlock
+  modifyBlock $ block {instructions = (A.Do ins) : instructions block }
+  return ()
+
 instruction :: A.Type -> A.Instruction -> CodeGenM A.Operand
 instruction typ ins = do
   OperandId i <- nextOperandId
   let name = A.UnName i
   block <- curBlock
-  -- let instrs = instructions block
   modifyBlock $ block { instructions = (name A.:= ins) : instructions block }
   return $ A.LocalReference typ name
 

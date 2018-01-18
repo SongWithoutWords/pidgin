@@ -63,6 +63,15 @@ genStmt stmt = case stmt of
     oper <- genExpr e
     addBinding name oper
 
+  SExpr (Expr _ (EApp (Expr _ (EIntr ArrayUpdate)) Pure [array, index, value])) -> do
+    array' <- genExpr array
+    index' <- genExpr index
+    value' <- genExpr value
+    address <- instructionToOperand $ getElementPtr array' index'
+    action $ store address value'
+
+  SAssign _ _ -> undefined
+
 
 -- Generates intermediate computations + returns a reference to the operand of the result
 genExpr :: Expr -> CodeGenM A.Operand

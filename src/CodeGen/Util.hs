@@ -39,10 +39,6 @@ globalReference :: Name -> Type -> A.Operand
 globalReference name typ =
   A.ConstantOperand $ C.GlobalReference (T.ptr $ typeToLlvmType typ) (fromString name)
 
-typeOfOperand :: A.Operand -> A.Type
-typeOfOperand op = case op of
-  A.LocalReference typ _ -> typ
-
 addLocalBinding :: String -> Type -> CodeGenM ()
 addLocalBinding name typ = addBinding name $ localReference name typ
 
