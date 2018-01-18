@@ -85,7 +85,7 @@ instance Monoid Distance where
   mempty = Distance 0
   mappend (Distance a) (Distance b) = Distance (a + b)
 
--- TODO: Could I replace the status with matches that emit new constraints?
+-- TODO TODO TODO: Could I replace the status with matches that emit new constraints?
 -- An incomplete match could simply re-emit itself?
 data Status
   = Complete
