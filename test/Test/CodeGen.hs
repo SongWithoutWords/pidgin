@@ -67,6 +67,24 @@ gcd(Int a, Int b) => a if b == 0 else gcd(b, a % b)
 main() => gcd(18, 24)
 |] 6
 
+--   , namedTest "7th-prime" [s|
+-- nthPrime(Int n) =>
+--     ~$ arr = Array(n, 0)
+--     update(arr, 0, 2)
+--     update(arr, 1, 3)
+--     nthPrimImp(n, 2, 3)
+
+-- nthPrimeImp(Int n, Int numPrimesFound, Int candidate, ^~Array[Int] primes) =>
+--      nthPrimImp(n, numPrimesFound, candidate + 2) if isPrime()
+
+-- main() -> Bln =>
+--     ~$ arr = Array(1, 0)
+--     update(arr, 0, 7)
+--     apply(arr, 0)
+-- gcd(Int a, Int b) => a if b == 0 else gcd(b, a % b)
+-- main() => gcd(18, 24)
+-- |] 6
+
   -- Modulus operator tests
   , test "main() => 0 % 2" 0
 
