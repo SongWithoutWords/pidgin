@@ -168,6 +168,27 @@ main() -> Int =>
     update(arr, 1, 6)
     apply(arr, 0) + apply(arr, 1)
 |] 13
+    , namedTest "array-indexed-by-elements" [s|
+main() -> Int =>
+    ~$ arr = Array(4, 0)
+    update(arr, 0, 2)
+    update(arr, 1, 3)
+    update(arr, 2, 4)
+    update(arr, 3, 5)
+    apply(arr, apply(arr, 0)) + apply(arr, apply(arr, 1))
+|] 9
+    , namedTest "array-sum" [s|
+arraySum(^Array[Int] array, Int size) =>
+    (apply(array, size - 1) + arraySum(array, size - 1)) if size > 0 else 0
+
+main() =>
+    ~$ arr = Array(4, 0)
+    update(arr, 0, 4)
+    update(arr, 1, 5)
+    update(arr, 2, 7)
+    update(arr, 3, 9)
+    arraySum(arr, 4)
+|] 25
     ]
   ]
 
