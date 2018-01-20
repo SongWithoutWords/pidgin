@@ -9,6 +9,9 @@ import Ast.Common.Purity
 
 type Types = [Type]
 
+(~>) :: [Type] -> Type -> Type
+ts ~> t = TFunc Pure ts t
+
 data Type
   -- = TUser Typename
   = TMut Type

@@ -139,7 +139,3 @@ typeOfIntrinsic f = case f of
   ArrayUpdate -> TParams["a"]
     $ [TRef Mut $ TArray $ TUser "a", TInt, TRef Imt (TUser "a")] ~> TNone
 
-  where
-    (~>) :: [Type] -> Type -> Type
-    (~>) args ret = TFunc Pure args ret
-

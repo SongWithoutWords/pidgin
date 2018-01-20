@@ -7,6 +7,9 @@ module Ast.A0Parse.Type
 import Ast.Common.Mutability
 import Ast.Common.Purity
 
+(~>) :: [Type] -> Type -> Type
+ts ~> t = TFunc Pure ts t
+
 data Type
   = TUser Typename
 
