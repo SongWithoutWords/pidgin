@@ -160,7 +160,7 @@ main() -> Int =>
     update(arr, 0, 7)
     apply(arr, 0)
 |] 7
-    , namedTest "array-element-sum" [s|
+    , namedTest "array-element-add" [s|
 main() -> Int =>
     ~$ arr = Array(2, 0)
     update(arr, 0, 7)
