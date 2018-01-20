@@ -7,6 +7,7 @@ module Ast.A0Parse.Type
 import Ast.Common.Mutability
 import Ast.Common.Purity
 
+infixr 0 ~>
 (~>) :: [Type] -> Type -> Type
 ts ~> t = TFunc Pure ts t
 

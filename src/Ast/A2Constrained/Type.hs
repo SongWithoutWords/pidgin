@@ -9,6 +9,7 @@ import Ast.Common.Purity
 
 type Types = [Type]
 
+infixr 0 ~>
 (~>) :: [Type] -> Type -> Type
 ts ~> t = TFunc Pure ts t
 
