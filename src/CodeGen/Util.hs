@@ -22,6 +22,8 @@ typeToLlvmType t = case t of
     , T.isVarArg = False
     }
 
+  TRef (TArray t) -> T.ptr (typeToLlvmType t)
+
   TBln -> T.i1
   TChr -> T.i8
   TFlt -> T.float
