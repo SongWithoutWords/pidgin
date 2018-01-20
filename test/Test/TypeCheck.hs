@@ -613,6 +613,41 @@ f() -> Bln =>
         )
       ]
       []
+
+    , namedTest "array-sum" [s|
+arraySum(^Array[Int] array, Int size) =>
+    (apply(array, size - 1) + arraySum(array, size - 1)) if size > 0 else 0
+|]
+      [ ("arraySum", UFunc $ Func
+          (Sig Pure
+            [ Named "array" $ TRef $ TArray $ TInt
+            , Named "size" $ TInt] TInt)
+          $ Block []
+          $ Just $ Expr TInt $ EIf
+            (Cond $ Expr TBln $ EApp (Expr (TFunc Pure [TInt, TInt] TBln) $ EIntr IGrt) Pure
+              [ Expr TInt $ EName "size"
+              , Expr TInt $ EVal $ VInt 0
+              ])
+            (Expr TInt $ EApp (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr IAdd) Pure
+              [ Expr (TRef TInt) $ EApp (Expr (TFunc Pure [TRef $ TArray TInt, TInt] $ TRef TInt) $ EIntr ArrayAppImt) Pure
+                [ Expr (TRef $ TArray TInt) $ EName "array"
+                , Expr TInt $ EApp (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr ISub) Pure
+                  [ Expr TInt $ EName "size"
+                  , Expr TInt $ EVal $ VInt 1
+                  ]
+                ]
+              , Expr TInt $ EApp (Expr (TFunc Pure [TRef $ TArray TInt, TInt] TInt) $ EName "arraySum") Pure
+                [ Expr (TRef $ TArray TInt) $ EName "array"
+                , Expr TInt $ EApp (Expr (TFunc Pure [TInt, TInt] TInt) $ EIntr ISub) Pure
+                  [ Expr TInt $ EName "size"
+                  , Expr TInt $ EVal $ VInt 1
+                  ]
+                ]
+              ])
+            (Expr TInt $ EVal $ VInt 0)
+        )
+      ]
+      []
     ]
   ]
 
