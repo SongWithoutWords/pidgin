@@ -7,6 +7,7 @@ import Ast.A2Constrained.Type
 
 type Constraints = [Constraint]
 
+infixr 0 :$=
 data Constraint
   = Type :$= Type -- constraint arising from value assignment
   | Type :&= Type -- constraint arising from reference assignment
