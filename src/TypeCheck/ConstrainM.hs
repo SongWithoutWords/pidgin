@@ -122,6 +122,10 @@ checkType = checkType' M.empty
   where
   checkType' :: TypeParamSubs -> A1.Type -> ConstrainM Type
   checkType' subs typ = let checkType'' = checkType' subs in case typ of
+
+    -- Yep, I know it's wrong, will generalize at some stage ;)
+    A1.TArgs [t] (A1.TUser "Array") -> TArray <$> checkType'' t
+
     A1.TUser typename -> do
       let typeParamSub = M.lookup typename subs
       kinds <- lookupKinds typename
@@ -141,9 +145,10 @@ checkType = checkType' M.empty
     A1.TArray t -> TArray <$> checkType'' t
 
     -- Convert named template parameters into type variables
-    A1.TParam names t -> do
-      newSubs <- M.fromList <$> mapM (\n -> do tvar <- getNextTVar; pure (n, tvar)) names
+    A1.TParams typenames t -> do
+      newSubs <- M.fromList <$> mapM (\n -> do tvar <- getNextTVar; pure (n, tvar)) typenames
       checkType' (subs <> newSubs) t
+
 
     A1.TBln -> return TBln
     A1.TChr -> return TChr

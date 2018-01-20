@@ -16,8 +16,12 @@ data Type
   | TRef Mut Type
   | TArray Type
 
-  -- Parameterized type
-  | TParam [Typename] Type
+  -- A parameterized type
+  | TParams [Typename] Type
+  -- A singular type param, could something like this be useful?
+  -- | TParam Typename
+  -- Arguments to a parameterized type
+  | TArgs [Type] Type
 
   | TBln
   | TChr

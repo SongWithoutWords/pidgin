@@ -128,15 +128,15 @@ typeOfIntrinsic f = case f of
   BEql -> [TBln, TBln] ~> TBln
   BNeq -> [TBln, TBln] ~> TBln
 
-  ArrayCons -> TParam["a"] $ [TInt, TUser "a"] ~> TArray (TUser "a")
+  ArrayCons -> TParams["a"] $ [TInt, TUser "a"] ~> TArray (TUser "a")
 
-  ArrayAppImt -> TParam["a"]
+  ArrayAppImt -> TParams["a"]
     $ [TRef Imt $ TArray $ TUser "a", TInt] ~> TRef Imt (TUser "a")
 
-  ArrayAppMut -> TParam["a"]
+  ArrayAppMut -> TParams["a"]
     $ [TRef Mut $ TArray $ TUser "a", TInt] ~> TRef Mut (TUser "a")
 
-  ArrayUpdate -> TParam["a"]
+  ArrayUpdate -> TParams["a"]
     $ [TRef Mut $ TArray $ TUser "a", TInt, TRef Imt (TUser "a")] ~> TNone
 
   where

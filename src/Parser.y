@@ -142,6 +142,9 @@ accessMod
 namedFunc
   : name func { Named $1 $2 }
 
+  -- Rule is fine as far as parse errors go
+  -- | name "[" types "]"func {  }
+
 func
   : signature "=>" block { Func $1 ImplicitRet $3 }
   | signature ":"  block { Func $1 ExplicitRet $3 }
@@ -212,7 +215,13 @@ expr
   | expr "(" purity ")"             { EApp $1 $3 [] }
   | expr "(" purity "," exprs ")"   { EApp $1 $3 $5 }
 
+  -- EIf is quite bad for shift reduce conflicts (90 with, 63 without)
   | expr if expr else optEol expr { EIf (Cond $3) $1 $6 }
+
+  -- Less bad (76 with, 63 without)
+  -- | if expr then expr else expr {}
+  -- | if expr ":" expr else expr {}
+
   | func      { ELambda $1 }
 
   | "(" expr ")"            { $2 }
@@ -257,6 +266,7 @@ type
   -- | "?" mut type { TOption $2 $3 }
   -- | "*" mut type { TZeroPlus $2 $3 }
   -- | "+" mut type { TOnePlus $2 $3 }
+  | type "[" types "]" { TArgs $3 $1 }
 
   | Bln       { TBln }
   | Chr       { TChr }
