@@ -1,6 +1,7 @@
 module PostParse(postParse) where
 
 import Data.Monoid()
+import Control.Monad(liftM2)
 import Control.Monad.Writer
 
 import qualified Ast.A0Parse as A0
@@ -81,6 +82,19 @@ mapBlock retNotation stmts = do
         e2' <- mapExpr e2
         mapBlock' rest rn (A1.SAssign e1' e2' : xs)
 
+      A0.SIf i -> do
+        i' <- mapIfBranch i
+        mapBlock' rest A0.ExplicitRet (A1.SIf i' : xs)
+
+
+mapIfBranch :: A0.IfBranch -> ErrorM A1.IfBranch
+mapIfBranch i = case i of
+  A0.If condBlock -> A1.If <$> mapCondBlock condBlock
+  A0.IfElse condBlock block -> liftM2 A1.IfElse (mapCondBlock condBlock) (mapBlock A0.ExplicitRet block)
+  A0.IfElseIf condBlock ifBranch -> undefined
+
+mapCondBlock (A0.CondBlock expr block) =
+  liftM2 A1.CondBlock (mapExpr expr) (mapBlock A0.ExplicitRet block)
 
 mapVar :: A0.Var -> ErrorM A1.Var
 mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ

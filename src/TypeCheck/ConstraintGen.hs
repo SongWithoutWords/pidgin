@@ -3,6 +3,7 @@ module TypeCheck.ConstraintGen
   , module TypeCheck.Constraint
   ) where
 
+import Control.Monad(liftM2)
 import Data.Maybe(mapMaybe)
 
 import qualified Ast.A1PostParse as A1
@@ -80,10 +81,17 @@ checkStmt stmt = case stmt of
     addLocalBinding $ Named name $ typeOfVar var'
     pure $ A2.SVar $ Named name var'
 
-  A1.SIf ifBranch -> undefined
+  A1.SIf ifBranch -> A2.SIf <$> checkIf ifBranch
 
   A1.SExpr e -> A2.SExpr <$> checkExpr e
 
+checkIf :: A1.IfBranch -> ConstrainM A2.IfBranch
+checkIf i = case i of
+  A1.If cb -> A2.If <$> checkCondBlock cb
+  A1.IfElse cb b -> liftM2 A2.IfElse (checkCondBlock cb) (checkBlock b)
+
+checkCondBlock :: A1.CondBlock -> ConstrainM A2.CondBlock
+checkCondBlock (A1.CondBlock e b) = liftM2 A2.CondBlock (checkExpr e) (checkBlock b)
 
 checkVar :: A1.Var -> ConstrainM A2.Var
 checkVar (A1.Var mut optType expr) = do
