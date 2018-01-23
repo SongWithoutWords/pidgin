@@ -152,10 +152,30 @@ main() => nthPrime(7)
 
   , test "main() => 3 != 4" 1
 
+    -- And
+  , test "main() => false and false" 0
+  , test "main() => false and true" 0
+  , test "main() => true and false" 0
+  , test "main() => true and true" 1
+
+    -- Or
+  , test "main() => false or false" 0
+  , test "main() => false or true" 1
+  , test "main() => true or false" 1
+  , test "main() => true or true" 1
+
   -- If expressions
   , test "main() => 3 if 1 < 2 else 7" 3
-
   , test "main() => 6 if false else -1" (-1)
+
+  -- Combined-ops
+  , test "main() => 0 == 1 or 1 == 1" 1
+  , test "main() => 0 == 1 and 1 == 1" 0
+  , test "main() => 7 % 5 == 0" 0
+  , test "main() => 10 % 5 == 0" 1
+  , test "main() => 4 if 4 % 2 == 0 else 0" 4
+  , test "main() => 1 if 1 < 1 else 2 if 1 < 2 else 3" 2
+  , test "main() => 1 if 1 < 1 else (2 if 1 < 2 else 3)" 2
 
   , testGroup "arrays"
     [ namedTest "array-update-desugared" [s|
