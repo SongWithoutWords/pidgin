@@ -105,8 +105,9 @@ indentedUnits
   | ind namedUnits ded { $2 } 
 
 namedUnits
-  : namedUnit                    { [$1] }
-  | namedUnit optLineSep namedUnits { $1 : $3 }
+  : namedUnit             { [$1] }
+  | namedUnit namedUnits  { $1 : $2 }
+  | lineSep namedUnits    { $2 }
 
 namedUnit
   : namespace       { fmap UNamespace $1 }
