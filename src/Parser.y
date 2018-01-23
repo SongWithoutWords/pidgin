@@ -92,8 +92,10 @@ import Parser.Util
 
   name          { T.Name $$ }
 
-%right prec_name
-%right "<" ">" "<=" ">=" "==" "!="
+%nonassoc name
+%nonassoc or
+%nonassoc and
+%nonassoc "<" ">" "<=" ">=" "==" "!="
 %right "+" "-" 
 %right "*" "/" "%"
 %right prec_neg
@@ -249,6 +251,10 @@ expr
   | expr "<=" expr          { eBinOp $1 "<=" $3 }
   | expr "==" expr          { eBinOp $1 "==" $3 }
   | expr "!=" expr          { eBinOp $1 "!=" $3 }
+
+  | expr and expr           { eBinOp $1 "and" $3 }
+  | expr or expr            { eBinOp $1 "or" $3 }
+  | expr name expr          { eBinOp $1 $2 $3 }
 
   -- Values
   | true   { EVal $ VBln True }

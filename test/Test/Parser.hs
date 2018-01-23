@@ -21,6 +21,15 @@ namedTest name src ast =
   in testCase name $ unless (ast' == ast) $ assertFailure $
     "expected ast:\n" ++ prettyShow ast ++ "\nbut got:\n" ++ prettyShow ast'
 
+exprTest :: String -> Expr -> TestTree
+exprTest src = namedExprTest src src
+
+namedExprTest :: String -> String -> Expr -> TestTree
+namedExprTest name src expr =
+  let expr' = parseExpr $ scanTokens src
+  in testCase name $ unless (expr' == expr) $ assertFailure $
+     "expected expr:\n" ++ prettyShow expr ++ "\nbut got:\n" ++ prettyShow expr'
+
 tests :: TestTree
 tests = testGroup "parser"
 
@@ -242,5 +251,55 @@ f() =>
       , SExpr $ EApp (EName "arr") Pure [EVal $ VInt 0]
       ]
     ]
+
+  , testGroup "precedence"
+    [ exprTest "1 == 2 or \"red\" == \"blue\"" $
+      EApp (EName "or") Pure
+      [ EApp (EName "==") Pure
+        [ EVal $ VInt 1
+        , EVal $ VInt 2
+        ]
+      , EApp (EName "==") Pure
+        [ EVal $ VStr "red"
+        , EVal $ VStr "blue"
+        ]
+      ]
+
+    , exprTest "1 * 2 + 3 * 4" $
+      EApp (EName "+") Pure
+      [ EApp (EName "*") Pure
+        [ EVal $ VInt 1
+        , EVal $ VInt 2
+        ]
+      , EApp (EName "*") Pure
+        [ EVal $ VInt 3
+        , EVal $ VInt 4
+        ]
+      ]
+
+    , exprTest "1 + 2 == 3 + 4" $
+      EApp (EName "==") Pure
+      [ EApp (EName "+") Pure
+        [ EVal $ VInt 1
+        , EVal $ VInt 2
+        ]
+      , EApp (EName "+") Pure
+        [ EVal $ VInt 3
+        , EVal $ VInt 4
+        ]
+      ]
+
+    , exprTest "a and b or c and d" $
+      EApp (EName "or") Pure
+      [ EApp (EName "and") Pure
+        [ EName "a"
+        , EName "b"]
+      , EApp (EName "and") Pure
+        [ EName "c"
+        , EName "d"
+        ]
+      ]
+    ]
+
   ]
 
