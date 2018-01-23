@@ -1,5 +1,10 @@
 {
-module Parser(parse) where
+module Parser
+  ( parse
+  , parseStmt
+  , parseExpr
+  , parseType
+  ) where
 
 import Ast.A0Parse
 import qualified Lexer.Token as T
@@ -7,7 +12,11 @@ import Parser.Error
 import Parser.Util
 }
 
-%name parse
+%name parse unitsOrNone
+%name parseStmt stmt
+%name parseExpr expr
+%name parseType type
+
 %tokentype { T.Token }
 %error { parseError }
 
@@ -93,8 +102,6 @@ import Parser.Util
 
 -- If performance becomes a concern will need to parse sequences another way
 -- (see Happy docs)
-
-root : unitsOrNone { $1 }
 
 unitsOrNone
   : {- none -}    { [] }
