@@ -1,6 +1,8 @@
 module Transforms
   ( module Lexer
   , module Parser
+  , module CodeGen
+  , module LlvmUtil
   , module Transforms
   ) where
 

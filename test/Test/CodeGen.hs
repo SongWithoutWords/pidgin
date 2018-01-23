@@ -14,12 +14,16 @@ test src = namedTest src src
 
 namedTest :: String -> String -> Int -> TestTree
 namedTest name src retValExpected = testCase name $ do
-  retValActual <- returnValFromSource src
-  unless (retValActual == Just retValExpected) $ do
-    llvmIr <- llvmIrFromSource src
-    assertFailure $ "expected:\n" ++ show retValExpected
-      ++ "\nbut got:\n" ++ show retValActual
-      ++ "\nwith llvm-ir:\n" ++ llvmIr
+  let (ast, errors) = lexParseCheck src
+  if not $ null errors
+    then assertFailure $ "errors: " ++ show errors
+    else do
+      retValActual <- execMainOfLlvmAst $ codeGen ast
+      unless (retValActual == Just retValExpected) $ do
+        llvmIr <- llvmIrFromSource src
+        assertFailure $ "expected:\n" ++ show retValExpected
+          ++ "\nbut got:\n" ++ show retValActual
+          ++ "\nwith llvm-ir:\n" ++ llvmIr
 
 tests :: TestTree
 tests = testGroup "codegen"
