@@ -32,9 +32,11 @@ library
 
                     Ast.A2Constrained
                     Ast.A2Constrained.Error
+                    Ast.A2Constrained.PrettyPrint
                     Ast.A2Constrained.Type
 
                     Ast.A3Typed
+                    Ast.A3Typed.PrettyPrint
 
                     Ast.Common.Access
                     Ast.Common.Intrinsic
