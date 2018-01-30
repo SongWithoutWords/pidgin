@@ -98,19 +98,25 @@ genExpr (Expr typ expr) = case expr of
       Nothing -> globalReference n typ
 
   EIf (Cond ec) e1 e2 -> do
-    ifTrue <- addBlock "if.true"
-    ifFalse <- addBlock "if.false"
-    ifEnd <- addBlock "if.end"
-
     cond <- genExpr ec
+
+    (BlockId blockNum) <- gets blockCount
+    let blockName = show blockNum
+
+    ifTrue <- addBlock $ fromString $ "if" ++ blockName
+    ifFalse <- addBlock $ fromString $ "else" ++ blockName
+    ifEnd <- addBlock $ fromString $ "end" ++ blockName
+
     condBr cond ifTrue ifFalse
 
     setBlock ifTrue
     e1' <- genExpr e1
+    ifTrue <- gets curBlockName
     br ifEnd
 
     setBlock ifFalse
     e2' <- genExpr e2
+    ifFalse <- gets curBlockName
     br ifEnd
 
     setBlock ifEnd
