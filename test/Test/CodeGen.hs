@@ -80,26 +80,11 @@ gcd(Int a, Int b) => a if b == 0 else gcd(b, a % b)
 main() => gcd(18, 24)
 |] 6
 
-  , namedTest "7th-prime" [s|
-nthPrime(Int n) =>
-    ~$ arr = Array(n, 0)
-    update(arr, 0, 2)
-    update(arr, 1, 3)
-    nthPrimImp(n, 2, 3)
-
-nthPrimeImp(Int n, Int numPrimesFound, Int candidate, ^~Array[Int] primes) =>
-    if isPrime(candidate, primes, numPrimesFound):
-        update(primes, numPrimesFound, candidate)
-        nthPrimeImp(n, numPrimesFound + 1, candidate + 2)
-    else
-        nthPrimeImp(n, numPrimesFound, candidate + 2)
   , namedTest "seq" [s|
 seq[A, B](A a, B b) => b
 main() => seq(true, 7)
 |] 7
 
-main() => nthPrime(7)
-|] 17
 
   -- Modulus operator tests
   , test "main() => 0 % 2" 0
@@ -226,5 +211,87 @@ main() =>
     arraySum(arr, 4)
 |] 25
     ]
+
+  , testGroup "mathy"
+    [ namedTest "sum-of-multiples-of-3-and-5" [s|
+sumOfMultiples(Int n) =>
+    0 if n <= 0 else sumOfMultiples(n - 1) + n if (n % 3 == 0 or n % 5 == 0) else 0
+
+main() => sumOfMultiples(9)
+|] 23
+
+    , namedTest "even-fibonacci-sum" [s|
+evenFibSum(Int max) => imp(max, 1, 1, 0)
+
+imp(Int max, Int cur, Int next, Int sum) =>
+    sum if cur > max else imp(max, next, cur + next, sum + cur if cur % 2 == 0 else 0)
+
+main() =>
+    evenFibSum(100)
+|] 44
+
+    , namedTest "largest-prime-factor" [s|
+maxPrimeFactor(Int n, Int div, Int largestDiv) -> Int =>
+    largestDiv if div > n else (maxPrimeFactor(n / div, div, div) if n % div == 0 else maxPrimeFactor(n, div + 1, largestDiv))
+
+main() => maxPrimeFactor(13195, 2, 1)
+|] 29
+
+    , namedTest "palindrome-product" [s|
+indexOfMaxDigit(Int n) => 0 if n < 10 else 1 + indexOfMaxDigit(n / 10)
+tenToPower(Int n) => 1 if n <= 0 else 10 * tenToPower(n - 1)
+
+isPalindrome(Int n) => isPalindromeImp(n, indexOfMaxDigit(n))
+isPalindromeImp(Int n, Int maxIndex) =>
+    $ maxIndexVal = tenToPower(maxIndex)
+    $ leftDigit = n / maxIndexVal
+    $ rightDigit = n % 10
+    true if maxIndex <= 0 else
+    (leftDigit == rightDigit) and isPalindromeImp((n % maxIndexVal) / 10, maxIndex - 2)
+
+maxPalindrome(Int i) => maxPalindromeImp(i, i, 0)
+maxPalindromeImp(Int i, Int j, Int max) -> Int =>
+    $ ij = i * j
+    max if i * i <= max else
+    maxPalindromeImp(i - 1, i - 1, max) if ij <= max else
+    maxPalindromeImp(i, j - 1, ij if ij > max else max) if isPalindrome(ij) else
+    maxPalindromeImp(i, j - 1, max)
+
+main() => maxPalindrome(99)
+|] 9009
+
+    , namedTest "sum-square-difference" [s|
+sumOfSquares(Int n) => 1 if n <= 1 else n * n + sumOfSquares(n - 1)
+
+sumTo(Int n) => 1 if n <= 1 else n + sumTo(n - 1)
+squareOfSum(Int n) =>
+    $ sum = sumTo(n)
+    sum * sum
+
+sumSquareDifference(Int n) => squareOfSum(n) - sumOfSquares(n)
+
+main() => sumSquareDifference(10)
+|] 2640
+
+    , namedTest "nth-prime" [s|
+prime(Int n) =>
+    ~$ primes = Array(n, 0)
+    update(arr, 0, 2)
+    update(arr, 1, 3)
+    primeImp(n, primes, 2, 3)
+
+primeImp(Int n, ^~Array[Int] primes, Int numPrimesFound, Int candidate) =>
+    if isPrime(candidate, primes, numPrimesFound):
+        update(primes, numPrimesFound, candidate)
+        primeImp(n, primes, numPrimesFound + 1, candidate + 2)
+    else
+        primeImp(n, primes, numPrimesFound, candidate + 2)
+
+isPrime(candidate, primes, numRemainingPrimes) =>
+    true if numRemainingPrimes <= 0
+
+main() => prime(7)
+|] 17
+   ]
   ]
 
