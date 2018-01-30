@@ -66,6 +66,15 @@ fib(Int i) => 1 if i <= 1 else fib(i - 1) + fib(i - 2)
 main() => fib(7)
 |] 21
 
+  , namedTest "faster-fibonacci-7" [s|
+fib(Int n) => fibImp(0, n, 1, 1)
+
+fibImp(Int i, Int n, Int cur, Int next) -> Int =>
+    cur if i >= n else fibImp(i + 1, n, next, cur + next)
+
+main() => fib(7)
+|] 21
+
   , namedTest "gcd 18 24" [s|
 gcd(Int a, Int b) => a if b == 0 else gcd(b, a % b)
 main() => gcd(18, 24)
