@@ -93,6 +93,10 @@ nthPrimeImp(Int n, Int numPrimesFound, Int candidate, ^~Array[Int] primes) =>
         nthPrimeImp(n, numPrimesFound + 1, candidate + 2)
     else
         nthPrimeImp(n, numPrimesFound, candidate + 2)
+  , namedTest "seq" [s|
+seq[A, B](A a, B b) => b
+main() => seq(true, 7)
+|] 7
 
 main() => nthPrime(7)
 |] 17
