@@ -19,8 +19,12 @@ printExpr (Expr _ expr) = case expr of
   EApp e p args -> (printExpr e) ++ "(" ++ (printPurityAndArgs p args) ++ ")"
   EName n -> n
   EIntr i -> nameOfIntrinsic i
-  EIf (Cond a) b c -> printExpr b ++ " if " ++ printExpr a ++ " else " ++ printExpr c
+  EIf a b c -> "if" ++ printExpr a ++ "then" ++ printBlock b ++ "else" ++ printBlock c
   EVal v -> printVal v
+
+printBlock :: Block -> String
+printBlock [] = []
+printBlock [e] = printExpr e
 
 printPurityAndArgs :: Purity -> [Expr] -> String
 
