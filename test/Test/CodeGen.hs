@@ -292,6 +292,6 @@ isPrime(candidate, primes, numRemainingPrimes) =>
 
 main() => prime(7)
 |] 17
-   ]
+    ]
   ]
 
