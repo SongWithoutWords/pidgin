@@ -40,37 +40,41 @@ genParams params = map genParam params
     genParam :: Param -> G.Parameter
     genParam (Named name t) = G.Parameter (typeToLlvmType t) (fromString name) []
 
-genBlock :: Params -> Block -> [G.BasicBlock]
+genBlock :: Params -> Exprs -> [G.BasicBlock]
 genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
 
-genBlock' :: Params -> Block -> CodeGenM ()
-genBlock' params (Block stmts retExpr) = do
+genBlock' :: Params -> Exprs -> CodeGenM ()
+genBlock' params exprs = do
   entryBlockName <- addBlock "entry"
   setBlock entryBlockName
   mapM_ addParamBinding params
-  mapM_ genStmt stmts
+  -- mapM_ genExpr exprs
 
-  retOp <- mapM genExpr retExpr
-  setTerminator $ A.Do $ A.Ret retOp []
+  retOp <- genExprs exprs -- this isn't quite right... (should probaly return None for none)
+  setTerminator $ A.Do $ A.Ret (Just retOp) []
 
   where
     addParamBinding (Named name t) = addLocalBinding name t
 
-genStmt :: Stmt -> CodeGenM ()
-genStmt stmt = case stmt of
+genExprs :: Exprs -> CodeGenM A.Operand
+genExprs exprs = last <$> mapM genExpr exprs
+  
 
-  SVar (Named name (Var _ e)) -> do
-    oper <- genExpr e
-    addBinding name oper
+-- genStmt :: Stmt -> CodeGenM ()
+-- genStmt stmt = case stmt of
 
-  SExpr (Expr _ (EApp (Expr _ (EIntr ArrayUpdate)) Pure [array, index, value])) -> do
-    array' <- genExpr array
-    index' <- genExpr index
-    value' <- genExpr value
-    address <- instructionToOperand $ getElementPtr array' index'
-    action $ store address value'
+--   SVar (Named name (Var _ e)) -> do
+--     oper <- genExpr e
+--     addBinding name oper
 
-  SAssign _ _ -> undefined
+--   SExpr (Expr _ (EApp (Expr _ (EIntr ArrayUpdate)) Pure [array, index, value])) -> do
+--     array' <- genExpr array
+--     index' <- genExpr index
+--     value' <- genExpr value
+--     address <- instructionToOperand $ getElementPtr array' index'
+--     action $ store address value'
+
+--   SAssign _ _ -> undefined
 
 
 -- Generates intermediate computations + returns a reference to the operand of the result
@@ -97,7 +101,7 @@ genExpr (Expr typ expr) = case expr of
       Just op -> op
       Nothing -> globalReference n typ
 
-  EIf (Cond ec) e1 e2 -> do
+  EIf ec e1 e2 -> do
     cond <- genExpr ec
 
     (BlockId blockNum) <- gets blockCount
@@ -110,12 +114,12 @@ genExpr (Expr typ expr) = case expr of
     condBr cond ifTrue ifFalse
 
     setBlock ifTrue
-    e1' <- genExpr e1
+    e1' <- genExprs e1
     ifTrue <- gets curBlockName
     br ifEnd
 
     setBlock ifFalse
-    e2' <- genExpr e2
+    e2' <- genExprs e2
     ifFalse <- gets curBlockName
     br ifEnd
 
