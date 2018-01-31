@@ -7,7 +7,7 @@ import qualified Data.Map as M
 
 import Ast.A2Constrained as A2
 import qualified Ast.A3Typed as A3
-import TypeCheck.ApplySubs
+-- import TypeCheck.ApplySubs
 import TypeCheck.ErrorM
 import TypeCheck.Substitution
 import TypeCheck.Util
@@ -43,15 +43,8 @@ subAst' substitutions ast = multiMapM subUnit ast
     subParam :: Param -> ErrorM A3.Param
     subParam (Named n t) = (Named n) <$> subType' t
 
-    subBlock :: Block -> ErrorM A3.Block
-    subBlock (Block stmts optExpr) =
-      liftM2 A3.Block (mapM subStmt stmts) (mapM subExpr optExpr)
-
-    subStmt :: Stmt -> ErrorM A3.Stmt
-    subStmt stmt = case stmt of
-      SAssign a b -> liftM2 A3.SAssign (subExpr a) (subExpr b)
-      SVar namedVar -> A3.SVar <$> mapM subVar namedVar
-      SExpr e -> A3.SExpr <$> subExpr e
+    subBlock :: Exprs -> ErrorM A3.Exprs
+    subBlock exprs = mapM subExpr exprs
 
     subExpr :: Expr -> ErrorM A3.Expr
     subExpr (Expr typ expr) = do
@@ -67,8 +60,8 @@ subAst' substitutions ast = multiMapM subUnit ast
           pure $ A3.ESelect e' name
         EName n -> pure $ A3.EName n
         EIntr i -> pure $ EIntr i
-        EIf (Cond ec) e1 e2 ->
-          liftM3 A3.EIf (A3.Cond <$> subExpr ec) (subExpr e1) (subExpr e2)
+        EIf ec e1 e2 ->
+          liftM3 A3.EIf (subExpr ec) (mapM subExpr e1) (mapM subExpr e2)
         ELambda f -> A3.ELambda <$> subFunc f
         EVal v -> pure $ A3.EVal v
 
