@@ -37,10 +37,11 @@ data Member
   | MVar Access Var
   deriving(Eq, Show)
 
-data Func = Func Sig Exprs
+data Func = Func Sig Block
   deriving(Eq, Show)
 
-type Exprs = [Expr]
+newtype Block = Block [Expr]
+  deriving(Eq, Show)
 
 data Var = Var Mut (Maybe Type) Expr
   deriving(Eq, Show)
@@ -48,7 +49,7 @@ data Var = Var Mut (Maybe Type) Expr
 data Expr
   = ELambda Func
 
-  | EIf Expr Exprs Exprs
+  | EIf Expr Block Block
   | ERet Expr
 
   | EVar (Named Var)
