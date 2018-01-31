@@ -37,10 +37,10 @@ data Member
   | MVar Access Var
   deriving(Eq, Show)
 
-data Func = Func Sig Block
+data Func = Func Sig Exprs
   deriving(Eq, Show)
 
-type Block = [Expr]
+type Exprs = [Expr]
 
 data Var = Var Mut (Maybe Type) Expr
   deriving(Eq, Show)
@@ -48,7 +48,7 @@ data Var = Var Mut (Maybe Type) Expr
 data Expr
   = ELambda Func
 
-  | EIf Expr Block Block
+  | EIf Expr Exprs Exprs
   | ERet Expr
 
   -- Should be ELet? Could I start allowing any expr to be type annotated?

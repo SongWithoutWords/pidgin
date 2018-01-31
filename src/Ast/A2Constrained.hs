@@ -37,7 +37,7 @@ data Member
   | MVar Access Var
   deriving(Eq, Show)
 
-data Func = Func Sig Block
+data Func = Func Sig Exprs
   deriving(Eq, Show)
 
 data Sig = Sig Purity Params Type
@@ -48,7 +48,7 @@ type Params = [Param]
 
 type Param = Named Type
 
-type Block = [Expr]
+type Exprs = [Expr]
 
 data Var = Var Type Expr
   deriving(Eq, Show)
@@ -59,7 +59,7 @@ data Expr = Expr Type Expr'
 data Expr'
   = ELambda Func
 
-  | EIf Expr Block Block
+  | EIf Expr Exprs Exprs
   | ERet Expr
 
   | EVar (Named Var)
