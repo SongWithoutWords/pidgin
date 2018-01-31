@@ -37,51 +37,28 @@ data Member
   | MVar Access Var
   deriving(Eq, Show)
 
-data RetNotation
-  = ImplicitRet
-  | ExplicitRet
+data Func = Func Sig Block
   deriving(Eq, Show)
 
-data Func = Func Sig RetNotation Block
-  deriving(Eq, Show)
-
-type Block = [Stmt]
-
-data Stmt
-  = SAssign Expr Expr
-  | SVar (Named Var)
-  | SIf IfBranch
-
-  -- SExprs and SRets are replaced by SApps and ret field on block during post-parse
-  | SExpr Expr
-  | SRet Expr
-  deriving(Eq, Show)
-
-data IfBranch
-  = If CondBlock
-  | IfElse CondBlock Block
-  | IfElseIf CondBlock IfBranch
-  deriving(Eq, Show)
-
-data CondBlock = CondBlock Expr Block
-  deriving(Eq, Show)
+type Block = [Expr]
 
 data Var = Var Mut (Maybe Type) Expr
   deriving(Eq, Show)
 
 data Expr
+  = ELambda Func
 
-  = EApp Expr Purity [Expr]
+  | EIf Expr Block Block
+  | ERet Expr
+
+  -- Should be ELet? Could I start allowing any expr to be type annotated?
+  | EVar (Named Var)
+  | EAssign Expr Expr
+
+  | EApp Expr Purity [Expr]
   | ESelect Expr Name
   | EName Name
 
-  | EIf Cond Expr Expr
-
-  | ELambda Func
-
   | EVal Value
-  deriving(Eq, Show)
-
-newtype Cond = Cond Expr
   deriving(Eq, Show)
 

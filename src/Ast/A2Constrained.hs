@@ -48,24 +48,7 @@ type Params = [Param]
 
 type Param = Named Type
 
-data Block = Block [Stmt] (Maybe Expr)
-  deriving(Eq, Show)
-
-data Stmt
-  = SAssign Expr Expr
-  | SVar (Named Var)
-  | SIf IfBranch
-  | SExpr Expr
-  deriving(Eq, Show)
-
-data IfBranch
-  = If CondBlock
-  | IfElse CondBlock Block
-  | IfElseIf CondBlock IfBranch
-  deriving(Eq, Show)
-
-data CondBlock = CondBlock Expr Block
-  deriving(Eq, Show)
+type Block = [Expr]
 
 data Var = Var Type Expr
   deriving(Eq, Show)
@@ -74,19 +57,21 @@ data Expr = Expr Type Expr'
   deriving(Eq, Show)
 
 data Expr'
-  = EApp Expr Purity [Expr]
-  | ESelect Expr Name
-  | EName Name
-  | EIntr Intrinsic
+  = ELambda Func
+
+  | EIf Expr Block Block
+  | ERet Expr
+
+  | EVar (Named Var)
+  | EAssign Expr Expr
+
+  | EApp Expr Purity [Expr]
   | EOver [Expr] -- Expression representing an overloaded name
 
-  | EIf Cond Expr Expr
+  | ESelect Expr Name
+  | EName Name
 
-  | ELambda Func
-
+  | EIntr Intrinsic
   | EVal Value
-  deriving(Eq, Show)
-
-newtype Cond = Cond Expr
   deriving(Eq, Show)
 

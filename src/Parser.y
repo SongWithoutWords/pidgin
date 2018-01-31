@@ -1,7 +1,6 @@
 {
 module Parser
   ( parse
-  , parseStmt
   , parseExpr
   , parseType
   ) where
@@ -13,7 +12,6 @@ import Parser.Util
 }
 
 %name parse unitsOrNone
-%name parseStmt stmt
 %name parseExpr expr
 %name parseType type
 
@@ -92,6 +90,7 @@ import Parser.Util
 
   name          { T.Name $$ }
 
+%nonassoc "="
 %nonassoc name
 %nonassoc or
 %nonassoc and
@@ -156,8 +155,7 @@ namedFunc
   -- | name "[" types "]"func {  }
 
 func
-  : signature "=>" block { Func $1 ImplicitRet $3 }
-  | signature ":"  block { Func $1 ExplicitRet $3 }
+  : signature "=>" block { Func $1 $3 }
 
 signature
   : purityAndParams optionRetType { Sig (fst $1) (snd $1) $2}
@@ -183,28 +181,8 @@ retType
   : "->" type   { $2 }
 
 block
-  : lineSep       { [] }
-  | expr          { [SExpr $1] }
-  | ind stmts ded { $2 }
-
-stmts
-  : stmt                { [$1] }
-  | stmt lineSep stmts  { $1 : $3 }
-
-stmt
-  : expr            { SExpr $1 }
-  | expr eqExpr     { SAssign $1 $2 }
-  | namedVar        { SVar $1 }
-  | ret expr        { SRet $2 }
-  | ifBranch        { SIf $1 }
-
-ifBranch
-  : if condBlock               { If $2 }
-  | if condBlock else block    { IfElse $2 $4 }
-  | if condBlock else ifBranch { IfElseIf $2 $4 }
-
-condBlock
-  : expr ":" block             { CondBlock $1 $3 }
+  : expr            { [$1] }
+  | ind lsExprs ded { $2 }
 
 namedVar
   : mut maybeType name eqExpr { Named $3 $ Var $1 $2 $4 }
@@ -212,27 +190,31 @@ namedVar
 eqExpr
   : "=" expr { $2 }
 
-exprs
+-- line-separated exprs
+lsExprs
   : expr            { [$1]}
-  | expr "," exprs  { $1 : $3 }
+  | expr lineSep lsExprs  { $1 : $3 }
+
+-- comma-separated exprs
+csExprs
+  : expr              { [$1]}
+  | expr "," csExprs  { $1 : $3 }
 
 expr
   : name                            { EName $1 }
   | expr "." name                   { ESelect $1 $3 }
+  | expr eqExpr                     { EAssign $1 $2 }
+  | namedVar                        { EVar $1 }
 
   | expr "(" ")"                    { EApp $1 Pure [] }
-  | expr "(" exprs ")"              { EApp $1 Pure $3 }
+  | expr "(" csExprs ")"              { EApp $1 Pure $3 }
   | expr "(" purity ")"             { EApp $1 $3 [] }
-  | expr "(" purity "," exprs ")"   { EApp $1 $3 $5 }
+  | expr "(" purity "," csExprs ")"   { EApp $1 $3 $5 }
 
   -- EIf is quite bad for shift reduce conflicts (90 with, 63 without)
-  | expr if expr else optEol expr { EIf (Cond $3) $1 $6 }
+  | if expr then block else block { EIf (Cond $2) $4 $6 }
 
-  -- Less bad (76 with, 63 without)
-  -- | if expr then expr else expr {}
-  -- | if expr ":" expr else expr {}
-
-  | func      { ELambda $1 }
+  | func                    { ELambda $1 }
 
   | "(" expr ")"            { $2 }
 
