@@ -48,8 +48,7 @@ type Params = [Param]
 
 type Param = Named Type
 
-newtype Block = Block [Expr]
-  deriving(Eq, Show)
+type Block = [Expr]
 
 data Var = Var Type Expr
   deriving(Eq, Show)

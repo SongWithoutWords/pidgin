@@ -45,10 +45,10 @@ checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
   pushNewScope
 
   mapM_ addLocalBinding params'
-  block'@(A2.Block _ optRetExpr') <- checkBlock block
-  let tRetExpr = case optRetExpr' of
-        Nothing -> TNone
-        Just (A2.Expr t _) -> t
+  block' <- checkBlock block
+
+  let tRetExpr = typeOfExpr $ last block' -- TODO: use a more robust function than last
+
   tRet $= tRetExpr
 
   popScope
@@ -56,42 +56,39 @@ checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
   pure $ A2.Func (A2.Sig pur params' tRet) block'
 
 checkBlock :: A1.Block -> ConstrainM A2.Block
-checkBlock (A1.Block stmts maybeRetExpr) = do
-  stmts' <- traverse checkStmt stmts
-  maybeRetExpr' <- traverse checkExpr maybeRetExpr
-  return $ A2.Block stmts' maybeRetExpr'
+checkBlock block = mapM checkExpr block
 
-checkStmt :: A1.Stmt -> ConstrainM A2.Stmt
-checkStmt stmt = case stmt of
+-- checkStmt :: A1.Stmt -> ConstrainM A2.Stmt
+-- checkStmt stmt = case stmt of
 
-  -- TODO: will need to account for mutations in future
-  A1.SAssign lhs rhs -> do
-    lhs'@(A2.Expr tLhs _) <- checkExpr lhs
+--   -- TODO: will need to account for mutations in future
+--   A1.SAssign lhs rhs -> do
+--     lhs'@(A2.Expr tLhs _) <- checkExpr lhs
 
-    case tLhs of
-      TMut _ -> pure ()
-      _ -> raise AssignmentToImmutableValue
+--     case tLhs of
+--       TMut _ -> pure ()
+--       _ -> raise AssignmentToImmutableValue
 
-    rhs'@(A2.Expr tRhs _) <- checkExpr rhs
-    tLhs $= tRhs
-    pure $ A2.SAssign lhs' rhs'
+--     rhs'@(A2.Expr tRhs _) <- checkExpr rhs
+--     tLhs $= tRhs
+--     pure $ A2.SAssign lhs' rhs'
 
-  A1.SVar (Named name var) -> do
-    var' <- checkVar var
-    addLocalBinding $ Named name $ typeOfVar var'
-    pure $ A2.SVar $ Named name var'
+--   A1.SVar (Named name var) -> do
+--     var' <- checkVar var
+--     addLocalBinding $ Named name $ typeOfVar var'
+--     pure $ A2.SVar $ Named name var'
 
-  A1.SIf ifBranch -> A2.SIf <$> checkIf ifBranch
+--   A1.SIf ifBranch -> A2.SIf <$> checkIf ifBranch
 
-  A1.SExpr e -> A2.SExpr <$> checkExpr e
+--   A1.SExpr e -> A2.SExpr <$> checkExpr e
 
-checkIf :: A1.IfBranch -> ConstrainM A2.IfBranch
-checkIf i = case i of
-  A1.If cb -> A2.If <$> checkCondBlock cb
-  A1.IfElse cb b -> liftM2 A2.IfElse (checkCondBlock cb) (checkBlock b)
+-- checkIf :: A1.IfBranch -> ConstrainM A2.IfBranch
+-- checkIf i = case i of
+--   A1.If cb -> A2.If <$> checkCondBlock cb
+--   A1.IfElse cb b -> liftM2 A2.IfElse (checkCondBlock cb) (checkBlock b)
 
-checkCondBlock :: A1.CondBlock -> ConstrainM A2.CondBlock
-checkCondBlock (A1.CondBlock e b) = liftM2 A2.CondBlock (checkExpr e) (checkBlock b)
+-- checkCondBlock :: A1.CondBlock -> ConstrainM A2.CondBlock
+-- checkCondBlock (A1.CondBlock e b) = liftM2 A2.CondBlock (checkExpr e) (checkBlock b)
 
 checkVar :: A1.Var -> ConstrainM A2.Var
 checkVar (A1.Var mut optType expr) = do
@@ -127,6 +124,9 @@ checkName name = do
         t <- (flip TOver ts) <$> getNextTVar
         pure $ A2.Expr t $ A2.EOver es
 
+-- checkExprs :: A1.Exprs -> ConstrainM A2.Expr
+-- checkExprs exprs = last <$> mapM checkExpr exprs
+
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of
 
@@ -150,16 +150,20 @@ checkExpr expression = case expression of
     pure $ A2.Expr tRet $ A2.EApp expr' purity args'
 
 
-  A1.EIf (A1.Cond cond) e1 e2 -> do
+  A1.EIf cond b1 b2 -> do
 
     cond'@(A2.Expr tCond _) <- checkExpr cond
-    e1'@(A2.Expr t1 _) <- checkExpr e1
-    e2'@(A2.Expr t2 _) <- checkExpr e2
+
+    b1' <- checkBlock b1
+    b2' <- checkBlock b2
+
+    let t1 = typeOfExpr $ last b1'
+    let t2 = typeOfExpr $ last b2'
 
     TBln $= tCond
     t1 $= t2
 
-    pure $ A2.Expr t1 $ A2.EIf (A2.Cond cond') e1' e2'
+    pure $ A2.Expr t1 $ A2.EIf cond' b1' b2'
 
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v

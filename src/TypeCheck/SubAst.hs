@@ -43,8 +43,8 @@ subAst' substitutions ast = multiMapM subUnit ast
     subParam :: Param -> ErrorM A3.Param
     subParam (Named n t) = (Named n) <$> subType' t
 
-    subBlock :: Exprs -> ErrorM A3.Exprs
-    subBlock exprs = mapM subExpr exprs
+    subBlock :: Block -> ErrorM A3.Block
+    subBlock block = mapM subExpr block
 
     subExpr :: Expr -> ErrorM A3.Expr
     subExpr (Expr typ expr) = do
@@ -60,8 +60,8 @@ subAst' substitutions ast = multiMapM subUnit ast
           pure $ A3.ESelect e' name
         EName n -> pure $ A3.EName n
         EIntr i -> pure $ EIntr i
-        EIf ec e1 e2 ->
-          liftM3 A3.EIf (subExpr ec) (mapM subExpr e1) (mapM subExpr e2)
+        EIf e b1 b2 ->
+          liftM3 A3.EIf (subExpr e) (subBlock b1) (subBlock b2)
         ELambda f -> A3.ELambda <$> subFunc f
         EVal v -> pure $ A3.EVal v
 

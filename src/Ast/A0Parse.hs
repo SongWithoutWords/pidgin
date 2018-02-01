@@ -40,8 +40,7 @@ data Member
 data Func = Func Sig Block
   deriving(Eq, Show)
 
-newtype Block = Block [Expr]
-  deriving(Eq, Show)
+type Block = [Expr]
 
 data Var = Var Mut (Maybe Type) Expr
   deriving(Eq, Show)

@@ -9,8 +9,8 @@ type Errors = Set Error
 
 data Error
 
-  = ImplicitRetWithoutFinalExpr
-  | MidBlockReturnStatement
+  = MidBlockReturn
+  -- | RedundantReturn
   | UselessExpression
 
   | UnknownId Name

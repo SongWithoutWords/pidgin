@@ -35,66 +35,61 @@ mapMember member = case member of
   A0.MVar acc v               -> A1.MVar acc <$> mapVar v
 
 mapFunc :: A0.Func -> ErrorM A1.Func
-mapFunc (A0.Func sig retNotation block) = A1.Func sig <$> mapBlock retNotation block
+mapFunc (A0.Func sig block) = A1.Func sig <$> mapBlock block
 
-mapBlock :: A0.RetNotation -> A0.Block -> ErrorM A1.Block
-mapBlock retNotation stmts = do
-  (A1.Block stmts' ret) <- mapBlock' stmts retNotation []
-  return $ A1.Block (reverse stmts') ret
+listOf :: a -> [a]
+listOf a = [a]
 
-  where
-    mapBlock' :: [A0.Stmt] -> A0.RetNotation -> [A1.Stmt] -> ErrorM A1.Block
+mapBlock :: A0.Block -> ErrorM A1.Block -- -> ErrorM A1.Block
 
-    -- No statements left => no ret value
-    mapBlock' [] rn xs = do
-      when (rn == A0.ImplicitRet) $ raise ImplicitRetWithoutFinalExpr
-      return $ A1.Block xs Nothing
+mapBlock [] = pure []
 
-    -- One remaining expr + implicit ret => ret value
-    mapBlock' [A0.SExpr e] A0.ImplicitRet xs =
-      A1.Block xs . Just <$> mapExpr e
+-- mapBlock (A0.ERet)
 
-    mapBlock' (s : rest) rn xs = case s of
+mapBlock (A0.ERet e : (_:_)) = raise MidBlockReturn >> listOf . A1.ERet <$> mapExpr e
 
-      A0.SExpr expr -> case expr of
-        -- Application can be significant without being returned
-        e@A0.EApp{} -> do
-          e' <- mapExpr e
-          mapBlock' rest rn (A1.SExpr e' : xs)
-        -- All other expressions are insignificant when not returned
-        _ -> do
-          raise UselessExpression
-          mapBlock' rest rn xs
+mapBlock (e : rest) = liftM2 (:) (mapExpr e) (mapBlock rest)
 
-      -- Ret statement => ret value
-      A0.SRet expr -> do
-        -- Raise error/warning if mid-block
-        when (not $ null rest) $ raise MidBlockReturnStatement
-        A1.Block xs . Just <$> mapExpr expr
+-- No statements left => no ret value
+-- mapBlock [] rn xs = do
+  -- when (rn == A0.ImplicitRet) $ raise ImplicitRetWithoutFinalExpr
+  -- return $ A1.Block xs Nothing
 
-      A0.SVar var -> do
-        var' <- mapM mapVar var
-        mapBlock' rest rn (A1.SVar var' : xs)
+-- One remaining expr + implicit ret => ret value
+-- mapBlock [e] xs =
+--   A1.Block xs . Just <$> mapExpr e
 
-      -- TODO: enforce proper assignment, syntax sugar for a(b) = c
-      A0.SAssign e1 e2 -> do
-        e1' <- mapExpr e1
-        e2' <- mapExpr e2
-        mapBlock' rest rn (A1.SAssign e1' e2' : xs)
+-- mapBlock (s : rest) rn xs = case s of
 
-      A0.SIf i -> do
-        i' <- mapIfBranch i
-        mapBlock' rest A0.ExplicitRet (A1.SIf i' : xs)
+--   A0.SExpr expr -> case expr of
+--     -- Application can be significant without being returned
+--     e@A0.EApp{} -> do
+--       e' <- mapExpr e
+--       mapBlock rest rn (A1.SExpr e' : xs)
+--     -- All other expressions are insignificant when not returned
+--     _ -> do
+--       raise UselessExpression
+--       mapBlock rest rn xs
 
+--   -- Ret statement => ret value
+--   A0.ERet expr -> do
+--     -- Raise error/warning if mid-block
+--     when (not $ null rest) $ raise MidBlockReturnStatement
+--     A1.Block xs . Just <$> mapExpr expr
 
-mapIfBranch :: A0.IfBranch -> ErrorM A1.IfBranch
-mapIfBranch i = case i of
-  A0.If condBlock -> A1.If <$> mapCondBlock condBlock
-  A0.IfElse condBlock block -> liftM2 A1.IfElse (mapCondBlock condBlock) (mapBlock A0.ExplicitRet block)
-  A0.IfElseIf condBlock ifBranch -> undefined
+--   A0.EVar var -> do
+--     var' <- mapM mapVar var
+--     mapBlock rest rn (A1.SVar var' : xs)
 
-mapCondBlock (A0.CondBlock expr block) =
-  liftM2 A1.CondBlock (mapExpr expr) (mapBlock A0.ExplicitRet block)
+--   -- TODO: enforce proper assignment, syntax sugar for a(b) = c
+--   A0.EAssign e1 e2 -> do
+--     e1' <- mapExpr e1
+--     e2' <- mapExpr e2
+--     mapBlock rest rn (A1.SAssign e1' e2' : xs)
+
+--   A0.EIf i -> do
+--     i' <- mapIfBranch i
+--     mapBlock rest A0.ExplicitRet (A1.SIf i' : xs)
 
 mapVar :: A0.Var -> ErrorM A1.Var
 mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ
@@ -109,11 +104,11 @@ mapExpr expr = case expr of
 
   A0.EName n -> return $ A1.EName n
 
-  A0.EIf (A0.Cond cond) e1 e2 -> do
+  A0.EIf cond b1 b2 -> do
     cond' <- mapExpr cond
-    e1' <- mapExpr e1
-    e2' <- mapExpr e2
-    return $ A1.EIf (A1.Cond cond') e1' e2'
+    b1' <- mapBlock b1
+    b2' <- mapBlock b2
+    return $ A1.EIf cond' b1' b2'
 
   A0.EVal v -> return $ A1.EVal v
 

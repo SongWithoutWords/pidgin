@@ -31,7 +31,7 @@ genUnit name unit = A.GlobalDefinition $ case unit of
     { G.name = A.Name $ fromString name
     , G.parameters = let vaArgs = False in (genParams params, vaArgs)
     , G.returnType = typeToLlvmType retType
-    , G.basicBlocks = genBlock params block
+    , G.basicBlocks = genFunc params block
     }
 
 genParams :: Params -> [G.Parameter]
@@ -40,25 +40,24 @@ genParams params = map genParam params
     genParam :: Param -> G.Parameter
     genParam (Named name t) = G.Parameter (typeToLlvmType t) (fromString name) []
 
-genBlock :: Params -> Exprs -> [G.BasicBlock]
-genBlock params block = buildBlocksFromCodeGenM $ genBlock' params block
+genFunc :: Params -> Block -> [G.BasicBlock]
+genFunc params block = buildBlocksFromCodeGenM $ genFunc' params block
 
-genBlock' :: Params -> Exprs -> CodeGenM ()
-genBlock' params exprs = do
+genFunc' :: Params -> Block -> CodeGenM ()
+genFunc' params exprs = do
   entryBlockName <- addBlock "entry"
   setBlock entryBlockName
   mapM_ addParamBinding params
   -- mapM_ genExpr exprs
 
-  retOp <- genExprs exprs -- this isn't quite right... (should probaly return None for none)
+  retOp <- genBlock exprs -- this isn't quite right... (should probaly return None for none)
   setTerminator $ A.Do $ A.Ret (Just retOp) []
 
   where
     addParamBinding (Named name t) = addLocalBinding name t
 
-genExprs :: Exprs -> CodeGenM A.Operand
-genExprs exprs = last <$> mapM genExpr exprs
-  
+genBlock :: Block -> CodeGenM A.Operand
+genBlock exprs = last <$> mapM genExpr exprs
 
 -- genStmt :: Stmt -> CodeGenM ()
 -- genStmt stmt = case stmt of
@@ -101,8 +100,8 @@ genExpr (Expr typ expr) = case expr of
       Just op -> op
       Nothing -> globalReference n typ
 
-  EIf ec e1 e2 -> do
-    cond <- genExpr ec
+  EIf e b1 b2 -> do
+    cond <- genExpr e
 
     (BlockId blockNum) <- gets blockCount
     let blockName = show blockNum
@@ -114,12 +113,12 @@ genExpr (Expr typ expr) = case expr of
     condBr cond ifTrue ifFalse
 
     setBlock ifTrue
-    e1' <- genExprs e1
+    e1' <- genBlock b1
     ifTrue <- gets curBlockName
     br ifEnd
 
     setBlock ifFalse
-    e2' <- genExprs e2
+    e2' <- genBlock b2
     ifFalse <- gets curBlockName
     br ifEnd
 
