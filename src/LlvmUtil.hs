@@ -4,10 +4,12 @@ module LlvmUtil where
 import qualified Data.ByteString.Char8 as C8
 import Foreign.Ptr(FunPtr, castFunPtr)
 
+import qualified LLVM.Analysis as AN
 import qualified LLVM.AST as A
 import qualified LLVM.Context as C
 import qualified LLVM.ExecutionEngine as EE
 import qualified LLVM.Module as M
+import qualified LLVM.PassManager as PM
 
 
 foreign import ccall "dynamic" exec :: FunPtr (IO Int) -> (IO Int)
@@ -31,18 +33,23 @@ withJit context action = EE.withMCJIT
   Nothing  -- fast instruction selection
   action
 
+passes :: PM.PassSetSpec
+passes = PM.defaultCuratedPassSetSpec { PM.optLevel = Just 1 }
+
 execFunction :: FunPtr a -> IO Int
 execFunction fn = exec (castFunPtr fn :: FunPtr (IO Int))
 
 execMainOfLlvmAst :: A.Module -> IO (Maybe Int)
 execMainOfLlvmAst astMod = withModuleFromAst astMod $ \context lmod ->
   withJit context $ \mcjit ->
-    EE.withModuleInEngine mcjit lmod $ \ee -> do
-      main <- EE.getFunction ee (A.Name "main")
-      case main of
-        Just f -> do
-          res <- execFunction f
-          return $ Just res
-        Nothing -> do
-          return Nothing
-
+    PM.withPassManager passes $ \pm -> do
+      AN.verify lmod
+      _ <- PM.runPassManager pm lmod
+      EE.withModuleInEngine mcjit lmod $ \ee -> do
+        main <- EE.getFunction ee (A.Name "main")
+        case main of
+          Just f -> do
+            res <- execFunction f
+            return $ Just res
+          Nothing -> do
+            return Nothing
