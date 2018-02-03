@@ -25,7 +25,7 @@ llvmAstToAsm astMod = withModuleFromAst astMod $ \_ lmod -> do
 withJit :: C.Context -> (EE.MCJIT -> IO a) -> IO a
 withJit context action = EE.withMCJIT
   context
-  (Just 0) -- optimization level
+  (Just 1) -- optimization level
   Nothing  -- model
   Nothing  -- frame pointer elimination
   Nothing  -- fast instruction selection

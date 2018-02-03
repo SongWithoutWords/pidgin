@@ -14,7 +14,7 @@ import Ast.Common.Name
 import CodeGen.CodeGenM
 
 typeToLlvmType :: Type -> A.Type
-typeToLlvmType t = case t of
+typeToLlvmType typ = case typ of
 
   TFunc _ paramTypes ret -> T.FunctionType
     { T.resultType = typeToLlvmType ret
@@ -22,14 +22,18 @@ typeToLlvmType t = case t of
     , T.isVarArg = False
     }
 
+  TRef (TMut (TArray t)) -> T.ptr (typeToLlvmType t)
   TRef (TArray t) -> T.ptr (typeToLlvmType t)
+
+  TRef (TMut t) -> T.ptr (typeToLlvmType t)
+  TRef t -> T.ptr (typeToLlvmType t)
 
   TBln -> T.i1
   TChr -> T.i8
   TFlt -> T.float
   TInt -> T.i64
   TNone -> T.void
-  _ -> error $ "typeToLlvmType " ++ show t
+  _ -> error $ "typeToLlvmType " ++ show typ
 
 -- nameToLlvmName :: Name -> A.Name
 -- nameToLlvmName = fromString

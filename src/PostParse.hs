@@ -97,6 +97,15 @@ mapVar (A0.Var mut typ expr) = mapExpr expr >>= return . A1.Var mut typ
 mapExpr :: A0.Expr -> ErrorM A1.Expr
 mapExpr expr = case expr of
 
+  A0.EIf cond b1 b2 -> do
+    cond' <- mapExpr cond
+    b1' <- mapBlock b1
+    b2' <- mapBlock b2
+    return $ A1.EIf cond' b1' b2'
+
+  A0.EVar (Named n var) -> A1.EVar . Named n <$> mapVar var
+  A0.EAssign e1 e2 -> liftM2 A1.EAssign (mapExpr e1) (mapExpr e2)
+
   A0.EApp e purity args -> do
     e' <- mapExpr e
     args' <- mapM mapExpr args
@@ -104,11 +113,6 @@ mapExpr expr = case expr of
 
   A0.EName n -> return $ A1.EName n
 
-  A0.EIf cond b1 b2 -> do
-    cond' <- mapExpr cond
-    b1' <- mapBlock b1
-    b2' <- mapBlock b2
-    return $ A1.EIf cond' b1' b2'
 
   A0.EVal v -> return $ A1.EVal v
 

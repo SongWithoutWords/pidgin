@@ -8,6 +8,7 @@ import Data.String
 
 import qualified LLVM.AST as A
 import qualified LLVM.AST.Constant as C
+import qualified LLVM.AST.CallingConvention as CC
 import qualified LLVM.AST.Global as G
 
 import Ast.A3Typed
@@ -32,6 +33,8 @@ genUnit name unit = A.GlobalDefinition $ case unit of
     , G.parameters = let vaArgs = False in (genParams params, vaArgs)
     , G.returnType = typeToLlvmType retType
     , G.basicBlocks = genFunc params block
+    , G.callingConvention = CC.Fast
+    , G.metadata = []
     }
 
 genParams :: Params -> [G.Parameter]
@@ -51,12 +54,12 @@ genFunc' params exprs = do
   -- mapM_ genExpr exprs
 
   retOp <- genBlock exprs -- this isn't quite right... (should probaly return None for none)
-  setTerminator $ A.Do $ A.Ret (Just retOp) []
+  setTerminator $ A.Do $ A.Ret retOp []
 
   where
     addParamBinding (Named name t) = addLocalBinding name t
 
-genBlock :: Block -> CodeGenM A.Operand
+genBlock :: Block -> CodeGenM (Maybe A.Operand)
 genBlock exprs = last <$> mapM genExpr exprs
 
 -- genStmt :: Stmt -> CodeGenM ()
@@ -75,33 +78,42 @@ genBlock exprs = last <$> mapM genExpr exprs
 
 --   SAssign _ _ -> undefined
 
+genExpr' :: Expr -> CodeGenM A.Operand
+genExpr' e = do
+  Just e' <- genExpr e
+  pure e'
 
 -- Generates intermediate computations + returns a reference to the operand of the result
-genExpr :: Expr -> CodeGenM A.Operand
+genExpr :: Expr -> CodeGenM (Maybe A.Operand)
 genExpr (Expr typ expr) = case expr of
 
   EApp (Expr _ (EIntr i)) _ args -> do
     args' <- mapM genExpr args
     genIntrinsic i args'
 
-  EApp e _ args -> do
+  EApp e@(Expr fType _) _ args -> do
 
-    let retType = case typ of
+    let retType = case fType of
           TFunc _ _ ret -> ret
-          _ -> error "CodeGen received EApp with non applicable type"
+          _ -> error $ "CodeGen received EApp with non applicable type, in expr " ++ show (Expr typ expr)
 
-    e' <- genExpr e
-    args' <- traverse genExpr args
+    e' <- genExpr' e
+    args' <- traverse genExpr' args
     call (typeToLlvmType retType) e' args'
+
+  EVar (Named name (Var _ e)) -> do
+    oper <- genExpr' e
+    addBinding name oper
+    pure Nothing
 
   EName n -> do
     locals <- gets bindings
-    return $ case M.lookup n locals of -- if M.member n locals
+    return $ Just $ case M.lookup n locals of
       Just op -> op
       Nothing -> globalReference n typ
 
   EIf e b1 b2 -> do
-    cond <- genExpr e
+    cond <- genExpr' e
 
     (BlockId blockNum) <- gets blockCount
     let blockName = show blockNum
@@ -113,19 +125,19 @@ genExpr (Expr typ expr) = case expr of
     condBr cond ifTrue ifFalse
 
     setBlock ifTrue
-    e1' <- genBlock b1
+    Just b1' <- genBlock b1
     ifTrue <- gets curBlockName
     br ifEnd
 
     setBlock ifFalse
-    e2' <- genBlock b2
+    Just b2' <- genBlock b2
     ifFalse <- gets curBlockName
     br ifEnd
 
     setBlock ifEnd
-    phi (typeToLlvmType typ) [(e1', ifTrue), (e2', ifFalse)]
+    phi (typeToLlvmType typ) [(b1', ifTrue), (b2', ifFalse)]
 
   EVal v -> case v of
-    VBln b -> return $ A.ConstantOperand $ C.Int 1 $ case b of True -> 1; False -> 0
-    VInt i -> return $ A.ConstantOperand $ C.Int intWidth $ toInteger i
+    VBln b -> return $ Just $ A.ConstantOperand $ C.Int 1 $ case b of True -> 1; False -> 0
+    VInt i -> return $ Just $ A.ConstantOperand $ C.Int intWidth $ toInteger i
 

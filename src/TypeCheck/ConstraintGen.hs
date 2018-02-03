@@ -130,6 +130,26 @@ checkName name = do
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of
 
+  A1.EIf cond b1 b2 -> do
+
+    cond'@(A2.Expr tCond _) <- checkExpr cond
+
+    b1' <- checkBlock b1
+    b2' <- checkBlock b2
+
+    let t1 = typeOfExpr $ last b1'
+    let t2 = typeOfExpr $ last b2'
+
+    TBln $= tCond
+    t1 $= t2
+
+    pure $ A2.Expr t1 $ A2.EIf cond' b1' b2'
+
+  A1.EVar (Named n var) -> do
+    var' <- checkVar var
+    addLocalBinding $ Named n $ typeOfVar var'
+    pure $ A2.Expr TNone $ A2.EVar $ Named n var'
+
   A1.EName name -> checkName name
 
   A1.ELambda f -> do
@@ -150,20 +170,6 @@ checkExpr expression = case expression of
     pure $ A2.Expr tRet $ A2.EApp expr' purity args'
 
 
-  A1.EIf cond b1 b2 -> do
-
-    cond'@(A2.Expr tCond _) <- checkExpr cond
-
-    b1' <- checkBlock b1
-    b2' <- checkBlock b2
-
-    let t1 = typeOfExpr $ last b1'
-    let t2 = typeOfExpr $ last b2'
-
-    TBln $= tCond
-    t1 $= t2
-
-    pure $ A2.Expr t1 $ A2.EIf cond' b1' b2'
 
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v

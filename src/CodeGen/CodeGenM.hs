@@ -11,6 +11,7 @@ import Control.Monad.State
 
 import qualified LLVM.AST as A
 import qualified LLVM.AST.Global as G
+import qualified LLVM.AST.Type as T
 -- import qualified LLVM.AST.Constant as C
 
 
@@ -121,13 +122,17 @@ action ins = do
   modifyBlock $ block {instructions = (A.Do ins) : instructions block }
   return ()
 
-instruction :: A.Type -> A.Instruction -> CodeGenM A.Operand
+instruction :: A.Type -> A.Instruction -> CodeGenM (Maybe A.Operand)
+instruction T.VoidType ins = do
+  block <- curBlock
+  modifyBlock $ block { instructions = (A.Do ins) : instructions block }
+  return Nothing
 instruction typ ins = do
   OperandId i <- nextOperandId
   let name = A.UnName i
   block <- curBlock
   modifyBlock $ block { instructions = (name A.:= ins) : instructions block }
-  return $ A.LocalReference typ name
+  return $ Just $ A.LocalReference typ name
 
 setTerminator :: A.Named A.Terminator -> CodeGenM ()
 setTerminator term = do

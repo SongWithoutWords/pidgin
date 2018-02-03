@@ -51,19 +51,28 @@ subAst' substitutions ast = multiMapM subUnit ast
       typ' <- subType' typ
 
       A3.Expr typ' <$> case expr of
+
+        ELambda f -> A3.ELambda <$> subFunc f
+
+        EIf e b1 b2 ->
+          liftM3 A3.EIf (subExpr e) (subBlock b1) (subBlock b2)
+
+        EVar (Named n var) -> A3.EVar . Named n <$> subVar var
+
+        EAssign e1 e2 -> liftM2 A3.EAssign (subExpr e1) (subExpr e2)
+
         EApp e p args -> do
           e' <- subExpr e
           args' <- mapM subExpr args
           pure $ A3.EApp e' p args'
+
         ESelect e name -> do
           e' <- subExpr e
           pure $ A3.ESelect e' name
+
         EName n -> pure $ A3.EName n
+
         EIntr i -> pure $ EIntr i
-        EIf e b1 b2 ->
-          liftM3 A3.EIf (subExpr e) (subBlock b1) (subBlock b2)
-        ELambda f -> A3.ELambda <$> subFunc f
-        EVal v -> pure $ A3.EVal v
 
         EOver exprs -> let
           exprsAndErrs = runErrorM . subExpr <$> exprs
@@ -74,6 +83,8 @@ subAst' substitutions ast = multiMapM subUnit ast
             pure $ case chosenExprs of
               [Expr _ e] -> e
               overloads -> A3.EOver overloads
+
+        EVal v -> pure $ A3.EVal v
 
     subType' :: Type -> ErrorM A3.Type
     subType' typ = case typ of
