@@ -311,6 +311,7 @@ isPrime(Int candidate, ^Array[Int] primes, Int numRemainingPrimes) =>
 main() => prime(7)
 |] 17
 
+    -- Serves as a good test for tailcall optimization: will overflow stack without
     , namedTest "longest-collatz-sequence" [s|
 
 collatz(Int n) =>
@@ -333,8 +334,8 @@ longestCollatzImp(Int n, Int maxSteps, Int maxStepNumber) =>
         $ curSteps = collatz(n)
         longestCollatzImp(n - 1, if curSteps > maxSteps then curSteps else maxSteps, if curSteps > maxSteps then n else maxStepNumber)
 
-main() => longestCollatz(10)
-|] 9
+main() => longestCollatz(1000000)
+|] 837799
 
     , namedTest "coin-sums" [s|
 
