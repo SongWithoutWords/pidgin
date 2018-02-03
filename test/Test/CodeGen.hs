@@ -333,7 +333,7 @@ longestCollatzImp(Int n, Int maxSteps) =>
         $ curSteps = collatz(n)
         longestCollatzImp(n - 1, if curSteps > maxSteps then curSteps else maxSteps)
 
-main() => longestCollatz(999999)
+main() => longestCollatz(999)
 |] 11
 
     , namedTest "coin-sums" [s|
