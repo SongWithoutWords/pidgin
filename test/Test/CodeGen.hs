@@ -310,6 +310,46 @@ isPrime(Int candidate, ^Array[Int] primes, Int numRemainingPrimes) =>
 
 main() => prime(7)
 |] 17
+
+    , namedTest "collatz-sequence" [s|
+
+collatz(Int n) =>
+    collatzImp(n, 1)
+
+collatzImp(Int n, Int steps) =>
+    if n == 1 then
+        steps
+    else if n % 2 == 0 then
+        collatzImp(n / 2, steps + 1)
+    else
+        collatzImp(3 * n + 1, steps + 1)
+
+longestCollatz(Int n) => longestCollatzImp(n, 0)
+
+longestCollatzImp(Int n, Int maxSteps) =>
+    if n == 1 then
+        maxSteps
+    else
+        $ curSteps = collatz(n)
+        longestCollatzImp(n - 1, if curSteps > maxSteps then curSteps else maxSteps)
+
+main() => longestCollatz(999999)
+|] 11
+
+    , namedTest "coin-sums" [s|
+
+coinSum(Int total) =>
+    cs(total, 200)
+
+cs(Int total, Int maxCoin) =>
+    $ max = if total < maxCoin then total else maxCoin
+    trySum(total, max, 200) + trySum(total, max, 100) + trySum(total, max, 50) + trySum(total, max, 20) + trySum(total, max, 10) + trySum(total, max, 5) + trySum(total, max, 2) + trySum(total, max, 1)
+
+trySum(Int total, Int max, Int coin) =>
+    if coin > max then 0 else if total == coin then 1 else cs(total - coin, coin)
+
+main() => coinSum(10)
+|] 11
     ]
   ]
 
