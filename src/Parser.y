@@ -212,7 +212,8 @@ expr
   | expr "(" purity "," csExprs ")"   { EApp $1 $3 $5 }
 
   -- EIf is quite bad for shift reduce conflicts (90 with, 63 without)
-  | if expr then block else block { EIf $2 $4 $6 }
+  | if expr then block else optEol block { EIf $2 $4 $7 }
+  | if expr then block            { EIf $2 $4 [] }
 
   | func                    { ELambda $1 }
 
