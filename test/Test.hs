@@ -11,7 +11,7 @@ import qualified Test.Parser as Parser
 import qualified Test.TypeCheck as TypeCheck
 import qualified Test.CodeGen as CodeGen
 
-testTimeout_μs = 50000
+testTimeout_μs = 500000
 
 main :: IO ()
 main = defaultMainWithIngredients ingredients tests
