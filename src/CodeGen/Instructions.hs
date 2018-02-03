@@ -147,7 +147,7 @@ phi t pairs = instruction t $ A.Phi t pairs []
 call :: T.Type -> A.Operand -> [A.Operand] -> CodeGenM (Maybe A.Operand)
 call typ op args = instruction typ $ A.Call
   { A.tailCallKind = Nothing
-  , A.callingConvention = CallingConvention.C
+  , A.callingConvention = CallingConvention.Fast
   , A.returnAttributes = []
   , A.function = Right op -- Left would be inline assembly
   , A.arguments = map (\a -> (a, [])) args
