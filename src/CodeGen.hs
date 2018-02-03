@@ -34,7 +34,6 @@ genUnit name unit = A.GlobalDefinition $ case unit of
     , G.returnType = typeToLlvmType retType
     , G.basicBlocks = genFunc params block
     , G.callingConvention = CC.Fast
-    , G.metadata = []
     }
 
 genParams :: Params -> [G.Parameter]
