@@ -45,95 +45,112 @@ tests = testGroup "parser"
       $ EApp (EName "+") Pure [EVal $ VInt 1, EVal $ VInt 2] ]
 
   , namedTest "if expr"
-    [s|$ msg = "it works!" if true else "or not :("|]
+    [s|$ msg = if true then "it works!" else "or not :("|]
     [ Named "msg" $ UVar $ Var Imt Nothing
-    $ EIf (Cond $ EVal $ VBln True) (EVal $ VStr "it works!") (EVal $ VStr "or not :(") ]
+    $ EIf (EVal $ VBln True)
+      [EVal $ VStr "it works!"]
+      [EVal $ VStr "or not :("]
+    ]
 
   , namedTest "negate inline"
-    "negate(Bln b) -> Bln => false if b else true"
-    [ Named "negate" $ UFunc $ Func (Sig Pure [Param Imt TBln "b"] $ Just TBln) ImplicitRet
-      [ SExpr $ EIf (Cond $ EName "b") (EVal $ VBln False) (EVal $ VBln True) ]
+    "negate(Bln b) -> Bln => if b then false else true"
+    [ Named "negate" $ UFunc $ Func (Sig Pure [Param Imt TBln "b"] $ Just TBln)
+      [ EIf (EName "b")
+        [EVal $ VBln False]
+        [EVal $ VBln True]
+      ]
     ]
 
   , namedTest "negate block"
     [s|
 negate(Bln b) -> Bln =>
-    false if b else true
+    if b then false else true
     |]
-    [ Named "negate" $ UFunc $ Func (Sig Pure [Param Imt TBln "b"] $ Just TBln) ImplicitRet
-      [ SExpr $ EIf (Cond $ EName "b") (EVal $ VBln False) (EVal $ VBln True) ]
+    [ Named "negate" $ UFunc $ Func (Sig Pure [Param Imt TBln "b"] $ Just TBln)
+      [EIf (EName "b") [EVal $ VBln False] [EVal $ VBln True] ]
     ]
 
   , namedTest "factorial"
     [s|
 factorial(Int n) -> Int =>
-    1 if n <= 0 else n * factorial(n - 1)
+    if n <= 0 then 1 else n * factorial(n - 1)
     |]
-    [ Named "factorial" $ UFunc $ Func ( Sig Pure [Param Imt TInt "n"] $ Just TInt) ImplicitRet
-      [ SExpr
-        $ EIf
-          (Cond $ EApp (EName "<=") Pure [EName "n", EVal $ VInt 0])
-          (EVal $ VInt 1)
-          (EApp (EName "*") Pure
-           [ (EName "n")
-           , EApp (EName "factorial") Pure
-             [EApp (EName "-") Pure [EName "n", EVal $ VInt 1]]
-           ]
-          )
+    [ Named "factorial" $ UFunc $ Func ( Sig Pure [Param Imt TInt "n"] $ Just TInt)
+      [ EIf
+        (EApp (EName "<=") Pure [EName "n", EVal $ VInt 0])
+        [EVal $ VInt 1]
+        [EApp (EName "*") Pure
+          [ (EName "n")
+          , EApp (EName "factorial") Pure
+            [EApp (EName "-") Pure [EName "n", EVal $ VInt 1]]
+          ]
+        ]
       ]
     ]
 
   , namedTest "cascading if exprs"
     [s|
 clothing(Weather w) -> Clothing =>
-    rainCoat if w.isRaining else coat if w.isCold else tShirt if w.isSunny else jacket
+    if w.isRaining then rainCoat else if w.isClold then coat else if w.isSunny then tShirt else jacket
     |]
     [ Named "clothing" $ UFunc $ Func
-      ( Sig Pure [Param Imt (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
-      [ SExpr
-        $ EIf (Cond $ ESelect (EName "w") "isRaining") (EName "rainCoat")
-        $ EIf (Cond $ ESelect (EName "w") "isCold") (EName "coat")
-        $ EIf (Cond $ ESelect (EName "w") "isSunny") (EName "tShirt")
-        $ EName "jacket"
+      (Sig Pure [Param Imt (TUser "Weather") "w"] $ Just $ TUser "Clothing")
+      [EIf (ESelect (EName "w") "isRaining")
+        [EName "rainCoat"]
+        [EIf (ESelect (EName "w") "isCold")
+          [EName "coat"]
+          [EIf (ESelect (EName "w") "isSunny")
+            [EName "tShirt"]
+            [EName "jacket"]
+          ]
+        ]
       ]
     ]
 
   , namedTest "cascading if exprs multiline"
+
+--     [s|
+-- clothing(Weather w) -> Clothing =>
+--     if w.isRaining then rainCoat else
+--     if w.isCold then coat else
+--     if w.isSunny then tShirt else
+--     jacket
+--     |]
+
     [s|
 clothing(Weather w) -> Clothing =>
-    rainCoat if w.isRaining else
-    coat if w.isCold else
-    tShirt if w.isSunny else
-    jacket
+    if w.isRaining then rainCoat
+    else if w.isCold then coat
+    else if w.isSunny then tShirt
+    else jacket
     |]
     [ Named "clothing" $ UFunc $ Func
-      ( Sig Pure [Param Imt (TUser "Weather") "w"] $ Just $ TUser "Clothing" ) ImplicitRet
-      [ SExpr
-        $ EIf (Cond $ ESelect (EName "w") "isRaining") (EName "rainCoat")
-        $ EIf (Cond $ ESelect (EName "w") "isCold") (EName "coat")
-        $ EIf (Cond $ ESelect (EName "w") "isSunny") (EName "tShirt")
-        $ EName "jacket"
+      (Sig Pure [Param Imt (TUser "Weather") "w"] $ Just $ TUser "Clothing")
+      [EIf (ESelect (EName "w") "isRaining")
+        [EName "rainCoat"]
+        [EIf (ESelect (EName "w") "isCold")
+          [EName "coat"]
+          [EIf (ESelect (EName "w") "isSunny")
+            [EName "tShirt"]
+            [EName "jacket"]
+          ]
+        ]
       ]
     ]
-
   , namedTest "draw widget"
     [s|
-drawWidget(~@, Nat width, Nat height):
+drawWidget(~@, Nat width, Nat height) =>
     $ w = Widget(width, height)
-    if w.exists:
+    if w.exists then
         w.draw(~@)
     |]
     [ Named "drawWidget" $ UFunc $ Func
       ( Sig PWrite [Param Imt TNat "width", Param Imt TNat "height"] $ Nothing )
-      ExplicitRet
-      [ SVar
-        $ Named "w" $ Var Imt Nothing $ EApp (EName "Widget") Pure
+      [ EVar $ Named "w" $ Var Imt Nothing $ EApp (EName "Widget") Pure
           [EName "width", EName "height"]
-      , SIf
-        $ If
-          $ CondBlock
-            ( ESelect (EName "w") "exists" )
-            [ SExpr $ EApp (ESelect (EName "w") "draw") PWrite [] ]
+      , EIf (ESelect (EName "w") "exists")
+        [EApp (ESelect (EName "w") "draw") PWrite []]
+        []
       ]
     ]
 
@@ -146,21 +163,19 @@ quadratic(Flt a, Flt b, Flt c) -> Flt -> Flt =>
     [ Named "quadratic" $ UFunc $ Func
       ( Sig Pure [Param Imt TFlt "a", Param Imt TFlt "b", Param Imt TFlt "c"]
         $ Just $ TFunc Pure [TFlt] $ TFlt
-      ) ImplicitRet
-      [ SExpr
-        $ ELambda $ Func
-          ( Sig Pure [Param Imt TFlt "x"] $ Just TFlt ) ImplicitRet
-          [ SExpr
-            $ EApp (EName "+") Pure
-              [ EApp (EName "*") Pure
-                [ EName "a"
-                , EApp (EName "*") Pure [EName "x", EName "x"]
-                ]
-              , EApp (EName "+") Pure
-                [ EApp (EName "*") Pure [EName "b", EName "x"]
-                , EName "c"
-                ]
+      )
+      [ ELambda $ Func
+          ( Sig Pure [Param Imt TFlt "x"] $ Just TFlt )
+          [ EApp (EName "+") Pure
+            [ EApp (EName "*") Pure
+              [ EName "a"
+              , EApp (EName "*") Pure [EName "x", EName "x"]
               ]
+            , EApp (EName "+") Pure
+              [ EApp (EName "*") Pure [EName "b", EName "x"]
+              , EName "c"
+              ]
+            ]
           ]
       ]
     ]
@@ -173,21 +188,18 @@ quadratic(Flt a, Flt b, Flt c) =>
     |]
     [ Named "quadratic" $ UFunc $ Func
       ( Sig Pure [Param Imt TFlt "a", Param Imt TFlt "b", Param Imt TFlt "c"] Nothing)
-      ImplicitRet
-      [ SExpr
-        $ ELambda $ Func
-          ( Sig Pure [Param Imt TFlt "x"] Nothing) ImplicitRet
-          [ SExpr
-            $ EApp (EName "+") Pure
-              [ EApp (EName "*") Pure
-                [ EName "a"
-                , EApp (EName "*") Pure [EName "x", EName "x"]
-                ]
-              , EApp (EName "+") Pure
-                [ EApp (EName "*") Pure [EName "b", EName "x"]
-                , EName "c"
-                ]
-              ]
+      [ ELambda $ Func
+        ( Sig Pure [Param Imt TFlt "x"] Nothing)
+        [ EApp (EName "+") Pure
+          [ EApp (EName "*") Pure
+            [ EName "a"
+            , EApp (EName "*") Pure [EName "x", EName "x"]
+            ]
+          , EApp (EName "+") Pure
+            [ EApp (EName "*") Pure [EName "b", EName "x"]
+            , EName "c"
+            ]
+          ]
           ]
       ]
     ]
@@ -199,8 +211,7 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
       |]
     [ Named "singleRoot" $ UFunc $ Func
       ( Sig Pure [Param Imt TFlt "a", Param Imt TFlt "b", Param Imt TFlt "c"] $ Just TFlt )
-      ImplicitRet
-      [ SExpr $ EApp (EName "/") Pure
+      [ EApp (EName "/") Pure
         [ EApp (EName "+") Pure
           [ EApp (EName "-") Pure [EName "b"]
           , EApp (ESelect (EName "math") "sqrt") Pure
@@ -221,8 +232,7 @@ singleRoot(Flt a, Flt b, Flt c) -> Flt =>
   , test "foo() => foo()"
     [ Named "foo" $ UFunc $ Func
       (Sig Pure [] Nothing)
-      ImplicitRet
-      [SExpr $ EApp (EName "foo") Pure []]
+      [EApp (EName "foo") Pure []]
     ]
 
   , test [s|
@@ -231,8 +241,7 @@ foo() =>
 |]
     [ Named "foo" $ UFunc $ Func
       (Sig Pure [] Nothing)
-      ImplicitRet
-      [SExpr $ EApp (EName "foo") Pure []]
+      [EApp (EName "foo") Pure []]
     ]
 
   , namedTest "array" [s|
@@ -243,12 +252,12 @@ f() =>
     arr(0)
 |]
     [ Named "f" $ UFunc $ Func
-      (Sig Pure [] Nothing) ImplicitRet
-      [ SVar $ Named "arr" $ Var Mut Nothing $ EApp (EName "Array") Pure
+      (Sig Pure [] Nothing)
+      [ EVar $ Named "arr" $ Var Mut Nothing $ EApp (EName "Array") Pure
         [EVal $ VInt 2, EVal $ VInt 0]
-      , SAssign (EApp (EName "arr") Pure [EVal $ VInt 0]) (EVal $ VInt 1)
-      , SAssign (EApp (EName "arr") Pure [EVal $ VInt 1]) (EVal $ VInt 2)
-      , SExpr $ EApp (EName "arr") Pure [EVal $ VInt 0]
+      , EAssign (EApp (EName "arr") Pure [EVal $ VInt 0]) (EVal $ VInt 1)
+      , EAssign (EApp (EName "arr") Pure [EVal $ VInt 1]) (EVal $ VInt 2)
+      , EApp (EName "arr") Pure [EVal $ VInt 0]
       ]
     ]
 
@@ -301,5 +310,41 @@ f() =>
       ]
     ]
 
+  , testGroup "if"
+    [ exprTest "if a then b" $
+      EIf (EName "a") [EName "b"] []
+
+    , exprTest "if a then b else c" $
+      EIf (EName "a") [EName "b"] [EName "c"]
+
+    , exprTest "if a then b else if c then d" $
+      EIf (EName "a")
+        [EName "b"]
+        [EIf (EName "c") [EName "d"] [] ]
+
+    , exprTest "if a then b else if c then d else e" $
+      EIf (EName "a")
+        [EName "b"]
+        [EIf (EName "c") [EName "d"] [EName "e"] ]
+
+    , namedExprTest "if-multiline" [s|
+if a then b else
+if c then d else
+e
+|] $
+      EIf (EName "a")
+        [EName "b"]
+        [EIf (EName "c") [EName "d"] [EName "e"] ]
+
+    , namedExprTest "single-if-multiline" [s|
+if a then
+    b
+else
+    c
+|] $
+      EIf (EName "a")
+        [EName "b"]
+        [EName "c"]
+    ]
   ]
 

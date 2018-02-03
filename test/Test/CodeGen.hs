@@ -57,12 +57,12 @@ main() => sumTo(5)
 |] 15
 
   , namedTest "factorial 4" [s|
-fact(Int i) -> Int => 1 if i <= 1 else i * fact(i - 1)
+fact(Int i) -> Int => if i <= 1 then 1 else i * fact(i - 1)
 main() => fact(5)
 |] 120
 
   , namedTest "fibonacci 7" [s|
-fib(Int i) => 1 if i <= 1 else fib(i - 1) + fib(i - 2)
+fib(Int i) => if i <= 1 then 1 else fib(i - 1) + fib(i - 2)
 main() => fib(7)
 |] 21
 
