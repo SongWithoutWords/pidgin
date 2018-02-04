@@ -118,13 +118,13 @@ namedUnits
   | lineSep namedUnits    { $2 }
 
 namedUnit
-  : namespace name indentedUnits  { Named $2 (UNamespace $3) }
+  : namespace name indentedUnits  { ($2, UNamespace $3) }
   | namedData                     { fmap UData $1 }
   | namedFunc                     { fmap UFunc $1 }
   | namedVar                      { fmap UVar $1 }
 
 namedData
-  : data name indentedMembers  { Named $2 $3 } 
+  : data name indentedMembers  { ($2, $3) } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -136,7 +136,7 @@ members
 
 member
   : accessMod namedData    { fmap (MData $1) $2 }
-  | accessMod type name    { Named $3 (MVar $1 $2) }
+  | accessMod type name    { ($3, MVar $1 $2) }
 
 accessMod
   : {- none -}  { Pub }
@@ -145,7 +145,7 @@ accessMod
   | pri         { Pri }
 
 namedFunc
-  : name func { Named $1 $2 }
+  : name func { ($1, $2) }
 
   -- Rule is fine as far as parse errors go
   -- | name "[" types "]"func {  }
@@ -181,7 +181,7 @@ block
   | ind lsExprs ded { $2 }
 
 namedVar
-  : mut maybeType name eqExpr { Named $3 $ Var $1 $2 $4 }
+  : mut maybeType name eqExpr { ($3, Var $1 $2 $4) }
 
 eqExpr
   : "=" expr { $2 }

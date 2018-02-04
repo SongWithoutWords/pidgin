@@ -268,7 +268,7 @@ inc(Int x) -> Int => x + 1
 $ a = inc(1)
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Named "x" $ TInt] TInt)
+        (Sig Pure [("x", TInt)] TInt)
           [ Expr TInt
             $ EApp (Expr ([TInt, TInt] ~> TInt) $ EIntr IAdd) Pure
               [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]])
@@ -285,7 +285,7 @@ inc(Int x) -> Int => x + 1
 $ a = inc(inc(1))
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Named "x" $ TInt] TInt )
+        (Sig Pure [("x", TInt)] TInt )
           [Expr TInt
             $ EApp (Expr ([TInt, TInt] ~> TInt) $ EIntr IAdd) Pure
               [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]])
@@ -320,7 +320,7 @@ inc(Int x) => x + 1
 $ a = inc(1)
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Named "x" $ TInt] TInt)
+        (Sig Pure [("x", TInt)] TInt)
         [Expr TInt
           $ EApp (Expr ([TInt, TInt] ~> TInt) $ EIntr IAdd)
             Pure [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]])
@@ -336,7 +336,7 @@ inc(Int x) => x + 1
 $ a = inc("one")
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Named "x" $ TInt] TInt)
+        (Sig Pure [("x", TInt)] TInt)
         [Expr TInt
           $ EApp (Expr ([TInt, TInt] ~> TInt) $ EIntr IAdd)
             Pure [Expr TInt $ EName "x", Expr TInt $ EVal $ VInt 1]])
@@ -355,8 +355,8 @@ inc(Int x) =>
 $ a = inc(1)
 |]
     [ ("inc", UFunc $ Func
-        (Sig Pure [Named "x" $ TInt] TInt )
-        [ Expr TNone $ EVar $ Named "one" $ Var TInt (Expr TInt $ EVal $ VInt 1)
+        (Sig Pure [("x", TInt)] TInt)
+        [ Expr TNone $ EVar ("one", Var TInt $ Expr TInt $ EVal $ VInt 1)
         , Expr TInt
           $ EApp (Expr ([TInt, TInt] ~> TInt) $ EIntr IAdd)
             Pure [Expr TInt $ EName "x", Expr TInt $ EName "one"]
@@ -373,7 +373,7 @@ fact(Int n) -> Int =>
     if n <= 1 then 1 else n * fact(n - 1)
 |]
    [("fact", UFunc $ Func
-     (Sig Pure [Named "n" $ TInt] TInt)
+     (Sig Pure [("n", TInt)] TInt)
       [ Expr TInt
         $ EIf
           (Expr TBln $ EApp
@@ -400,7 +400,7 @@ fact(Int n) =>
     if n <= 1 then 1 else n * fact(n - 1)
 |]
    [("fact", UFunc $ Func
-     (Sig Pure [Named "n" $ TInt] TInt)
+     (Sig Pure [("n", TInt)] TInt)
       [ Expr TInt
         $ EIf
           (Expr TBln $ EApp
@@ -456,14 +456,14 @@ inc(~Int x) =>
     x
 |]
       [ ("mutableInc", UFunc $ Func
-          (Sig Pure [Named "x" $ TRef $ TMut TInt] TNone)
+          (Sig Pure [("x", TRef $ TMut TInt)] TNone)
           [Expr TNone $ EAssign (Expr (TRef $ TMut TInt) $ EName "x") $ Expr TInt
             $ EApp (Expr ([TInt, TInt] ~> TInt) $ EIntr IAdd) Pure
               [Expr (TRef $ TMut TInt) $ EName "x", Expr TInt $ EVal $ VInt 1]]
           )
 
       , ("inc", UFunc $ Func
-          (Sig Pure [Named "x" $ TMut TInt] TInt)
+          (Sig Pure [("x", TMut TInt)] TInt)
           [ Expr TNone $ EApp
             (Expr ([TRef $ TMut TInt] ~> TNone) $ EName "mutableInc")
             Pure [Expr (TMut TInt) $ EName "x"]
@@ -575,10 +575,12 @@ f() -> Bln =>
     apply(arr, 0)
 |]
       [ ("f", UFunc $ Func (Sig Pure [] TBln)
-          [ Expr TNone $ EVar $ Named "arr" $ Var (TMut $ TArray TBln)
-            $ Expr (TArray TBln) $ EApp
-              (Expr ([TInt, TBln] ~> TArray TBln) $ EIntr ArrayCons) Pure
-              [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
+          [ Expr TNone $ EVar
+            ("arr", Var (TMut $ TArray TBln)
+              $ Expr (TArray TBln) $ EApp
+                (Expr ([TInt, TBln] ~> TArray TBln) $ EIntr ArrayCons) Pure
+                [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
+            )
           , (Expr TNone $ EApp
               (Expr ([TRef $ TMut $ TArray TBln, TInt, TRef TBln] ~> TNone) $ EIntr ArrayUpdate)
               Pure
@@ -600,10 +602,12 @@ f() -> Bln =>
     arr(0)
 |]
       [ ("f", UFunc $ Func (Sig Pure [] TBln)
-          [ Expr TNone $ EVar $ Named "arr" $ Var (TMut $ TArray TInt)
-            $ Expr (TMut $ TArray TInt) $ EApp
-              (Expr ([TInt, TInt] ~> TArray TInt) $ EName "Array") Pure
-              [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
+          [ Expr TNone $ EVar
+            ("arr", Var (TMut $ TArray TInt)
+              $ Expr (TMut $ TArray TInt) $ EApp
+                (Expr ([TInt, TInt] ~> TArray TInt) $ EName "Array") Pure
+                [Expr TInt $ EVal $ VInt 2, Expr TBln $ EVal $ VBln False]
+            )
           , Expr TNone $ EAssign
             (Expr
               (TRef $ TMut TInt) $ EApp (Expr (TMut $ TArray TInt) $ EName "arr")
@@ -623,8 +627,8 @@ arraySum(^Array[Int] array, Int size) =>
 |]
       [ ("arraySum", UFunc $ Func
           (Sig Pure
-            [ Named "array" $ TRef $ TArray $ TInt
-            , Named "size" $ TInt] TInt)
+            [ ("array", TRef $ TArray $ TInt)
+            , ("size", TInt)] TInt)
           [ Expr TInt $ EIf
             (Expr TBln $ EApp (Expr ([TInt, TInt] ~> TBln) $ EIntr ILeq) Pure
               [ Expr TInt $ EName "size"
@@ -688,7 +692,7 @@ LengthSquared(^Vector v) =>
         [ ("x", MVar Pub TFlt)
         , ("y", MVar Pub TFlt)
         ])
-      , ("LengthSquared", UFunc $ Func (Sig Pure [Named "v" $ TRef $ TUser "Vector"] TFlt)
+      , ("LengthSquared", UFunc $ Func (Sig Pure [("v", TRef $ TUser "Vector")] TFlt)
         [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FAdd) Pure
           [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
             [ Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "x"

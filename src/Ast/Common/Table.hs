@@ -9,9 +9,9 @@ import Util.MultiMap
 type Table a = MultiMap Name a
 
 tableFromNamed :: [Named a] -> Table a
-tableFromNamed = multiFromList . (map $ \(Named n x) -> (n, x))
+tableFromNamed = multiFromList
 
 tableFromNamedM :: Monad m => (a -> m b) -> [Named a] -> m (Table b)
-tableFromNamedM f namedAs =
-  mapM (\(Named n a) -> f a >>= \b -> pure $ (n, b)) namedAs >>= pure . multiFromList
+tableFromNamedM f xs =
+  mapM (\(n, a) -> f a >>= \b -> pure $ (n, b)) xs >>= pure . multiFromList
 

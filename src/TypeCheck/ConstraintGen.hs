@@ -45,7 +45,7 @@ checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
     Just t -> checkType t
     Nothing -> getNextTypeVar
 
-  params' <- mapM (\(A1.Param m t n) -> (Named n) . (applyMut m) <$> checkType t) params
+  params' <- mapM (\(A1.Param m t n) -> (,) n . (applyMut m) <$> checkType t) params
 
   pushNewScope
 
@@ -150,10 +150,10 @@ checkExpr expression = case expression of
 
     pure $ A2.Expr t1 $ A2.EIf cond' b1' b2'
 
-  A1.EVar (Named n var) -> do
+  A1.EVar (n, var) -> do
     var' <- checkVar var
-    addLocalBinding $ Named n $ typeOfVar var'
-    pure $ A2.Expr TNone $ A2.EVar $ Named n var'
+    addLocalBinding $ (n, typeOfVar var')
+    pure $ A2.Expr TNone $ A2.EVar (n, var')
 
   A1.EName name -> checkName name
 

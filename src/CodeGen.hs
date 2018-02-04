@@ -40,7 +40,7 @@ genParams :: Params -> [G.Parameter]
 genParams params = map genParam params
   where
     genParam :: Param -> G.Parameter
-    genParam (Named name t) = G.Parameter (typeToLlvmType t) (fromString name) []
+    genParam (name, t) = G.Parameter (typeToLlvmType t) (fromString name) []
 
 genFunc :: Params -> Block -> [G.BasicBlock]
 genFunc params block = buildBlocksFromCodeGenM $ genFunc' params block
@@ -56,7 +56,7 @@ genFunc' params exprs = do
   setTerminator $ A.Do $ A.Ret retOp []
 
   where
-    addParamBinding (Named name t) = addLocalBinding name t
+    addParamBinding (name, t) = addLocalBinding name t
 
 genBlock :: Block -> CodeGenM (Maybe A.Operand)
 genBlock exprs = last <$> mapM genExpr exprs
@@ -100,7 +100,7 @@ genExpr (Expr typ expr) = case expr of
     args' <- traverse genExpr' args
     call (typeToLlvmType retType) e' args'
 
-  EVar (Named name (Var _ e)) -> do
+  EVar (name, (Var _ e)) -> do
     oper <- genExpr' e
     addBinding name oper
     pure Nothing

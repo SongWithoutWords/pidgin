@@ -1,23 +1,27 @@
+{-# language TypeSynonymInstances #-}
+{-# language FlexibleInstances #-}
 module Ast.Common.Name where
 
 type Name = String
 type Names = [Name]
 
-data Named a = Named Name a
-  deriving(Eq, Ord, Show)
+type Named a = (Name, a)
 
-instance Functor Named where
-  fmap f (Named n a) = Named n $ f a
+-- data Named a = Named Name a
+  -- deriving(Eq, Ord, Show)
 
-instance Foldable Named where
-  foldMap f (Named _ a) = f a
+-- instance Functor ((,) Name) where
+--   fmap f (n, a) = (n, f a)
 
-instance Traversable Named where
-  traverse f (Named n a) = Named n <$> f a
+-- instance Foldable ((,) Name) where
+--   foldMap f (_, a) = f a
+
+-- instance Traversable ((,) Name) where
+--   traverse f (n, a) = (,) n <$> f a
 
 lookupName :: Name -> [Named a] -> Maybe a
 lookupName _ [] = Nothing
-lookupName name (Named n x : rest) =
+lookupName name ((n, x) : rest) =
   if n == name then Just x
   else lookupName name rest
 

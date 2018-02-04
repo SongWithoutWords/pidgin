@@ -74,7 +74,7 @@ modifyCurrentScope :: (Scope -> Scope) -> ConstrainM ()
 modifyCurrentScope f = modify $ \s -> s{scopes = (f $ head $ scopes s):scopes s}
 
 addLocalBinding :: Named Type -> ConstrainM ()
-addLocalBinding (Named n t) = modifyCurrentScope $ M.insert n $ KExpr $ Expr t $ EName n
+addLocalBinding (n, t) = modifyCurrentScope $ M.insert n $ KExpr $ Expr t $ EName n
 
 getNextTVar :: ConstrainM TVar
 getNextTVar = do

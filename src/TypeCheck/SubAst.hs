@@ -46,7 +46,7 @@ subAst' substitutions ast = multiMapM subUnit ast
     subParams ps = mapM subParam ps
 
     subParam :: Param -> ErrorM A3.Param
-    subParam (Named n t) = (Named n) <$> subType' t
+    subParam (n, t) = (,) n <$> subType' t
 
     subBlock :: Block -> ErrorM A3.Block
     subBlock block = mapM subExpr block
@@ -62,7 +62,7 @@ subAst' substitutions ast = multiMapM subUnit ast
         EIf e b1 b2 ->
           liftM3 A3.EIf (subExpr e) (subBlock b1) (subBlock b2)
 
-        EVar (Named n var) -> A3.EVar . Named n <$> subVar var
+        EVar (n, var) -> A3.EVar . (,) n <$> subVar var
 
         EAssign e1 e2 -> liftM2 A3.EAssign (subExpr e1) (subExpr e2)
 

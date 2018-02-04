@@ -101,7 +101,7 @@ mapExpr expr = case expr of
     b2' <- mapBlock b2
     return $ A1.EIf cond' b1' b2'
 
-  A0.EVar (Named n var) -> A1.EVar . Named n <$> mapVar var
+  A0.EVar (n, var) -> A1.EVar . (,) n <$> mapVar var
   A0.EAssign e1 e2 -> liftM2 A1.EAssign (mapExpr e1) (mapExpr e2)
 
   A0.EApp e purity args -> do
