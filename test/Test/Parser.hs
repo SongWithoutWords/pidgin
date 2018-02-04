@@ -349,7 +349,10 @@ else
 
 
   , testGroup "user-types"
-    [ namedTest "vector" [s|
+    [ namedTest "empty" "data Empty"
+      [Named "Empty" $ UData $ Data []]
+
+    , namedTest "vector" [s|
 data Vector
     Flt x
     Flt y
