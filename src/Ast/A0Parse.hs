@@ -31,7 +31,7 @@ data Data = Data [Named Member]
   deriving(Eq, Show)
 
 data Member
-  = MVar Access Var
+  = MVar Access Type
   | MData Access Data
   deriving(Eq, Show)
 

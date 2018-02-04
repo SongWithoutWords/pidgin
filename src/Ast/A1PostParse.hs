@@ -32,7 +32,7 @@ data Data = Data (Table Member)
 
 data Member
   = MData Access Data
-  | MVar Access Var
+  | MVar Access Type
   deriving(Eq, Show)
 
 data Func = Func Sig Block

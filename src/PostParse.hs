@@ -30,7 +30,7 @@ mapMembers = tableFromNamedM mapMember
 mapMember :: A0.Member -> ErrorM A1.Member
 mapMember member = case member of
   A0.MData acc (A0.Data ms)   -> A1.MData acc . A1.Data <$> mapMembers ms
-  A0.MVar acc v               -> A1.MVar acc <$> mapVar v
+  A0.MVar acc t               -> pure $ A1.MVar acc t
 
 mapFunc :: A0.Func -> ErrorM A1.Func
 mapFunc (A0.Func sig block) = A1.Func sig <$> mapBlock block

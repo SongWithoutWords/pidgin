@@ -136,12 +136,13 @@ members
 
 member
   : accessMod namedData    { fmap (MData $1) $2 }
-  | accessMod namedVar      { fmap (MVar $1) $2}
+  | accessMod type name    { Named $3 (MVar $1 $2) }
 
 accessMod
-  : pub   { Pub }  
-  | pro   { Pro }
-  | pri   { Pri }
+  : {- none -}  { Pub }
+  | pub         { Pub }  
+  | pro         { Pro }
+  | pri         { Pri }
 
 namedFunc
   : name func { Named $1 $2 }
