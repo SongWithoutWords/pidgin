@@ -655,26 +655,53 @@ arraySum(^Array[Int] array, Int size) =>
       []
     ]
 
-    , testGroup "user-types"
-      [ namedTest "empty" [s|
+  , testGroup "user-types"
+    [ namedTest "empty" [s|
 data Empty
 |]
-          [ ("Empty", UData $ Data $ multiFromList []) ]
-          []
+      [ ("Empty", UData $ Data $ multiFromList []) ]
+      []
 
-      , namedTest "vector" [s|
+    , namedTest "vector" [s|
 data Vector
     Flt x
     Flt y
     Flt z
 |]
-          [ ("Vector", UData $ Data $ multiFromList
-            [ ("x", MVar Pub TFlt)
-            , ("y", MVar Pub TFlt)
-            , ("z", MVar Pub TFlt)
-            ])
-          ]
-          []
+      [ ("Vector", UData $ Data $ multiFromList
+        [ ("x", MVar Pub TFlt)
+        , ("y", MVar Pub TFlt)
+        , ("z", MVar Pub TFlt)
+        ])
       ]
+      []
+
+    , namedTest "member-access" [s|
+data Vector
+    Flt x
+    Flt y
+
+LengthSquared(^Vector v) =>
+    v.x * v.x + v.y * v.y
+|]
+      [ ("Vector", UData $ Data $ multiFromList
+        [ ("x", MVar Pub TFlt)
+        , ("y", MVar Pub TFlt)
+        ])
+      , ("LengthSquared", UFunc $ Func (Sig Pure [Named "v" $ TRef $ TUser "Vector"] TFlt)
+        [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FAdd) Pure
+          [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
+            [ Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "x"
+            , Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "x"
+            ]
+          , Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
+            [ Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "y"
+            , Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "y"
+            ]
+          ]
+        ])
+      ]
+      []
+    ]
   ]
 
