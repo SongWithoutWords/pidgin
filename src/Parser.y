@@ -44,8 +44,7 @@ import Parser.Util
   ret           { T.Ret }
   then          { T.Then }
 
-  tknNamespace  { T.Namespace }
-  tknClass      { T.Class }
+  data          { T.Data }
 
   pub           { T.Pub }
   pro           { T.Pro }
@@ -118,16 +117,12 @@ namedUnits
   | lineSep namedUnits    { $2 }
 
 namedUnit
-  : namespace       { fmap UNamespace $1 }
-  | namedClass      { fmap UClass $1 }
+  : namedData       { fmap UData $1 }
   | namedFunc       { fmap UFunc $1 }
   | namedVar        { fmap UVar $1 }
 
-namespace
-  : tknNamespace name indentedUnits { Named $2 $3 }
-
-namedClass
-  : tknClass name indentedMembers  { Named $2 $ Class $3 } 
+namedData
+  : data name indentedMembers  { Named $2 $ Data $3 } 
 
 indentedMembers
   : {- none -}      { [] }
@@ -138,9 +133,7 @@ members
   | member eol members  { $1 : $3 }
 
 member
-  : accessMod namedClass    { fmap (MClass $1) $2 }
-  | accessMod mut namedFunc { fmap (MFunc $1 $2) $3 }
-  | accessMod This func     { Named "This" $ MCons $1 $3 }
+  : accessMod namedData    { fmap (MData $1) $2 }
   | accessMod namedVar      { fmap (MVar $1) $2}
 
 accessMod

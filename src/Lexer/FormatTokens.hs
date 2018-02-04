@@ -51,8 +51,7 @@ needsSpace t = case t of
   None -> true
   Ret -> true
 
-  Namespace -> true
-  Class -> true
+  Data -> true
 
   Pub -> true
   Pro -> true
@@ -95,8 +94,7 @@ formatToken token indent =
     None -> "none"
     Ret -> "ret"
 
-    Namespace -> "namespace"
-    Class -> "class"
+    Data -> "data"
 
     Pub -> "pub"
     Pro -> "pro"

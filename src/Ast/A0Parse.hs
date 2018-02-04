@@ -22,19 +22,17 @@ type Ast = [Named Unit]
 
 data Unit
   = UNamespace [Named Unit]
-  | UClass Class
+  | UData Data
   | UFunc Func
   | UVar Var
   deriving(Eq, Show)
 
-data Class = Class [Named Member]
+data Data = Data [Named Member]
   deriving(Eq, Show)
 
 data Member
-  = MClass Access Class
-  | MFunc Access Mut Func
-  | MCons Access Func
-  | MVar Access Var
+  = MVar Access Var
+  | MData Access Data
   deriving(Eq, Show)
 
 data Func = Func Sig Block
