@@ -348,7 +348,7 @@ else
     ]
 
 
-  , testGroup "data"
+  , testGroup "user-types"
     [ namedTest "vector" [s|
 data Vector
     Flt x
