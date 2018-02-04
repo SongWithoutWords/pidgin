@@ -44,6 +44,7 @@ import Parser.Util
   ret           { T.Ret }
   then          { T.Then }
 
+  namespace     { T.Namespace }
   data          { T.Data }
 
   pub           { T.Pub }
@@ -117,9 +118,10 @@ namedUnits
   | lineSep namedUnits    { $2 }
 
 namedUnit
-  : namedData       { fmap UData $1 }
-  | namedFunc       { fmap UFunc $1 }
-  | namedVar        { fmap UVar $1 }
+  : namespace name indentedUnits  { Named $2 (UNamespace $3) }
+  | namedData                     { fmap UData $1 }
+  | namedFunc                     { fmap UFunc $1 }
+  | namedVar                      { fmap UVar $1 }
 
 namedData
   : data name indentedMembers  { Named $2 $ Data $3 } 

@@ -61,6 +61,7 @@ not                      { appendTokenAction T.Not }
 none                     { appendTokenAction T.None }
 ret                      { appendTokenAction T.Ret }
 
+namespace                { appendTokenAction T.Namespace }
 data                     { appendTokenAction T.Data }
 
 pub                      { appendTokenAction T.Pub }

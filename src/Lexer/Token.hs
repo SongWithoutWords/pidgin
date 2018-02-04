@@ -28,6 +28,7 @@ data Token
   | None
   | Ret
 
+  | Namespace
   | Data
 
   | Pub

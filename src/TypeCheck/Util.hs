@@ -15,11 +15,11 @@ typeOfFunc (Func (Sig purity params returnType) _) =
 typeOfVar :: Var -> Type
 typeOfVar (Var t _) = t
 
-consOfClass :: Class -> [Type]
-consOfClass (Class members) = mapMaybe
-  (\m -> case m of
-      MCons _ f -> Just $ typeOfFunc f
-      _ -> Nothing
-  ) $ multiValues members
+-- consOfClass :: Class -> [Type]
+-- consOfClass (Class members) = mapMaybe
+--   (\m -> case m of
+--       MCons _ f -> Just $ typeOfFunc f
+--       _ -> Nothing
+--   ) $ multiValues members
 
 

@@ -22,18 +22,16 @@ type Ast = Table Unit
 
 data Unit
   = UNamespace (Table Unit)
-  | UClass Class
+  | UData Data
   | UFunc Func
   | UVar Var
   deriving(Eq, Show)
 
-data Class = Class (Table Member)
+data Data = Class (Table Member)
   deriving(Eq, Show)
 
 data Member
-  = MClass Access Class
-  | MFunc Access Mut Func
-  | MCons Access Func
+  = MData Access Data
   | MVar Access Var
   deriving(Eq, Show)
 
