@@ -346,5 +346,36 @@ else
         [EName "b"]
         [EName "c"]
     ]
+
+
+  , testGroup "data"
+    [ namedTest "vector" [s|
+data Vector
+    Flt x
+    Flt y
+    Flt z
+|]
+    [ Named "Vector" $ UData $ Data
+      [ Named "x" $ MVar Pub TFlt
+      , Named "y" $ MVar Pub TFlt
+      , Named "z" $ MVar Pub TFlt
+      ]
+    ]
+
+    , namedTest "colour" [s|
+data Colour
+    Int r
+    Int g
+    Int b
+    Int a
+|]
+      [ Named "Colour" $ UData $ Data
+        [ Named "r" $ MVar Pub TInt
+        , Named "g" $ MVar Pub TInt
+        , Named "b" $ MVar Pub TInt
+        , Named "a" $ MVar Pub TInt
+        ]
+      ]
+    ]
   ]
 
