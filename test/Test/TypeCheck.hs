@@ -659,7 +659,7 @@ arraySum(^Array[Int] array, Int size) =>
     [ namedTest "empty" [s|
 data Empty
 |]
-      [ ("Empty", UData $ Data $ multiFromList []) ]
+      [ ("Empty", UData $ multiFromList []) ]
       []
 
     , namedTest "vector" [s|
@@ -668,7 +668,7 @@ data Vector
     Flt y
     Flt z
 |]
-      [ ("Vector", UData $ Data $ multiFromList
+      [ ("Vector", UData $ multiFromList
         [ ("x", MVar Pub TFlt)
         , ("y", MVar Pub TFlt)
         , ("z", MVar Pub TFlt)
@@ -684,7 +684,7 @@ data Vector
 LengthSquared(^Vector v) =>
     v.x * v.x + v.y * v.y
 |]
-      [ ("Vector", UData $ Data $ multiFromList
+      [ ("Vector", UData $ multiFromList
         [ ("x", MVar Pub TFlt)
         , ("y", MVar Pub TFlt)
         ])

@@ -30,15 +30,12 @@ checkUnits = multiMapM checkUnit
 checkUnit :: A1.Unit -> ConstrainM A2.Unit
 checkUnit unit = case unit of
   A1.UNamespace n -> A2.UNamespace <$> checkUnits n
-  A1.UData d -> A2.UData <$> checkData d
+  A1.UData members -> A2.UData <$> multiMapM checkMember members
   A1.UFunc f -> A2.UFunc <$> checkFunc f
   A1.UVar v -> A2.UVar <$> checkVar v
 
-checkData :: A1.Data -> ConstrainM A2.Data
-checkData (A1.Data members) = A2.Data <$> multiMapM checkMember members
-
 checkMember :: A1.Member -> ConstrainM A2.Member
-checkMember (A1.MData acc d) = A2.MData acc <$> checkData d
+checkMember (A1.MData acc members) = A2.MData acc <$> multiMapM checkMember members
 checkMember (A1.MVar acc typ) = A2.MVar acc <$> checkType typ
 
 checkFunc :: A1.Func -> ConstrainM A2.Func
@@ -185,6 +182,4 @@ checkExpr expression = case expression of
         A1.VFlt _ -> TFlt
         A1.VInt _ -> TInt
         A1.VStr _ -> TStr
-
-
 

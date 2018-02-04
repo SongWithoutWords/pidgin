@@ -124,7 +124,7 @@ namedUnit
   | namedVar                      { fmap UVar $1 }
 
 namedData
-  : data name indentedMembers  { Named $2 $ Data $3 } 
+  : data name indentedMembers  { Named $2 $3 } 
 
 indentedMembers
   : {- none -}      { [] }

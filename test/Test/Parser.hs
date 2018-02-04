@@ -350,7 +350,7 @@ else
 
   , testGroup "user-types"
     [ namedTest "empty" "data Empty"
-      [Named "Empty" $ UData $ Data []]
+      [Named "Empty" $ UData []]
 
     , namedTest "vector" [s|
 data Vector
@@ -358,7 +358,7 @@ data Vector
     Flt y
     Flt z
 |]
-    [ Named "Vector" $ UData $ Data
+    [ Named "Vector" $ UData
       [ Named "x" $ MVar Pub TFlt
       , Named "y" $ MVar Pub TFlt
       , Named "z" $ MVar Pub TFlt
@@ -372,7 +372,7 @@ data Colour
     Int b
     Int a
 |]
-      [ Named "Colour" $ UData $ Data
+      [ Named "Colour" $ UData
         [ Named "r" $ MVar Pub TInt
         , Named "g" $ MVar Pub TInt
         , Named "b" $ MVar Pub TInt

@@ -20,7 +20,7 @@ mapUnits = tableFromNamedM mapUnit
 mapUnit :: A0.Unit -> ErrorM A1.Unit
 mapUnit unit = case unit of
   A0.UNamespace us        -> A1.UNamespace <$> mapUnits us
-  A0.UData (A0.Data ms)   -> A1.UData . A1.Data <$> mapMembers ms
+  A0.UData ms             -> A1.UData <$> mapMembers ms
   A0.UFunc f              -> A1.UFunc <$> mapFunc f
   A0.UVar v               -> A1.UVar <$> mapVar v
 
@@ -29,7 +29,7 @@ mapMembers = tableFromNamedM mapMember
 
 mapMember :: A0.Member -> ErrorM A1.Member
 mapMember member = case member of
-  A0.MData acc (A0.Data ms)   -> A1.MData acc . A1.Data <$> mapMembers ms
+  A0.MData acc ms             -> A1.MData acc <$> mapMembers ms
   A0.MVar acc t               -> pure $ A1.MVar acc t
 
 mapFunc :: A0.Func -> ErrorM A1.Func

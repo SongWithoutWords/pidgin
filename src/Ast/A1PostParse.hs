@@ -27,8 +27,7 @@ data Unit
   | UVar Var
   deriving(Eq, Show)
 
-data Data = Data (Table Member)
-  deriving(Eq, Show)
+type Data = Table Member
 
 data Member
   = MData Access Data

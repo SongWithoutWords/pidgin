@@ -27,8 +27,7 @@ data Unit
   | UVar Var
   deriving(Eq, Show)
 
-data Data = Data [Named Member]
-  deriving(Eq, Show)
+type Data = [Named Member]
 
 data Member
   = MVar Access Type
