@@ -27,7 +27,7 @@ data Unit
   | UVar Var
   deriving(Eq, Show)
 
-data Data = Class (Table Member)
+data Data = Data (Table Member)
   deriving(Eq, Show)
 
 data Member
