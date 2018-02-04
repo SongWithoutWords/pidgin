@@ -654,5 +654,21 @@ arraySum(^Array[Int] array, Int size) =>
       ]
       []
     ]
+
+    , testGroup "user-types"
+      [ namedTest "vector" [s|
+data Vector
+    Flt x
+    Flt y
+    Flt z
+|]
+          [ ("Vector", UData $ Data $ multiFromList
+            [ ("x", MVar Pub TFlt)
+            , ("y", MVar Pub TFlt)
+            , ("z", MVar Pub TFlt)
+            ])
+          ]
+          []
+      ]
   ]
 
