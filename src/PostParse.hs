@@ -109,6 +109,7 @@ mapExpr expr = case expr of
     args' <- mapM mapExpr args
     return $ A1.EApp e' purity args'
 
+  A0.ESelect e n -> mapExpr e >>= \e' -> pure $ A1.ESelect e' n
   A0.EName n -> return $ A1.EName n
 
 
