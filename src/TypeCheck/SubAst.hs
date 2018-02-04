@@ -24,8 +24,16 @@ subAst' substitutions ast = multiMapM subUnit ast
     subUnit :: Unit -> ErrorM A3.Unit
     subUnit unit = case unit of
       UNamespace units -> A3.UNamespace <$> multiMapM subUnit units
+      UData d -> A3.UData <$> subData d
       UFunc f -> A3.UFunc <$> subFunc f
       UVar v -> A3.UVar <$> subVar v
+
+    subData :: Data -> ErrorM A3.Data
+    subData (Data members) = A3.Data <$> multiMapM subMember members
+
+    subMember :: Member -> ErrorM A3.Member
+    subMember (MData acc d) = A3.MData acc <$> subData d
+    subMember (MVar acc typ) = A3.MVar acc <$> subType' typ
 
     subVar :: Var -> ErrorM A3.Var
     subVar (Var t e) = liftM2 A3.Var (subType' t) (subExpr e)

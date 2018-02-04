@@ -30,8 +30,16 @@ checkUnits = multiMapM checkUnit
 checkUnit :: A1.Unit -> ConstrainM A2.Unit
 checkUnit unit = case unit of
   A1.UNamespace n -> A2.UNamespace <$> checkUnits n
+  A1.UData d -> A2.UData <$> checkData d
   A1.UFunc f -> A2.UFunc <$> checkFunc f
   A1.UVar v -> A2.UVar <$> checkVar v
+
+checkData :: A1.Data -> ConstrainM A2.Data
+checkData (A1.Data members) = A2.Data <$> multiMapM checkMember members
+
+checkMember :: A1.Member -> ConstrainM A2.Member
+checkMember (A1.MData acc d) = A2.MData acc <$> checkData d
+checkMember (A1.MVar acc typ) = A2.MVar acc <$> checkType typ
 
 checkFunc :: A1.Func -> ConstrainM A2.Func
 checkFunc (A1.Func (A1.Sig pur params optRetType) block) = do
@@ -168,9 +176,6 @@ checkExpr expression = case expression of
     TFunc purity argTypes tRet $= tExpr
 
     pure $ A2.Expr tRet $ A2.EApp expr' purity args'
-
-
-
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
     where
