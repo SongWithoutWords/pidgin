@@ -114,7 +114,7 @@ checkName name = do
         KNamespace -> Nothing
         KType _ -> Nothing
         KExpr e -> Just e
-  let foundError err = (raise err) >> (pure $ A2.Expr TError $ A2.EName name)
+  let foundError err = (raise err) >> (pure $ A2.Expr A2.TError $ A2.EName name)
 
   kinds <- lookupKinds name
   case kinds of
@@ -126,7 +126,7 @@ checkName name = do
       [e] -> pure e
       es -> do
         let ts = map typeOfExpr es
-        t <- (flip TOver ts) <$> getNextTVar
+        t <- (flip A2.TOver ts) <$> getNextTVar
         pure $ A2.Expr t $ A2.EOver es
 
 -- checkExprs :: A1.Exprs -> ConstrainM A2.Expr
@@ -145,7 +145,7 @@ checkExpr expression = case expression of
     let t1 = typeOfExpr $ last b1'
     let t2 = typeOfExpr $ last b2'
 
-    TBln $= tCond
+    A2.TBln $= tCond
     t1 $= t2
 
     pure $ A2.Expr t1 $ A2.EIf cond' b1' b2'
@@ -153,7 +153,7 @@ checkExpr expression = case expression of
   A1.EVar (n, var) -> do
     var' <- checkVar var
     addLocalBinding $ (n, typeOfVar var')
-    pure $ A2.Expr TNone $ A2.EVar (n, var')
+    pure $ A2.Expr A2.TNone $ A2.EVar (n, var')
 
   A1.EName name -> checkName name
 
@@ -170,16 +170,16 @@ checkExpr expression = case expression of
 
     let argTypes = typeOfExpr <$> args'
 
-    TFunc purity argTypes tRet $= tExpr
+    A2.TFunc purity argTypes tRet $= tExpr
 
     pure $ A2.Expr tRet $ A2.EApp expr' purity args'
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
     where
       t = case v of
-        A1.VBln _ -> TBln
-        A1.VChr _ -> TChr
-        A1.VFlt _ -> TFlt
-        A1.VInt _ -> TInt
-        A1.VStr _ -> TStr
+        A1.VBln _ -> A2.TBln
+        A1.VChr _ -> A2.TChr
+        A1.VFlt _ -> A2.TFlt
+        A1.VInt _ -> A2.TInt
+        A1.VStr _ -> A2.TStr
 

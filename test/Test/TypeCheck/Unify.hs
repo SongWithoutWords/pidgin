@@ -6,6 +6,7 @@ import Data.Map as M
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Ast.A2Constrained
 import TypeCheck.Unify
 
 type SubstitutionList = [(TVar, Type)]

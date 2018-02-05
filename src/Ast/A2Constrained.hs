@@ -3,16 +3,19 @@
 -- Ast2 represents the Ast after it has been constrained for type checking, but before unification
 module Ast.A2Constrained
   ( module Ast.A2Constrained
-  , module Ast.A2Constrained.Type
   , module Ast.Common.Access
   , module Ast.Common.Intrinsic
+  , module Ast.Common.Mutability
+  , module Ast.Common.Purity
   , module Ast.Common.Table
   , module Ast.Common.Value
   ) where
 
-import Ast.A2Constrained.Type
+-- import Ast.A2Constrained.Type
 import Ast.Common.Access
 import Ast.Common.Intrinsic
+import Ast.Common.Mutability
+import Ast.Common.Purity
 import Ast.Common.Table
 import Ast.Common.Value
 
@@ -32,7 +35,7 @@ type Data = Table Member
 data Member
   = MData Access Data
   | MVar Access Type
-  deriving(Eq, Show)
+  deriving(Eq, Ord, Show)
 
 data Func = Func Sig Block
   deriving(Eq, Show)
@@ -71,4 +74,42 @@ data Expr'
   | EIntr Intrinsic
   | EVal Value
   deriving(Eq, Show)
+
+type Types = [Type]
+
+infixr 0 ~>
+(~>) :: [Type] -> Type -> Type
+ts ~> t = TFunc Pure ts t
+
+data Type
+  -- = TUser Typename
+  = TMut Type
+
+  -- Neither caller nor callee care about left-most mutability of param and return types
+  | TFunc Purity Types Type
+
+  -- Types associated with an overloaded name
+  | TOver TVar Types
+
+  | TRef Type
+  | TArray Type
+
+  | TUser Typename Data
+  | TBln
+  | TChr
+  | TFlt
+  | TInt
+  | TNat
+  | TStr
+
+  | TNone
+
+  | TError
+  | TVar TVar
+
+  deriving(Eq, Ord, Show)
+
+type TVar = Word
+
+type Typename = String
 

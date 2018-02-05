@@ -1,9 +1,9 @@
 module TypeCheck.Constraint
   ( module TypeCheck.Constraint
-  , module Ast.A2Constrained.Type
+  -- , module Ast.A2Constrained.Type
   ) where
 
-import Ast.A2Constrained.Type
+import Ast.A2Constrained -- .Type
 
 type Constraints = [Constraint]
 

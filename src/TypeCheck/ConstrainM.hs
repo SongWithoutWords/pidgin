@@ -100,7 +100,7 @@ lookupKinds name =
     kindOfUnit :: Unit -> Kind
     kindOfUnit u = case u of
       UNamespace _ -> KNamespace
-      UData _ -> KType $ TUser name
+      UData ms -> KType $ TUser name ms
       UFunc f -> KExpr $ Expr (typeOfFunc f) $ EName name
       UVar (Var t _) -> KExpr $ Expr t $ EName name
 

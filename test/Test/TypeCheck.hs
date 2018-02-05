@@ -685,26 +685,31 @@ data Vector
     Flt x
     Flt y
 
-LengthSquared(^Vector v) =>
+lengthSquared(^Vector v) =>
     v.x * v.x + v.y * v.y
 |]
-      [ ("Vector", UData $ multiFromList
-        [ ("x", MVar Pub TFlt)
-        , ("y", MVar Pub TFlt)
-        ])
-      , ("LengthSquared", UFunc $ Func (Sig Pure [("v", TRef $ TUser "Vector")] TFlt)
-        [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FAdd) Pure
-          [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
-            [ Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "x"
-            , Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "x"
-            ]
-          , Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
-            [ Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "y"
-            , Expr TFlt $ ESelect (Expr (TUser "Vector") $ EName "v") "y"
-            ]
+      (let
+        vectorData = multiFromList
+          [ ("x", MVar Pub TFlt)
+          , ("y", MVar Pub TFlt)
           ]
-        ])
-      ]
+        vectorType = TUser "Vector" vectorData
+      in
+        [ ("Vector", UData vectorData)
+        , ("lengthSquared", UFunc $ Func (Sig Pure [("v", TRef vectorType)] TFlt)
+          [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FAdd) Pure
+            [ Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
+              [ Expr TFlt $ ESelect (Expr vectorType $ EName "v") "x"
+              , Expr TFlt $ ESelect (Expr vectorType $ EName "v") "x"
+              ]
+            , Expr TFlt $ EApp (Expr ([TFlt, TFlt] ~> TFlt) $ EIntr FMul) Pure
+              [ Expr TFlt $ ESelect (Expr vectorType $ EName "v") "y"
+              , Expr TFlt $ ESelect (Expr vectorType $ EName "v") "y"
+              ]
+            ]
+          ])
+        ]
+      )
       []
     ]
   ]

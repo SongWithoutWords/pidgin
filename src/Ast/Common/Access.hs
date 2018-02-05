@@ -4,5 +4,5 @@ data Access
   = Pub
   | Pro
   | Pri
-  deriving(Eq, Show)
+  deriving(Eq, Ord, Show)
 

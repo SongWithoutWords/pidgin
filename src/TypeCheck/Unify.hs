@@ -11,6 +11,7 @@ import Data.Ord(comparing, Ordering(..))
 import qualified Data.Map as M
 import qualified Data.Set as S
 
+import Ast.A2Constrained
 import Ast.A2Constrained.Error
 import TypeCheck.ApplySubs
 import TypeCheck.Constraint

@@ -3,8 +3,8 @@ module TypeCheck.ApplySubs where
 import qualified Data.Set as S
 import qualified Data.Map as M
 
+import Ast.A2Constrained
 import Ast.A2Constrained.Error
-import Ast.A2Constrained.Type
 import TypeCheck.Constraint
 import TypeCheck.Substitution
 
