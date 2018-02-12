@@ -76,6 +76,14 @@ library
                     TypeCheck.Unify
                     TypeCheck.Util
 
+                    X.Ast
+                    X.Error
+                    X.TypeCheck
+                    X.TypeCheck.ConstrainM
+                    X.TypeCheck.ConstraintGen
+                    X.TypeCheck.Reduce
+                    X.TypeCheck.Util
+
                     Util.Cycle
                     Util.Debug
                     Util.MultiMap
