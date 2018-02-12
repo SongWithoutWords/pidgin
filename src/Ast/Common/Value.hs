@@ -6,5 +6,5 @@ data Value
   | VFlt Float
   | VInt Int
   | VStr String
-  deriving(Eq, Show)
+  deriving(Eq, Ord, Show)
 
