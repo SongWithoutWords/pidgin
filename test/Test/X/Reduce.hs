@@ -77,7 +77,9 @@ tests = testGroup "reduce"
       vector = TData "Vector" members
       input = Expr TError $
         ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
-    in reduceExprTest "select-member" input input)
+      output = Expr TFlt $
+        ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
+    in reduceExprTest "select-member" input output)
 
 
   ]
