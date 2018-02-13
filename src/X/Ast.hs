@@ -74,23 +74,18 @@ data Expr
   deriving(Eq, Ord, Show)
 
 data Expr'
-  = ELambda Func
-
-  | EIf Expr Block Block
-  | ERet Expr
-
-  | EVar Name Expr
+  = EApp Purity Expr [Expr]
   | EAssign Expr Expr
-  | ECons Expr -- Dummy expr used to constrain types
-
-  | EApp Purity Expr [Expr]
-
-  | ESelect Expr Name Kinds
-  | EName Name Kinds
   | EBinding
-
+  | ECons Expr -- Dummy expr used to constrain types
+  | EIf Expr Block Block
   | EIntr Intrinsic
+  | ELambda Func
+  | EName Name Kinds
+  | ERet Expr
+  | ESelect Expr Name Kinds
   | EVal Value
+  | EVar Name Expr
   deriving(Eq, Ord, Show)
 
 type ERef = Int
