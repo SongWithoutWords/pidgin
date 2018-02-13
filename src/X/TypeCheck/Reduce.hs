@@ -42,24 +42,10 @@ raise e = modify $ \s -> s{errors = S.insert e $ errors s }
 reduceExpr :: Expr -> ReduceM Expr
 reduceExpr (Expr typ expr) = do
   expr' <- reduceSubExprs expr
-  let input' = Expr typ expr'
   let foundError err = raise err >> (pure $ Expr TError expr')
   case expr' of
 
-    -- Namespace unit selection
-    ESelect (Expr t (EName n1 [KNamespace units])) n2 _ -> do
-      let newName = n1 ++ "." ++ n2
-      pure $ Expr t $ EName newName $ lookupUnit n2 units
-
-    -- Struct member selection
-    ESelect e name kinds -> case typeOfExpr e of
-      TData typename members -> case multiLookup name members of
-        [] -> foundError $ UnknownMemberVariable typename name
-        (_:_:_) -> foundError $ AmbigousMemberVariable typename name
-        [MVar _ t] -> pure $ Expr t $ ESelect e name []
-      TVar _ -> pure $ Expr typ $ ESelect e name []
-
-    -- Compile time evaluation
+    -- Compile time evaluation (consider checking if all args are values up-front)
     EApp Pure (Expr _ (EName "+" _)) [Expr _ (EVal (VInt a)), Expr _ (EVal (VInt b))]
       -> pure $ Expr TInt $ EVal $ VInt (a + b)
 
@@ -78,6 +64,18 @@ reduceExpr (Expr typ expr) = do
     -- Non-function application
     EApp _ (Expr t _) _ -> foundError $ NonApplicable t
 
+    -- Namespace unit selection
+    ESelect (Expr t (EName n1 [KNamespace units])) n2 _ -> do
+      let newName = n1 ++ "." ++ n2
+      pure $ Expr t $ EName newName $ lookupUnit n2 units
+
+    -- Struct member selection
+    ESelect e name kinds -> case typeOfExpr e of
+      TData typename members -> case multiLookup name members of
+        [] -> foundError $ UnknownMemberVariable typename name
+        (_:_:_) -> foundError $ AmbigousMemberVariable typename name
+        [MVar _ t] -> pure $ Expr t $ ESelect e name []
+      TVar _ -> pure $ Expr typ $ ESelect e name []
 
     e -> pure $ Expr typ e
 
