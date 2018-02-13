@@ -17,6 +17,8 @@ data Error
 
   | UnknownTypeName Typename
   | AmbiguousTypeName Typename
+  | UnknownMemberVariable Typename Name
+  | AmbigousMemberVariable Typename Name
 
   | FailedToUnify Constraint
   | FailedToInferType Type

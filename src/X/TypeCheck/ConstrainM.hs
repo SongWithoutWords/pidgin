@@ -86,13 +86,6 @@ lookupKinds name =
       Just k -> [k]
       Nothing -> lookupLocal ls
 
-    kindOfUnit :: Unit -> Kind
-    kindOfUnit u = case u of
-      UNamespace n -> KNamespace n
-      UData ms -> KType $ TData name ms
-      UFunc f -> KExpr $ Expr (typeOfFunc f) $ EBinding
-      UVar (Var t _) -> KExpr $ Expr t $ EBinding
-
     kindOfIntrinsic :: Intrinsic -> ConstrainM Kind
     kindOfIntrinsic i = do
       t <- checkType $ typeOfIntrinsic i
@@ -102,7 +95,7 @@ lookupKinds name =
     intrins <- mapM kindOfIntrinsic $ multiLookup name intrinsicsByName
     globals <- multiLookup name <$> ask
     locals <- lookupLocal <$> gets scopes
-    pure $ intrins <> (kindOfUnit <$> globals) <> locals
+    pure $ intrins <> (kindOfUnit name <$> globals) <> locals
 
 type TypeParamSubs = M.Map Typename TVar
 
@@ -114,8 +107,6 @@ checkType = checkType' M.empty
 
     -- Yep, I know it's wrong, will generalize at some stage ;)
     A1.TArgs [t] (A1.TUser "Array") -> TArray <$> checkType'' t
-
-    -- A1.
 
     A1.TUser name -> do
       let typeParamSub = M.lookup name subs

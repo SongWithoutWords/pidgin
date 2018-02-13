@@ -1,12 +1,13 @@
 module Test.X.Reduce(tests) where
 
--- import Data.Set as S
+import Data.Set as S
 -- import Data.Map as M
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import X.Ast
+import X.Error
 import X.TypeCheck.Reduce
 
 import Util.MultiMap
@@ -21,10 +22,22 @@ import Util.MultiMap
 --     , testCase "errors" $ errorsActual @?= S.fromList errors
 --     ]
 
-reduceExprTest :: String -> Expr -> Expr -> TestTree
-reduceExprTest name input expected =
-  let result = reduceExpr input
-  in testCase name $ result @?= expected
+-- reduceTest :: String -> Ast -> Ast -> TestTree
+-- reduceTest name input expected =
+--   let result = reduceExpr input
+--   in testCase name $ result @?= expected
+
+reduceExprTest :: String -> Expr -> Expr -> Errors -> TestTree
+reduceExprTest name input expr errs =
+  let (expr', errs') = runReduce $ reduceExpr input
+  in testGroup name
+    [ testCase "expr" $ expr' @?= expr
+    , testCase "errors" $ errs' @?= errs]
+
+-- test :: (Eq a, Show a) => String -> a -> a -> TestTree
+-- test name input expected =
+--   let result = reduceExpr input
+--   in testCase name $ result @?= expected
 
 tests :: TestTree
 tests = testGroup "reduce"
@@ -43,7 +56,7 @@ tests = testGroup "reduce"
           "b" []
       output = Expr TError $ EName "a.b" [KNamespace unitsB]
 
-      in reduceExprTest "select-namespace" input output)
+      in reduceExprTest "select-namespace" input output S.empty)
 
   , (let
       unitsA = multiFromList
@@ -75,11 +88,10 @@ tests = testGroup "reduce"
         , ("y", MVar Pub TFlt)
         ]
       vector = TData "Vector" members
-      input = Expr TError $
-        ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
-      output = Expr TFlt $
-        ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
-    in reduceExprTest "select-member" input output)
+      expr' = ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
+      input = Expr TError expr'
+      output = Expr TFlt expr'
+    in reduceExprTest "select-member" input output S.empty)
 
 
   ]

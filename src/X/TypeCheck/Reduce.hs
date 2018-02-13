@@ -5,7 +5,7 @@ import qualified Data.IntMap.Lazy as IM
 import qualified Data.Set as S
 
 import X.Ast
-import Ast.A2Constrained.Error
+import X.Error
 import X.TypeCheck.Util
 import Util.MultiMap
 
@@ -18,46 +18,56 @@ type ExprSubs = IM.IntMap Type
 
 data ReduceState = ReduceState
   { errors :: Errors -- write-only
-  , exprSubs :: ExprSubs
-  , typeSubs :: TypeSubs
+  -- , exprSubs :: ExprSubs
+  -- , typeSubs :: TypeSubs
   }
 
 initialState :: ReduceState
 initialState = ReduceState
   { errors = S.empty
-  , exprSubs = IM.empty
-  , typeSubs = IM.empty
+  -- , exprSubs = IM.empty
+  -- , typeSubs = IM.empty
   }
 
 type ReduceM a = State ReduceState a
 
-raise :: String -> a
-raise = error
+runReduce :: ReduceM a -> (a, Errors)
+runReduce reduce =
+  let (result, ReduceState errs) = runState reduce initialState
+  in (result, errs)
 
-reduceExpr :: Expr -> Expr
-reduceExpr (Expr typ expr) = case reduceExpr' expr of
+raise :: Error -> ReduceM ()
+raise e = modify $ \s -> s{errors = S.insert e $ errors s }
 
-  ESelect (Expr t (EName n1 [KNamespace units])) n2 _ -> do
-    let newName = n1 ++ "." ++ n2
-    Expr t $ EName newName $ lookupUnit n2 units
+reduceExpr :: Expr -> ReduceM Expr
+reduceExpr (Expr typ expr) = do
+  expr' <- reduceSubExprs expr
+  let input' = Expr typ expr'
+  let raiseAndReturn e = raise e >> pure input'
+  case expr' of
 
-  ESelect e name kinds ->
-    let e' = reduceExpr e
-      in case typeOfExpr e' of
-        TData typename members -> case multiLookup name members of
-          [] -> raise $ "Type " ++ typename ++ " has no member " ++ name
-          (_:_:_) -> raise $ "Type " ++ typename ++ " has no member " ++ name
-          [MVar _ t] -> Expr t $ ESelect e' name []
+    -- Select unit of namespace
+    ESelect (Expr t (EName n1 [KNamespace units])) n2 _ -> do
+      let newName = n1 ++ "." ++ n2
+      pure $ Expr t $ EName newName $ lookupUnit n2 units
 
-        TVar _ -> Expr typ $ ESelect e' name kinds
+    -- Select member of struct
+    ESelect e name kinds -> case typeOfExpr e of
+      TData typename members -> case multiLookup name members of
+        [] -> raiseAndReturn $ UnknownMemberVariable typename name
+        (_:_:_) -> raiseAndReturn $ AmbigousMemberVariable typename name
+        [MVar _ t] -> pure $ Expr t $ ESelect e name []
+      TVar _ -> pure $ Expr typ $ ESelect e name kinds
 
-  EApp (Expr _ (EName "+" _)) Pure [Expr _ (EVal (VInt a)), Expr _ (EVal (VInt b))]
-    -> Expr TInt $ EVal $ VInt (a + b)
+    EApp Pure (Expr _ (EName "+" _)) [Expr _ (EVal (VInt a)), Expr _ (EVal (VInt b))]
+      -> pure $ Expr TInt $ EVal $ VInt (a + b)
 
-  e -> Expr typ e
+    e -> pure $ Expr typ e
 
-reduceExpr' :: Expr' -> Expr'
-reduceExpr' expr = case expr of
-  ESelect e name kinds -> ESelect (reduceExpr e) name kinds
-  e -> e
+reduceSubExprs :: Expr' -> ReduceM Expr'
+reduceSubExprs expr = case expr of
+  EVar n e -> liftM (EVar n) (reduceExpr e)
+  ESelect e name kinds -> reduceExpr e >>= \e' -> pure $ ESelect e' name kinds
+  EApp p e es -> liftM2 (EApp p) (reduceExpr e) (mapM reduceExpr es)
+  e -> pure $ e
 

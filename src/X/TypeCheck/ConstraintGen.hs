@@ -66,16 +66,14 @@ checkFuncBlock t (e:es) = liftM2 (:) (checkExpr e) (checkFuncBlock t es)
 checkBlock :: A1.Block -> ConstrainM A2.Block
 checkBlock block = mapM checkExpr block
 
-checkVar :: A1.Var -> ConstrainM A2.Var
+checkVar :: A1.Var -> ConstrainM A2.Expr
 checkVar (A1.Var mut optType expr) = do
   expr' <- checkExpr expr
   optType' <- traverse checkType optType
 
-  tVar <- case optType' of
-    Just t -> pure t
-    Nothing -> getNextTypeVar
-
-  return $ A2.Var (applyMut mut tVar) expr'
+  pure $ case optType' of
+    Just t -> A2.Expr (applyMut mut t) $ A2.ECons expr'
+    Nothing -> expr'
 
 checkExpr :: A1.Expr -> ConstrainM A2.Expr
 checkExpr expression = case expression of
@@ -92,10 +90,10 @@ checkExpr expression = case expression of
 
     pure $ A2.Expr (A2.TSuper [t1, t2]) $ A2.EIf cond' b1' b2'
 
-  A1.EVar (n, var) -> do
-    var' <- checkVar var
-    addLocalBinding $ (n, typeOfVar var')
-    pure $ A2.Expr A2.TNone $ A2.EVar (n, var')
+  A1.EVar (n, expr) -> do
+    expr' <- checkVar expr
+    addLocalBinding $ (n, typeOfExpr expr')
+    pure $ A2.Expr A2.TNone $ A2.EVar n expr'
 
   A1.ESelect expr name -> do
     expr' <- checkExpr expr
@@ -118,7 +116,7 @@ checkExpr expression = case expression of
     expr' <- checkExpr expr
     args' <- traverse checkExpr args
 
-    pure $ A2.Expr tRet $ A2.EApp expr' purity args'
+    pure $ A2.Expr tRet $ A2.EApp purity expr' args'
 
   A1.EVal v -> pure $ A2.Expr t $ A2.EVal v
     where

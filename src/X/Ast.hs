@@ -29,7 +29,7 @@ data Unit
   = UNamespace Units
   | UData Members
   | UFunc Func
-  | UVar Var
+  | UVar Expr
   deriving(Eq, Ord, Show)
 
 type Members = Table Member
@@ -52,9 +52,6 @@ type Param = Named Type
 
 type Block = [Expr]
 
-data Var = Var Type Expr
-  deriving(Eq, Ord, Show)
-
 data Kind
   = KNamespace Units
   | KType Type
@@ -74,11 +71,11 @@ data Expr'
   | EIf Expr Block Block
   | ERet Expr
 
-  | EVar (Named Var)
+  | EVar Name Expr
   | EAssign Expr Expr
   | ECons Expr -- Dummy expr used to constrain types
 
-  | EApp Expr Purity [Expr]
+  | EApp Purity Expr [Expr]
 
   | ESelect Expr Name Kinds
   | EName Name Kinds
