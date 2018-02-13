@@ -127,6 +127,7 @@ data Type
   | TStr
 
   | TNone
+  | TUnknown
 
   | TError
   | TVar TVar

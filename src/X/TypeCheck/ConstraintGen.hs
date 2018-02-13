@@ -86,7 +86,7 @@ checkExpr expression = case expression of
     b2' <- checkBlock b2
 
     -- I really need a better way of communicating that I haven't found a type just yet
-    pure $ A2.Expr (A2.TError) $ A2.EIf cond' b1' b2'
+    pure $ A2.Expr A2.TUnknown $ A2.EIf cond' b1' b2'
 
   A1.EVar (n, expr) -> do
     expr' <- checkVar expr

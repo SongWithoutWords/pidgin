@@ -33,10 +33,10 @@ tests = testGroup "reduce"
         , ("e", UData $ multiFromList [])
         ]
       input =
-        Expr TError $ ESelect
-          (Expr TError $ EName "a" [KNamespace unitsA])
+        Expr TUnknown $ ESelect
+          (Expr TUnknown $ EName "a" [KNamespace unitsA])
           "b" []
-      output = Expr TError $ EName "a.b" [KNamespace unitsB]
+      output = Expr TUnknown $ EName "a.b" [KNamespace unitsB]
 
       in reduceExprTest "select-namespace" input output [])
 
@@ -54,13 +54,13 @@ tests = testGroup "reduce"
         , ("z", UData $ multiFromList [])
         ]
       input =
-        Expr TError $ ESelect
-          (Expr TError $ ESelect
-            (Expr TError $ EName "a" [KNamespace unitsA])
+        Expr TUnknown $ ESelect
+          (Expr TUnknown $ ESelect
+            (Expr TUnknown $ EName "a" [KNamespace unitsA])
             "b" []
           )
         "c" []
-      output = Expr TError $ EName "a.b.c" [KNamespace unitsC]
+      output = Expr TUnknown $ EName "a.b.c" [KNamespace unitsC]
 
      in reduceExprTest "select-namespace-nested" input output [])
 
@@ -71,7 +71,7 @@ tests = testGroup "reduce"
         ]
       vector = TData "Vector" members
       expr' = ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TFlt expr'
     in reduceExprTest "select-member" input output [])
 
@@ -82,7 +82,7 @@ tests = testGroup "reduce"
         [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
         , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
         ]
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TInt expr'
       in reduceExprTest "simple-app" input output [])
 
@@ -92,7 +92,7 @@ tests = testGroup "reduce"
         [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
         , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
         ]
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TInt expr'
       in reduceExprTest "wrong-purity" input output [WrongPurity Pure PWrite])
 
@@ -103,7 +103,7 @@ tests = testGroup "reduce"
           , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
           , Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]
           ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TInt expr'
         in reduceExprTest "wrong-num-args" input output [WrongNumArgs 2 3])
 
@@ -113,7 +113,7 @@ tests = testGroup "reduce"
           [ Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding]
           , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
           ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TInt expr'
         in reduceExprTest "first-arg-wrong-type" input output [WrongType TInt TBln])
 
@@ -123,7 +123,7 @@ tests = testGroup "reduce"
           [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
           , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
           ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TInt expr'
         in reduceExprTest "second-arg-wrong-type" input output [WrongType TInt TStr])
 
@@ -133,7 +133,7 @@ tests = testGroup "reduce"
           [ Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding]
           , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
           ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TInt expr'
         in reduceExprTest "both-args-wrong-type" input output
           [WrongType TInt TBln, WrongType TInt TStr])
@@ -145,7 +145,7 @@ tests = testGroup "reduce"
           , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
           , Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]
           ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TInt expr'
         in reduceExprTest "wrong-num-args-of-wrong-type" input output
           [WrongNumArgs 2 3, WrongType TInt TBln, WrongType TInt TStr])
@@ -157,7 +157,7 @@ tests = testGroup "reduce"
           , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
           , Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]
           ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TInt expr'
         in reduceExprTest "wrong-purity-with-too-many-args-of-wrong-type" input output
           [ WrongPurity Pure PWrite
@@ -168,7 +168,7 @@ tests = testGroup "reduce"
     , (let
         expr' = EApp PWrite (Expr TStr $ EName "a" [KExpr $ Expr TInt EBinding])
           [ Expr TBln $ EName "b" [KExpr $ Expr TBln EBinding] ]
-        input = Expr TError expr'
+        input = Expr TUnknown expr'
         output = Expr TError expr'
         in reduceExprTest "non-applicable" input output
           [ NonApplicable TStr ])
@@ -180,7 +180,7 @@ tests = testGroup "reduce"
         (Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding])
         [Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]]
         [Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]]
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TInt expr'
       in reduceExprTest "simple" input output [])
 
@@ -189,7 +189,7 @@ tests = testGroup "reduce"
         (Expr TStr $ EName "a" [KExpr $ Expr TStr EBinding])
         [Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]]
         [Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]]
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TInt expr'
       in reduceExprTest "wrong-condition-type" input output [WrongType TBln TStr])
 
@@ -198,7 +198,7 @@ tests = testGroup "reduce"
         (Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding])
         [Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]]
         [Expr TStr $ EName "c" [KExpr $ Expr TStr EBinding]]
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TInt expr'
       in reduceExprTest "mismatched-types" input output [WrongType TInt TStr])
 
@@ -207,7 +207,7 @@ tests = testGroup "reduce"
         (Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding])
         [Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]]
         [Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]]
-      input = Expr TError expr'
+      input = Expr TUnknown expr'
       output = Expr TStr expr'
       in reduceExprTest "mismatched-types-b" input output [WrongType TStr TInt])
     ]
