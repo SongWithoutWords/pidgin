@@ -101,6 +101,7 @@ library
                      , llvm-hs-pure >= 5.0.0
                      , mtl
                      , transformers
+                     , vector
 
   ghc-options:
 
