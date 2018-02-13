@@ -9,31 +9,31 @@ import X.Error
 import X.TypeCheck.Util
 import Util.MultiMap
 
-type TypeSubs = IM.IntMap Type
-type ExprSubs = IM.IntMap Type
-
 -- Watching this shape up now, I'm beginning to wonder:
 --     should there be a list of expressions that are reduced, and discarded when they're
 --     fully figured out, so that the size of the traversal is continuously reduced?
 
-data ReduceState = ReduceState
+type TypeSubs = IM.IntMap Type
+type ExprSubs = IM.IntMap Type
+
+data Reduction = Reduction
   { errors :: Errors -- write-only
   -- , exprSubs :: ExprSubs
   -- , typeSubs :: TypeSubs
   }
 
-initialState :: ReduceState
-initialState = ReduceState
+initialState :: Reduction
+initialState = Reduction
   { errors = S.empty
   -- , exprSubs = IM.empty
   -- , typeSubs = IM.empty
   }
 
-type ReduceM a = State ReduceState a
+type ReduceM a = State Reduction a
 
 runReduce :: ReduceM a -> (a, Errors)
 runReduce reduce =
-  let (result, ReduceState errs) = runState reduce initialState
+  let (result, Reduction errs) = runState reduce initialState
   in (result, errs)
 
 raise :: Error -> ReduceM ()
@@ -57,7 +57,20 @@ reduceExpr (Expr typ expr) = do
         [] -> raiseAndReturn $ UnknownMemberVariable typename name
         (_:_:_) -> raiseAndReturn $ AmbigousMemberVariable typename name
         [MVar _ t] -> pure $ Expr t $ ESelect e name []
-      TVar _ -> pure $ Expr typ $ ESelect e name kinds
+      TVar _ -> pure $ Expr typ $ ESelect e name []
+
+    -- Apply function
+    app@(EApp callPurity (Expr (TFunc purity paramTypes tRet) _) args) -> do
+
+      when (callPurity /= purity) $ raise $ WrongPurity purity callPurity
+
+      let numParams = length paramTypes; numArgs = length args
+      when (numArgs /= numParams) $ raise $ WrongNumArgs numParams numArgs
+
+      _ <- zipWithM constrainExpr paramTypes args
+
+      pure $ Expr tRet app
+
 
     EApp Pure (Expr _ (EName "+" _)) [Expr _ (EVal (VInt a)), Expr _ (EVal (VInt b))]
       -> pure $ Expr TInt $ EVal $ VInt (a + b)
@@ -70,4 +83,12 @@ reduceSubExprs expr = case expr of
   ESelect e name kinds -> reduceExpr e >>= \e' -> pure $ ESelect e' name kinds
   EApp p e es -> liftM2 (EApp p) (reduceExpr e) (mapM reduceExpr es)
   e -> pure $ e
+
+constrainExpr :: Type -> Expr -> ReduceM ()
+constrainExpr t1 (Expr t2 _) = constrainType t1 t2
+
+constrainType :: Type -> Type -> ReduceM ()
+-- TODO: Account for implicit conversions
+constrainType t1 t2 = when (t1 /= t2) $ raise $ WrongType t1 t2
+
 

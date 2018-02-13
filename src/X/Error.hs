@@ -2,7 +2,7 @@ module X.Error where
 
 import Data.Set
 
-import Ast.A2Constrained
+import X.Ast
 import TypeCheck.Constraint
 
 type Errors = Set Error
@@ -10,7 +10,6 @@ type Errors = Set Error
 data Error
 
   = MidBlockReturn
-  -- | RedundantReturn
   | UselessExpression
 
   | UnknownId Name
@@ -20,14 +19,14 @@ data Error
   | UnknownMemberVariable Typename Name
   | AmbigousMemberVariable Typename Name
 
-  | FailedToUnify Constraint
+  | WrongType { typeExpected :: Type, typeFound :: Type }
   | FailedToInferType Type
   | FailedUnification Constraints
 
   | NonApplicable Type
-  | WrongPurity { purityRequired :: Purity, purityFound :: Purity }
+  | WrongPurity { purityExpected :: Purity, purityFound :: Purity }
   | WrongMutability
-  | WrongNumArgs { numArgsRequired :: Int, numArgsFound :: Int }
+  | WrongNumArgs { numArgsExpected :: Int, numArgsFound :: Int }
   | NoViableOverload
 
   -- Multiple, competing, duplicate, overlapping, contrandictory?...

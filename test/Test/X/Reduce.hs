@@ -12,32 +12,14 @@ import X.TypeCheck.Reduce
 
 import Util.MultiMap
 
--- type SubstitutionList = [(TVar, Type)]
-
--- unifyTest :: String -> [Constraint] -> SubstitutionList -> [Error] -> TestTree
--- unifyTest name constraints subs errors =
---   let (subsActual, errorsActual) = unify constraints
---   in testGroup name
---     [ testCase "substitutions" $ subsActual @?= M.fromList subs
---     , testCase "errors" $ errorsActual @?= S.fromList errors
---     ]
-
--- reduceTest :: String -> Ast -> Ast -> TestTree
--- reduceTest name input expected =
---   let result = reduceExpr input
---   in testCase name $ result @?= expected
-
-reduceExprTest :: String -> Expr -> Expr -> Errors -> TestTree
-reduceExprTest name input expr errs =
-  let (expr', errs') = runReduce $ reduceExpr input
+reduceExprTest :: String -> Expr -> Expr -> [Error] -> TestTree
+reduceExprTest name input expr errorList =
+  let
+    errs = S.fromList errorList
+    (expr', errs') = runReduce $ reduceExpr input
   in testGroup name
     [ testCase "expr" $ expr' @?= expr
     , testCase "errors" $ errs' @?= errs]
-
--- test :: (Eq a, Show a) => String -> a -> a -> TestTree
--- test name input expected =
---   let result = reduceExpr input
---   in testCase name $ result @?= expected
 
 tests :: TestTree
 tests = testGroup "reduce"
@@ -56,7 +38,7 @@ tests = testGroup "reduce"
           "b" []
       output = Expr TError $ EName "a.b" [KNamespace unitsB]
 
-      in reduceExprTest "select-namespace" input output S.empty)
+      in reduceExprTest "select-namespace" input output [])
 
   , (let
       unitsA = multiFromList
@@ -80,7 +62,7 @@ tests = testGroup "reduce"
         "c" []
       output = Expr TError $ EName "a.b.c" [KNamespace unitsC]
 
-     in reduceExprTest "select-namespace-nested" input output)
+     in reduceExprTest "select-namespace-nested" input output [])
 
   , (let
       members = multiFromList
@@ -91,7 +73,97 @@ tests = testGroup "reduce"
       expr' = ESelect (Expr vector $ EName "x" [KExpr $ Expr vector EBinding]) "y" []
       input = Expr TError expr'
       output = Expr TFlt expr'
-    in reduceExprTest "select-member" input output S.empty)
+    in reduceExprTest "select-member" input output [])
 
+  , testGroup "app"
+    [ (let
+      tadd = [TInt, TInt] ~> TInt
+      expr' = EApp Pure (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+        [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
+        , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
+        ]
+      input = Expr TError expr'
+      output = Expr TInt expr'
+      in reduceExprTest "simple-app" input output [])
 
+    , (let
+      tadd = [TInt, TInt] ~> TInt
+      expr' = EApp PWrite (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+        [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
+        , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
+        ]
+      input = Expr TError expr'
+      output = Expr TInt expr'
+      in reduceExprTest "wrong-purity" input output [WrongPurity Pure PWrite])
+
+    , (let
+        tadd = [TInt, TInt] ~> TInt
+        expr' = EApp Pure (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+          [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
+          , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
+          , Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]
+          ]
+        input = Expr TError expr'
+        output = Expr TInt expr'
+        in reduceExprTest "wrong-num-args" input output [WrongNumArgs 2 3])
+
+    , (let
+        tadd = [TInt, TInt] ~> TInt
+        expr' = EApp Pure (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+          [ Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding]
+          , Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]
+          ]
+        input = Expr TError expr'
+        output = Expr TInt expr'
+        in reduceExprTest "first-arg-wrong-type" input output [WrongType TInt TBln])
+
+    , (let
+        tadd = [TInt, TInt] ~> TInt
+        expr' = EApp Pure (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+          [ Expr TInt $ EName "a" [KExpr $ Expr TInt EBinding]
+          , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
+          ]
+        input = Expr TError expr'
+        output = Expr TInt expr'
+        in reduceExprTest "second-arg-wrong-type" input output [WrongType TInt TStr])
+
+    , (let
+        tadd = [TInt, TInt] ~> TInt
+        expr' = EApp Pure (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+          [ Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding]
+          , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
+          ]
+        input = Expr TError expr'
+        output = Expr TInt expr'
+        in reduceExprTest "both-args-wrong-type" input output
+          [WrongType TInt TBln, WrongType TInt TStr])
+
+    , (let
+        tadd = [TInt, TInt] ~> TInt
+        expr' = EApp Pure (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+          [ Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding]
+          , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
+          , Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]
+          ]
+        input = Expr TError expr'
+        output = Expr TInt expr'
+        in reduceExprTest "wrong-num-args-of-wrong-type" input output
+          [WrongNumArgs 2 3, WrongType TInt TBln, WrongType TInt TStr])
+
+    , (let
+        tadd = [TInt, TInt] ~> TInt
+        expr' = EApp PWrite (Expr tadd $ EName "+" [KExpr $ Expr tadd EBinding])
+          [ Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding]
+          , Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]
+          , Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]
+          ]
+        input = Expr TError expr'
+        output = Expr TInt expr'
+        in reduceExprTest "wrong-purity-with-too-many-args-of-wrong-type" input output
+          [ WrongPurity Pure PWrite
+          , WrongNumArgs 2 3
+          , WrongType TInt TBln
+          , WrongType TInt TStr])
+
+    ]
   ]
