@@ -43,23 +43,27 @@ reduceExpr :: Expr -> ReduceM Expr
 reduceExpr (Expr typ expr) = do
   expr' <- reduceSubExprs expr
   let input' = Expr typ expr'
-  let raiseAndReturn e = raise e >> pure input'
+  let foundError err = raise err >> (pure $ Expr TError expr')
   case expr' of
 
-    -- Select unit of namespace
+    -- Namespace unit selection
     ESelect (Expr t (EName n1 [KNamespace units])) n2 _ -> do
       let newName = n1 ++ "." ++ n2
       pure $ Expr t $ EName newName $ lookupUnit n2 units
 
-    -- Select member of struct
+    -- Struct member selection
     ESelect e name kinds -> case typeOfExpr e of
       TData typename members -> case multiLookup name members of
-        [] -> raiseAndReturn $ UnknownMemberVariable typename name
-        (_:_:_) -> raiseAndReturn $ AmbigousMemberVariable typename name
+        [] -> foundError $ UnknownMemberVariable typename name
+        (_:_:_) -> foundError $ AmbigousMemberVariable typename name
         [MVar _ t] -> pure $ Expr t $ ESelect e name []
       TVar _ -> pure $ Expr typ $ ESelect e name []
 
-    -- Apply function
+    -- Compile time evaluation
+    EApp Pure (Expr _ (EName "+" _)) [Expr _ (EVal (VInt a)), Expr _ (EVal (VInt b))]
+      -> pure $ Expr TInt $ EVal $ VInt (a + b)
+
+    -- Function application
     app@(EApp callPurity (Expr (TFunc purity paramTypes tRet) _) args) -> do
 
       when (callPurity /= purity) $ raise $ WrongPurity purity callPurity
@@ -71,9 +75,9 @@ reduceExpr (Expr typ expr) = do
 
       pure $ Expr tRet app
 
+    -- Non-function application
+    EApp _ (Expr t _) _ -> foundError $ NonApplicable t
 
-    EApp Pure (Expr _ (EName "+" _)) [Expr _ (EVal (VInt a)), Expr _ (EVal (VInt b))]
-      -> pure $ Expr TInt $ EVal $ VInt (a + b)
 
     e -> pure $ Expr typ e
 

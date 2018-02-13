@@ -165,5 +165,13 @@ tests = testGroup "reduce"
           , WrongType TInt TBln
           , WrongType TInt TStr])
 
+    , (let
+        expr' = EApp PWrite (Expr TStr $ EName "a" [KExpr $ Expr TInt EBinding])
+          [ Expr TBln $ EName "b" [KExpr $ Expr TBln EBinding] ]
+        input = Expr TError expr'
+        output = Expr TError expr'
+        in reduceExprTest "non-applicable" input output
+          [ NonApplicable TStr ])
+
     ]
   ]
