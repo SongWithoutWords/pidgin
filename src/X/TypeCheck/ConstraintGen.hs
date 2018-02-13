@@ -85,10 +85,8 @@ checkExpr expression = case expression of
     b1' <- checkBlock b1
     b2' <- checkBlock b2
 
-    let t1 = typeOfExpr $ last b1'
-    let t2 = typeOfExpr $ last b2'
-
-    pure $ A2.Expr (A2.TSuper [t1, t2]) $ A2.EIf cond' b1' b2'
+    -- I really need a better way of communicating that I haven't found a type just yet
+    pure $ A2.Expr (A2.TError) $ A2.EIf cond' b1' b2'
 
   A1.EVar (n, expr) -> do
     expr' <- checkVar expr

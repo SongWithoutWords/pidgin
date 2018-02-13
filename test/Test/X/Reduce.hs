@@ -172,6 +172,44 @@ tests = testGroup "reduce"
         output = Expr TError expr'
         in reduceExprTest "non-applicable" input output
           [ NonApplicable TStr ])
-
     ]
+
+  , testGroup "if"
+    [ (let
+      expr' = EIf
+        (Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding])
+        [Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]]
+        [Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]]
+      input = Expr TError expr'
+      output = Expr TInt expr'
+      in reduceExprTest "simple" input output [])
+
+    , (let
+      expr' = EIf
+        (Expr TStr $ EName "a" [KExpr $ Expr TStr EBinding])
+        [Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]]
+        [Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]]
+      input = Expr TError expr'
+      output = Expr TInt expr'
+      in reduceExprTest "wrong-condition-type" input output [WrongType TBln TStr])
+
+    , (let
+      expr' = EIf
+        (Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding])
+        [Expr TInt $ EName "b" [KExpr $ Expr TInt EBinding]]
+        [Expr TStr $ EName "c" [KExpr $ Expr TStr EBinding]]
+      input = Expr TError expr'
+      output = Expr TInt expr'
+      in reduceExprTest "mismatched-types" input output [WrongType TInt TStr])
+
+    , (let
+      expr' = EIf
+        (Expr TBln $ EName "a" [KExpr $ Expr TBln EBinding])
+        [Expr TStr $ EName "b" [KExpr $ Expr TStr EBinding]]
+        [Expr TInt $ EName "c" [KExpr $ Expr TInt EBinding]]
+      input = Expr TError expr'
+      output = Expr TStr expr'
+      in reduceExprTest "mismatched-types-b" input output [WrongType TStr TInt])
+    ]
+
   ]
