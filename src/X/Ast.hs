@@ -58,8 +58,16 @@ data Kind
   | KExpr Expr
   deriving(Eq, Ord, Show)
 
+-- Would "Term", "Symbol" or "Node" be clearer as a lookup result than kind? Just an idea
+-- data Term
+--   = TNamespace
+--   | TType
+--   | TExpr
+--   | TFunc
+
 type Kinds = [Kind]
 
+-- Starting to doubt that I need/want types for each expr this at this compliation stage...
 data Expr
   = Expr Type Expr'
   | ERef ERef -- A numbered reference to another expr
