@@ -9,7 +9,10 @@ module X.Ast
   , module Ast.Common.Purity
   , module Ast.Common.Table
   , module Ast.Common.Value
+  , module Util.StrongIndexVector
   ) where
+
+-- import Data.Vector
 
 -- import Ast.A2Constrained.Type
 import Ast.Common.Access
@@ -21,56 +24,116 @@ import Ast.Common.Value
 
 -- Finite number of steps friend!
 
-type Ast = Table Unit
+import Util.StrongIndexVector
 
-type Units = Table Unit
+-- type Ast = Table Unit
+
+-- Should call it scope? Is shorter
+type Namespace = Table Unit
 
 data Unit
-  = UNamespace Units
-  | UData Members
-  | UFunc Func
-  | UVar Expr
+  = UNamespace Namespace
+  | UType TypeId
+  | UFunc FuncId
+  | UVar VarId
+  | UIntr Intrinsic
   deriving(Eq, Ord, Show)
 
-type Members = Table Member
+type Units = [Unit]
 
-data Member
-  = MData Access Members
-  | MVar Access Type
+data Ast = Ast
+  { namespace :: Namespace
+  , functions :: Functions
+  , types :: Types -- Includes local type variables
+  , vars :: Vars -- Includes local variables
+  }
   deriving(Eq, Ord, Show)
 
-data Func = Func Sig Block
+data Data = Data Name Members
+  deriving(Eq, Ord, Show)
+
+newtype TypeId = TypeId Int
+  deriving(Eq, Ord, Show)
+
+instance Index TypeId where
+  toInt (TypeId i) = i
+
+type Types = StrongIndexVector TypeId Type
+
+-- type Members = Table Member
+
+
+data Member = Member Name Type
+  deriving(Eq, Ord, Show)
+
+newtype MId = MId Int
+  deriving(Eq, Ord, Show)
+
+
+type Members = StrongIndexVector MId Member
+
+-- data Member
+--   = MData Access Members
+--   | MVar Access Type
+--   deriving(Eq, Ord, Show)
+
+newtype VarId = VarId Int
+  deriving(Eq, Ord, Show)
+
+instance Index VarId where
+  toInt (VarId i) = i
+
+type Vars = StrongIndexVector VarId Var
+
+data Var = Var Name Expr
+  deriving(Eq, Ord, Show)
+
+newtype FuncId = FuncId Int
+  deriving(Eq, Ord, Show)
+
+instance Index FuncId where
+  toInt (FuncId i) = i
+
+type Functions = StrongIndexVector FuncId Func
+
+data Func = Func Name Sig Block
   deriving(Eq, Ord, Show)
 
 data Sig = Sig Purity Params Type
   deriving(Eq, Ord, Show)
 
--- In future Params could be alias for [Named MType]
 type Params = [Param]
 
 type Param = Named Type
 
 type Block = [Expr]
 
-data Kind
-  = KNamespace Units
-  | KType Type
-  | KExpr Expr
-  deriving(Eq, Ord, Show)
+-- data Kind
+  -- = KNamespace Namespace
+  -- | KType TypeId
+  -- | KExpr Type
+  -- | KVal Value
+  -- deriving(Eq, Ord, Show)
+
+-- type Kinds = [Kind]
 
 -- Would "Term", "Symbol" or "Node" be clearer as a lookup result than kind? Just an idea
--- data Term
---   = TNamespace
---   | TType
---   | TExpr
---   | TFunc
+-- data Id
+--   = INamespace Units
+--   | IType TypeId
+--   | IVar VarId
+--   | IFunc FuncId
+--   deriving(Eq, Ord, Show)
 
-type Kinds = [Kind]
+-- type Ids = [Id]
 
 -- Starting to doubt that I need/want types for each expr this at this compliation stage...
 data Expr
   = Expr Type Expr'
-  | ERef ERef -- A numbered reference to another expr
+  | EType Type
+  | ENamespace Namespace
+  | EOver [Expr]
+  -- | ERef ERef -- A numbered reference to another expr
   deriving(Eq, Ord, Show)
 
 data Expr'
@@ -81,22 +144,24 @@ data Expr'
   | EIf Expr Block Block
   | EIntr Intrinsic
   | ELambda Func
-  | EName Name Kinds
+  | EName Unit
+  -- | EOver [Expr]
+  -- | EName Name Units
   | ERet Expr
-  | ESelect Expr Name Kinds
+  | ESelect Expr Name Units
   | EVal Value
-  | EVar Name Expr
+  | EVar VarId
   deriving(Eq, Ord, Show)
 
-type ERef = Int
+-- type ERef = Int
 
 -- For all intents and purposes, I think I only care either when the type or value is known
 -- Would it be possible to get rid of TVar's and use this instead? Possibly not... at all.
-data ERefResult -- but maybe expr's better still
-  = Dynamic Type
-  | Static Value
+-- data ERefResult -- but maybe expr's better still
+--   = Dynamic Type
+--   | Static Value
 
-type Types = [Type]
+-- type Types = [Type]
 
 infixr 0 ~>
 (~>) :: [Type] -> Type -> Type
@@ -107,18 +172,18 @@ data Type
   = TMut Type
 
   -- Neither caller nor callee care about left-most mutability of param and return types
-  | TFunc Purity Types Type
+  | TFunc Purity [Type] Type
 
   -- Types associated with an overloaded name
   -- | TOver TVar Types
-  | TSuper Types
+  | TSuper [Type]
 
   | TRef Type
   | TArray Type
 
   | TData Name Members
 
-  | TUser Name Kinds
+  | TName Name Units
   | TBln
   | TChr
   | TFlt

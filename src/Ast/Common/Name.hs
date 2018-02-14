@@ -19,10 +19,10 @@ type Named a = (Name, a)
 -- instance Traversable ((,) Name) where
 --   traverse f (n, a) = (,) n <$> f a
 
-lookupName :: Name -> [Named a] -> Maybe a
-lookupName _ [] = Nothing
-lookupName name ((n, x) : rest) =
-  if n == name then Just x
-  else lookupName name rest
+-- lookupName :: Name -> [Named a] -> Maybe a
+-- lookupName _ [] = Nothing
+-- lookupName name ((n, x) : rest) =
+--   if n == name then Just x
+--   else lookupName name rest
 
 
