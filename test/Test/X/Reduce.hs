@@ -1,6 +1,6 @@
 module Test.X.Reduce(tests) where
 
-import Data.Set as S
+import qualified Data.Set as S
 -- import Data.Map as M
 
 import Test.Tasty
@@ -13,7 +13,7 @@ import X.TypeCheck.Reduce
 
 import X.TypeCheck.ConstraintGen
 
--- import Util.MultiMap
+import Util.MultiMap
 
 -- reduceExprTest :: String -> Expr -> Expr -> [Error] -> TestTree
 -- reduceExprTest name input expr errorList =
@@ -32,12 +32,65 @@ reduceAstTest name input expected =
 
 tests :: TestTree
 tests = testGroup "reduce"
-  [ ( let
-        x = []
+  [ (let
+        input = multiFromList
+          [("a", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EVal $ A1.VInt 1)]
+        output = Ast
+          { namespace = multiFromList [("a", UVar (VarId 0))]
+          , functions = fromList []
+          , types = fromList []
+          , vars = fromList [Var "a" $ Expr TInt $ EVal $ VInt 1]
+          }
       in
-        reduceAstTest
-    )
-    
+        reduceAstTest "single-var" input output)
+
+  , (let
+      input = multiFromList
+        [ ("a", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EVal $ A1.VInt 1)
+        , ("b", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EVal $ A1.VBln False)
+        ]
+      output = Ast
+        { namespace = multiFromList [("a", UVar (VarId 0)), ("b", UVar (VarId 1))]
+        , functions = fromList []
+        , types = fromList []
+        , vars = fromList
+          [ Var "a" $ Expr TInt $ EVal $ VInt 1
+          , Var "b" $ Expr TBln $ EVal $ VBln False]
+        }
+    in
+      reduceAstTest "two-vars" input output)
+
+  , (let
+      input = multiFromList
+        [ ("a", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EName "b")
+        , ("b", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EName "a")
+        ]
+      output = Ast
+        { namespace = multiFromList [("a", UVar (VarId 0)), ("b", UVar (VarId 1))]
+        , functions = fromList []
+        , types = fromList []
+        , vars = fromList
+          [ Var "a" $ Expr TInt $ EName $ UVar $ VarId 1
+          , Var "b" $ Expr TInt $ EVal $ VInt 1]
+        }
+    in
+      reduceAstTest "variable-forward-reference" input output)
+
+  , (let
+      input = multiFromList
+        [ ("a", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EVal $ A1.VInt 1)
+        , ("b", A1.UVar $ A1.Var A1.Imt Nothing $ A1.EName "a")
+        ]
+      output = Ast
+        { namespace = multiFromList [("a", UVar (VarId 0)), ("b", UVar (VarId 1))]
+        , functions = fromList []
+        , types = fromList []
+        , vars = fromList
+          [ Var "a" $ Expr TInt $ EVal $ VInt 1
+          , Var "b" $ Expr TInt $ EName $ UVar $ VarId 0]
+        }
+    in
+      reduceAstTest "variable-back-reference" input output)
   ]
   -- [ (let
   --     unitsA = multiFromList

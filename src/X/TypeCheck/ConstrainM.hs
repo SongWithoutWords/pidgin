@@ -8,6 +8,7 @@ module X.TypeCheck.ConstrainM
   , pushSearchNode
   , popSearchNode
   , addFunc
+  , addVar
   , pushNewScope
   , popScope
   , addLocalBinding
@@ -22,6 +23,7 @@ module X.TypeCheck.ConstrainM
 
 -- import Control.Monad.RWS
 import Control.Monad.Trans(lift)
+-- import Control.Monad.ST.Lazy
 import Control.Monad.ST
 -- import Control.Monad.Trans.State
 import Control.Monad.Trans.RWS
@@ -29,6 +31,8 @@ import Data.Monoid((<>))
 import Data.STRef
 import qualified Data.Map as M
 import qualified Data.Set as S
+
+import Debug.Trace
 
 import qualified Ast.A0Parse.Type as A1
 import X.Ast
@@ -61,8 +65,11 @@ initialState :: Ast -> ConstrainState
 initialState a = ConstrainState
   { ast = a
   , fList = []
+  , fCount = FuncId 0
   , tList = []
+  , tCount = TypeId 0
   , vList = []
+  , vCount = VarId 0
   , scopes = []
   , nextTypeId = 0
   , errors = S.empty
@@ -75,7 +82,7 @@ type ConstrainM s = RWST (STRef s [Unit]) () ConstrainState (ST s)
 
 
 runConstrainM :: ConstrainM s a -> Ast -> ST s (a, ConstrainState)
-runConstrainM constrainM ast = do
+runConstrainM constrainM ast = trace "runConstrainM" $ do
   history <- newSTRef []
   (x, s, _) <- runRWST constrainM history (initialState ast)
   pure (x, s)
@@ -83,7 +90,7 @@ runConstrainM constrainM ast = do
   -- in (x, s)
 
 constrainStateToAst :: Namespace -> ConstrainState -> Ast
-constrainStateToAst namespace state =
+constrainStateToAst namespace state = trace "constrainStateToAst" $
   let
     -- Reverse the lists so they match the order of the indices we've provided
     fs = fromList $ reverse $ fList state
@@ -100,7 +107,7 @@ constrainStateToAst namespace state =
 pushSearchNode :: Unit -> ConstrainM s ()
 pushSearchNode u = do
   history <- ask
-  lift $ modifySTRef history (u:)
+  lift $ trace "pushNode" $ modifySTRef history (u:)
 
 popSearchNode :: ConstrainM s ()
 popSearchNode = do
@@ -112,6 +119,13 @@ addFunc f = do
   fId@(FuncId curCount) <- gets fCount
   f' <- f fId
   modify $ \s -> s{fList = f' : fList s, fCount = FuncId $ curCount + 1}
+  pure $ fId
+
+addVar :: (VarId -> ConstrainM s Var) -> ConstrainM s VarId
+addVar f = trace "addVar" $ do
+  fId@(VarId curCount) <- gets vCount
+  v <- f fId
+  modify $ \s -> s{vList = v : vList s, vCount = VarId $ curCount + 1}
   pure $ fId
 
 pushScope :: Scope -> ConstrainM s ()
@@ -142,7 +156,7 @@ intrinsicsByName :: MultiMap Name Intrinsic
 intrinsicsByName = multiFromList $ zip (nameOfIntrinsic <$> intrinsics) intrinsics
 
 exprOfUnit :: Unit -> ConstrainM s Expr
-exprOfUnit u = case u of
+exprOfUnit u = trace "exprOfUnit" $ case u of
   UNamespace units -> pure $ ENamespace units
   -- UType ms -> KType ms
 
@@ -154,7 +168,7 @@ exprOfUnit u = case u of
   UVar vId -> exprOfVar <$> (!vId) <$> vars <$> gets ast
 
 lookupName :: Name -> ConstrainM s [Expr]
-lookupName name =
+lookupName name = trace ("lookupName" ++ name) $
   let
     lookupLocal :: Scopes -> [Expr]
     lookupLocal [] = []

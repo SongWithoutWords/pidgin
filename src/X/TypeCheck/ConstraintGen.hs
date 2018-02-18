@@ -17,10 +17,12 @@ import X.TypeCheck.ConstrainM
 import X.TypeCheck.Util
 import Util.MultiMap
 
+import Debug.Trace
+
 constrainAst :: A1.Ast -> Ast
 constrainAst ast =
   -- tie the knot, in order to refer to typevars further ahead in the input
-  let
+  trace "constrainAst" $ let
     (namespace, state) = runST $ runConstrainM (checkUnits ast) ast'
     ast' = constrainStateToAst namespace state
   in ast'
@@ -39,7 +41,7 @@ checkUnit name unit = case unit of
     -- func <- (checkFunc name f fId)
     -- addFunc func
     -- pure $ UFunc fId
-  -- A1.UVar v -> UVar <$> (checkVar name v >>= addVar)
+  A1.UVar v -> UVar <$> addVar (checkVar name v)
 
 checkMember :: A1.Member -> ConstrainM s Member
 checkMember = undefined
@@ -84,17 +86,17 @@ checkFuncBlock t (e:es) = liftM2 (:) (checkExpr e) (checkFuncBlock t es)
 checkBlock :: A1.Block -> ConstrainM s Block
 checkBlock block = mapM checkExpr block
 
-checkVar' :: A1.Var -> ConstrainM s Expr
-checkVar' (A1.Var mut optType expr) = do
+checkVar :: Name -> A1.Var -> VarId -> ConstrainM s Var
+checkVar name (A1.Var mut optType expr) vId = trace "checkVar" $ do
   expr' <- checkExpr expr
   optType' <- traverse checkType optType
 
-  pure $ case optType' of
+  pure $ Var name $ case optType' of
     Just t -> Expr (applyMut mut t) $ ECons expr'
     Nothing -> expr'
 
 checkExpr :: A1.Expr -> ConstrainM s Expr
-checkExpr expression = case expression of
+checkExpr expression = trace "checkExpr" $ case expression of
 
   A1.EIf cond b1 b2 -> do
 
@@ -127,10 +129,12 @@ checkExpr expression = case expression of
     -- t <- getNextTypeVar
     -- pure $ Expr t $ ESelect expr' name kinds
 
-  -- A1.EName name -> do
-  --   kinds <- lookupKinds name
-  --   t <- getNextTypeVar
-  --   pure $ Expr t $ EName name kinds
+  A1.EName name -> trace  ("checkExpr.EName" ++ name) $ do
+    exprs <- lookupName name
+    case exprs of
+      [Expr t e] -> undefined
+    -- t <- getNextTypeVar
+    -- pure $ Expr t $ EName undefined --kinds
 
   -- A1.ELambda f -> do
   --   f' <- checkFunc f
