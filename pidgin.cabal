@@ -89,6 +89,7 @@ library
                     Util.MultiMap
                     Util.Preface
                     Util.PrettyShow
+                    Util.StrongIndexVector
                     Util.UnorderedPair
 
   build-tools: alex, happy
